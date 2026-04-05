@@ -1,0 +1,250 @@
+/* Role Selection Styles */
+.role-selection-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.role-selection-card {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  padding: 50px;
+  max-width: 900px;
+  width: 100%;
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.role-selection-header {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.role-selection-header h1 {
+  font-size: 36px;
+  color: #333;
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+
+.role-selection-header p {
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+}
+
+.role-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-bottom: 40px;
+}
+
+.role-option {
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 30px 25px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #f9f9f9;
+}
+
+.role-option:hover {
+  border-color: #667eea;
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+  transform: translateY(-5px);
+}
+
+.role-option.selected {
+  border-color: #667eea;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+}
+
+.role-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  color: white;
+  transition: transform 0.3s ease;
+}
+
+.role-option:hover .role-icon,
+.role-option.selected .role-icon {
+  transform: scale(1.1);
+}
+
+.role-option h2 {
+  font-size: 24px;
+  color: #333;
+  margin: 15px 0 8px 0;
+  font-weight: 600;
+}
+
+.role-option > p {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.role-benefits {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0 0 0;
+  text-align: left;
+  font-size: 13px;
+  color: #555;
+}
+
+.role-benefits li {
+  padding: 8px 0;
+  transition: color 0.3s ease;
+}
+
+.role-option:hover .role-benefits li,
+.role-option.selected .role-benefits li {
+  color: #667eea;
+}
+
+.role-selection-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.btn-continue {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 14px 30px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-continue:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.btn-continue:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-back {
+  background: white;
+  color: #667eea;
+  border: 2px solid #e0e0e0;
+  padding: 12px 30px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-back:hover {
+  border-color: #667eea;
+  background: #f9f9f9;
+}
+
+.login-redirect {
+  text-align: center;
+  color: #666;
+  margin-top: 20px;
+}
+
+.login-redirect a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.login-redirect a:hover {
+  color: #764ba2;
+  text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .role-selection-card {
+    padding: 30px 20px;
+  }
+
+  .role-selection-header h1 {
+    font-size: 28px;
+  }
+
+  .role-options {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .role-option {
+    padding: 25px 20px;
+  }
+
+  .role-icon {
+    width: 70px;
+    height: 70px;
+    font-size: 30px;
+  }
+
+  .role-option h2 {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .role-selection-container {
+    padding: 10px;
+  }
+
+  .role-selection-card {
+    padding: 20px 15px;
+    border-radius: 10px;
+  }
+
+  .role-selection-header h1 {
+    font-size: 24px;
+  }
+
+  .role-selection-header p {
+    font-size: 14px;
+  }
+
+  .btn-continue,
+  .btn-back {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+}
