@@ -2,8 +2,7 @@ import React, { useState, useCallback } from "react";
 import Map from "../components/Map";
 import ApartmentList from "../components/ApartmentList";
 import { FaSearch, FaMapMarkerAlt, FaHome, FaBuilding, FaUniversity, FaFilter, FaChevronDown } from "react-icons/fa";
-import { HiViewList, HiMap, HiOfficeBuilding } from "react-icons/hi";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { HiViewList,HiOfficeBuilding } from "react-icons/hi";
 
 function Home() {
   const [view, setView] = useState("both");

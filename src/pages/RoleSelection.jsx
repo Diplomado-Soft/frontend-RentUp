@@ -116,7 +116,7 @@ function RoleSelection() {
             </div>
             
             <h2 className="text-xl font-bold text-surface-800 mb-2">Arrendador</h2>
-            <p className="text-surface-500 text-sm mb-4">Quiero alquilar mis propiedades</p>
+            <p className="text-surface-500 text-sm mb-4">Quiero alquilar mis propiedades a estudiantes</p>
             
             <ul className="space-y-2 text-sm text-surface-600">
               <li className="flex items-center gap-2">

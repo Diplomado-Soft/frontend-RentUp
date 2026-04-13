@@ -1,18 +1,18 @@
 import React, { createContext, useState, useEffect } from 'react';
 
-// Crear el contexto
 export const UserContext = createContext();
 
-// Proveedor del contexto
 export const UserProvider = ({ children }) => {
-    // Inicializar el estado a partir del localStorage, si existe
     const [user, setUser] = useState(() => {
         const storedUser = localStorage.getItem('user');
         return storedUser ? JSON.parse(storedUser) : null;
     });
 
+    const [role, setRole] = useState(() => {
+        return localStorage.getItem('selectedRole') || null;
+    });
+
     const login = (userData) => {
-        // Soportar ambos formatos: destructurado o objeto completo
         const data = userData.token 
             ? userData 
             : { ...userData, token: userData.token };
@@ -20,7 +20,6 @@ export const UserProvider = ({ children }) => {
         setUser(data);
         localStorage.setItem('user', JSON.stringify(data));
         
-        // También guardar token en clave separada para fácil acceso
         if (data.token) {
             localStorage.setItem('token', data.token);
         }
@@ -28,24 +27,30 @@ export const UserProvider = ({ children }) => {
 
     const logout = () => {
         setUser(null);
+        setRole(null);
         localStorage.removeItem('user');
         localStorage.removeItem('token');
+        localStorage.removeItem('selectedRole');
     };
-
     useEffect(() => {
         if (user) {
             localStorage.setItem('user', JSON.stringify(user));
-            if (user.token) {
-                localStorage.setItem('token', user.token);
-            }
+            if (user.token) localStorage.setItem('token', user.token);
         } else {
             localStorage.removeItem('user');
             localStorage.removeItem('token');
         }
     }, [user]);
+    useEffect(() => {
+        if (role) {
+            localStorage.setItem('selectedRole', role);
+        } else {
+            localStorage.removeItem('selectedRole');
+        }
+    }, [role]);
 
     return (
-        <UserContext.Provider value={{ user, setUser, login, logout }}>
+        <UserContext.Provider value={{ user, setUser, login, logout, role, setRole }}>
             {children}
         </UserContext.Provider>
     );
