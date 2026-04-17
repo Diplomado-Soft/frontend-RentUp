@@ -4,6 +4,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { UserProvider } from './contexts/UserContext';
 import Login from './pages/Login';
 import RoleSelection from './pages/RoleSelection';
+import PropertyDetail from './pages/PropertyDetail.jsx';
 
 import './App.css';
 
@@ -13,9 +14,11 @@ function AppContent() {
       <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />
       <Route path="/role-selection" element={<RoleSelection />} />
+      <Route path="/property/:id" element={<PropertyDetail />} />
     </Routes>
   );
 }
+
 
 function App() {
   return (
