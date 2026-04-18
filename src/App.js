@@ -6,6 +6,8 @@ import Login from './pages/Login';
 import RoleSelection from './pages/RoleSelection';
 
 import './App.css';
+import MyAccount from './pages/My-Account';
+import ProtectedRoute from './contexts/ProtectedRoute';
 
 function AppContent() {
   return (
@@ -13,6 +15,9 @@ function AppContent() {
       <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />
       <Route path="/role-selection" element={<RoleSelection />} />
+
+          {/* My Account: para usuarios autenticados (cualquier rol) */}
+        <Route path='/my-account' element={<MyAccount />} />
     </Routes>
   );
 }
