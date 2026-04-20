@@ -2,6 +2,7 @@ import React, { useState, useContext } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faFileInvoiceDollar, faStar, faHistory, faTrashAlt, faChartBar, faComments, faTimes, faHome } from "@fortawesome/free-solid-svg-icons";
 import Reviews from '../components/My-Account/Reviews';
+import User from '../components/My-Account/User';
 import { UserContext } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
 
@@ -12,6 +13,8 @@ function MyAccount() {
 
     const renderComponent = () => {
         switch (activeTab) {
+            case "datos":
+                return <User />
             case "reseñas":
                 return <Reviews />
                 return (
