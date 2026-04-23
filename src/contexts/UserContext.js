@@ -16,7 +16,6 @@ export const UserProvider = ({ children }) => {
         const data = userData.token 
             ? userData 
             : { ...userData, token: userData.token };
-        
         setUser(data);
         localStorage.setItem('user', JSON.stringify(data));
         

@@ -3,6 +3,7 @@ import { UserProvider } from './contexts/UserContext';
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import Signup from './pages/Signup';
 import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
 import Navbar from './components/Navbar';
 import Account from './components/Account';
 import ProtectedRoute from './contexts/ProtectedRoute';
@@ -46,6 +47,14 @@ function AppContent() {
         <Route path='/role-selection' element={<RoleSelection />} />
         <Route path='/signup' element={<Signup />} />
         <Route path='/login' element={<Login />} />
+        <Route 
+          path='/dashboard' 
+          element={
+            <ProtectedRoute requiredRole={2}>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
         <Route 
           path='/my-account' 
           element={
