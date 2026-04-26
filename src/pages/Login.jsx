@@ -16,6 +16,7 @@ function Login() {
   const location = useLocation();
     
   const goToHome = () => navigate("/");
+  const goToMyAccount = () => navigate("/my-account");
 
   useEffect(() => {
     if (location.state?.errorMsg) {
@@ -26,7 +27,7 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const result = await loginUser({ email, password, login });
-    if (result.success) goToHome();
+    if (result.success) goToMyAccount();
     else setMessage(result.message);
   };
 
@@ -36,7 +37,7 @@ function Login() {
       const result = await firebaseGoogleSignIn(1);
       if (result.success) {
         login(result.user);
-        goToHome();
+        goToMyAccount();
       } else {
         setMessage(result.error || "Error al autenticar");
       }
