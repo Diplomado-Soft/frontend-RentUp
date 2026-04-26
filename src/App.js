@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserProvider } from './contexts/UserContext';
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+import Home from './pages/Home';
 import Signup from './pages/Signup';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -43,7 +44,7 @@ function AppContent() {
       {showAccount && <Account onClose={toggleAccount} onLogoutSuccess={handleLogoutSuccess} />}
 
       <Routes>
-        <Route path='/' element={<Login />} />
+        <Route path='/' element={<Home />} />
         <Route path='/role-selection' element={<RoleSelection />} />
         <Route path='/signup' element={<Signup />} />
         <Route path='/login' element={<Login />} />
