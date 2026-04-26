@@ -35,7 +35,7 @@ function AppContent() {
     <>
       {!isAuthPage && (
         <Navbar 
-          goToJoin={toggleJoin}
+          //goToJoin={toggleJoin}
           showAccount={showAccount}
           setShowAccount={toggleAccount}
         />
