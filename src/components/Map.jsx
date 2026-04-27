@@ -64,12 +64,12 @@ return null;
 
 function Map() {
     const [apartments, setApartments] = useState([]);
-    const [center, setCenter] = useState([3.341300, -76.529400]);
+    const [center, setCenter] = useState([1.156667, -76.651944]);
     const [routeCoordinates, setRouteCoordinates] = useState([]);
     const [distance, setDistance] = useState(null);
     const [selectedApartment, setSelectedApartment] = useState(null);
 
-    const UNIPUTUMAYO_COORDINATES = [3.341300, -76.529400];
+    const UNIPUTUMAYO_COORDINATES = [1.156667, -76.651944];
 
 
 useEffect(() => {

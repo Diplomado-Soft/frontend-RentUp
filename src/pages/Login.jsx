@@ -27,7 +27,7 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const result = await loginUser({ email, password, login });
-    if (result.success) goToMyAccount();
+    if (result.success) goToHome();
     else setMessage(result.message);
   };
 
@@ -37,7 +37,7 @@ function Login() {
       const result = await firebaseGoogleSignIn(1);
       if (result.success) {
         login(result.user);
-        goToMyAccount();
+        goToHome();
       } else {
         setMessage(result.error || "Error al autenticar");
       }

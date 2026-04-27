@@ -10,23 +10,17 @@ import Account from './components/Account';
 import ProtectedRoute from './contexts/ProtectedRoute';
 import RoleSelection from './pages/RoleSelection';
 import MyAccount from './pages/My-Account';
+import AdminDashboard from './components/AdminDashboard';
 import './App.css';
 
 function AppContent() {
-  const [showJoin, setShowJoin] = useState(false);
   const [showAccount, setShowAccount] = useState(false);
   const location = useLocation();
 
-  const toggleJoin = () => setShowJoin(prev => !prev);
   const toggleAccount = () => setShowAccount(prev => !prev);
-
-  const handleLogoutSuccess = () => {
-    setShowAccount(false);
-  };
 
   useEffect(() => {
     setShowAccount(false);
-    setShowJoin(false);
   }, [location.pathname]);
 
   const isAuthPage = ['/signup', '/login', '/role-selection'].includes(location.pathname);
@@ -35,13 +29,13 @@ function AppContent() {
     <>
       {!isAuthPage && (
         <Navbar 
-          goToJoin={toggleJoin}
+          goToLogin={() => window.location.href = '/login'}
           showAccount={showAccount}
           setShowAccount={toggleAccount}
         />
       )}
 
-      {showAccount && <Account onClose={toggleAccount} onLogoutSuccess={handleLogoutSuccess} />}
+      {showAccount && <Account onClose={toggleAccount} />}
 
       <Routes>
         <Route path='/' element={<Home />} />
@@ -51,7 +45,7 @@ function AppContent() {
         <Route 
           path='/dashboard' 
           element={
-            <ProtectedRoute requiredRole={2}>
+            <ProtectedRoute requiredRole={2} fallbackPath="/">
               <Dashboard />
             </ProtectedRoute>
           } 
@@ -61,6 +55,14 @@ function AppContent() {
           element={
             <ProtectedRoute>
               <MyAccount />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path='/admin/apartments' 
+          element={
+            <ProtectedRoute requiredRole={3} fallbackPath="/">
+              <AdminDashboard />
             </ProtectedRoute>
           } 
         />
