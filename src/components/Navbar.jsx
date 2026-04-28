@@ -4,7 +4,7 @@ import { faUser, faClipboardList, faShieldAlt, faSignInAlt, faBuilding, faBars, 
 import { UserContext } from '../contexts/UserContext';
 import { useNavigate } from 'react-router-dom';
 
-function Navbar({ setShowAccount }) {
+function Navbar({ goToLogin, setShowAccount }) {
   const { user } = useContext(UserContext);
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
@@ -37,7 +37,7 @@ function Navbar({ setShowAccount }) {
             <div className="hidden md:flex items-center gap-2 sm:gap-3">
               {!user ? (
                   <button
-                      onClick={() => navigate('/login')}
+                      onClick={goToLogin}
                       className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-xs sm:text-sm font-semibold flex items-center gap-1 sm:gap-2 transition-all duration-300 shadow-button hover:shadow-lg hover:-translate-y-0.5"
                   >
                       <FontAwesomeIcon icon={faSignInAlt} className="text-xs sm:text-sm" />
@@ -105,7 +105,7 @@ function Navbar({ setShowAccount }) {
               {!user ? (
                 <button
                     onClick={() => {
-                      navigate('/login');
+                      goToLogin();
                       setIsMenuOpen(false);
                     }}
                     className="w-full px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold flex items-center justify-center gap-2 transition-all duration-300"
