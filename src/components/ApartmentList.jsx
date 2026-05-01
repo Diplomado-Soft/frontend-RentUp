@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ImageModal from "./ImageModal";
+import PropertyDetailModal from "./PropertyDetailModal";
 import ReviewSection from "./ReviewSection";
 import { 
   FaMapMarkerAlt, 
@@ -26,6 +27,23 @@ function ApartmentList({ searchTerm = "", filters = {} }) {
   const [carouselIndexes, setCarouselIndexes] = useState({});
   const [apartmentList, setApartmentList] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+// Estado para el modal de detalles del inmueble
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState(null);
+  
+  // Efecto para abrir modal automáticamente después del login
+  useEffect(() => {
+    const openModalId = localStorage.getItem("openPropertyModal");
+    if (openModalId && apartmentList.length > 0) {
+      const property = apartmentList.find(apt => apt.id_apt === parseInt(openModalId));
+      if (property) {
+        setSelectedProperty(property);
+        setShowDetailModal(true);
+        localStorage.removeItem("openPropertyModal");
+      }
+    }
+  }, [apartmentList]);
 
   const fetchApartments = async () => {
     try {
@@ -160,12 +178,23 @@ function ApartmentList({ searchTerm = "", filters = {} }) {
       (prev) => (prev === modalImages.length - 1 ? 0 : prev + 1)
     );
 
-  const formatPrice = (price) => {
+const formatPrice = (price) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
       currency: 'COP',
       maximumFractionDigits: 0
     }).format(price);
+  };
+
+  // Funciones para el modal de detalles del inmueble
+  const openDetailModal = (apartment) => {
+    setSelectedProperty(apartment);
+    setShowDetailModal(true);
+  };
+
+  const closeDetailModal = () => {
+    setShowDetailModal(false);
+    setSelectedProperty(null);
   };
 
   return (
@@ -194,9 +223,10 @@ function ApartmentList({ searchTerm = "", filters = {} }) {
             const currentIndex = carouselIndexes[apartment.id_apt] || 0;
 
             return (
-              <div
+<div
                 key={apartment.id_apt || apartment.user_id}
-                className="card overflow-hidden group hover:shadow-card-hover transition-all duration-300"
+                className="card overflow-hidden group hover:shadow-card-hover transition-all duration-300 cursor-pointer"
+                onClick={() => openDetailModal(apartment)}
               >
                 <div className="flex flex-col sm:flex-row">
                   {/* Imagen con Carrusel */}
@@ -399,7 +429,7 @@ function ApartmentList({ searchTerm = "", filters = {} }) {
         </div>
       )}
 
-      {/* Modal de imágenes */}
+{/* Modal de imágenes */}
       {showModal && (
         <ImageModal
           images={modalImages}
@@ -407,6 +437,14 @@ function ApartmentList({ searchTerm = "", filters = {} }) {
           onClose={closeModal}
           onPrev={handlePrevImage}
           onNext={handleNextImage}
+        />
+      )}
+
+      {/* Modal de detalles del inmueble */}
+      {showDetailModal && selectedProperty && (
+        <PropertyDetailModal
+          apartment={selectedProperty}
+          onClose={closeDetailModal}
         />
       )}
     </div>
