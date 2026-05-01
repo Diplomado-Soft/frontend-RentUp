@@ -24,19 +24,38 @@ function Login() {
     }
   }, [location.state]);
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     const result = await loginUser({ email, password, login });
-    if (result.success) goToHome();
-    else setMessage(result.message);
+    if (result.success) {
+      // Verificar si hay una propiedad pendiente para abrir el modal
+      const pendingPropertyId = localStorage.getItem("pendingPropertyId");
+      if (pendingPropertyId) {
+        localStorage.setItem("openPropertyModal", pendingPropertyId);
+        localStorage.removeItem("pendingPropertyId");
+        localStorage.removeItem("pendingPropertyTitle");
+      }
+      // Siempre redirigir al home - el modal se abrirá automáticamente
+      goToHome();
+    } else {
+      setMessage(result.message);
+    }
   };
 
-  const handleGoogleSignIn = async () => {
+const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
       const result = await firebaseGoogleSignIn(1);
       if (result.success) {
         login(result.user);
+        // Verificar si hay una propiedad pendiente para abrir el modal
+        const pendingPropertyId = localStorage.getItem("pendingPropertyId");
+        if (pendingPropertyId) {
+          localStorage.setItem("openPropertyModal", pendingPropertyId);
+          localStorage.removeItem("pendingPropertyId");
+          localStorage.removeItem("pendingPropertyTitle");
+        }
+        // Siempre redirigir al home - el modal se abrirá automáticamente
         goToHome();
       } else {
         setMessage(result.error || "Error al autenticar");
