@@ -1,8 +1,14 @@
 import React, { useState, useContext } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faFileInvoiceDollar, faStar, faHistory, faTrashAlt, faChartBar, faComments, faTimes, faHome } from "@fortawesome/free-solid-svg-icons";
-import Reviews from '../components/My-Account/Reviews';
 import User from '../components/My-Account/User';
+import Billing from '../components/My-Account/Billing';
+import Record from '../components/My-Account/Record';
+import Reviews from '../components/My-Account/Reviews';
+import Reservations from '../components/My-Account/Reservations';
+import MyRents from '../components/My-Account/MyRents';
+import Messages from '../components/My-Account/Messages';
+import History from '../components/My-Account/History';
 import { UserContext } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
 
@@ -15,8 +21,21 @@ function MyAccount() {
         switch (activeTab) {
             case "datos":
                 return <User />
+            case "facturacion":
+                return <Billing />
+            case "estadisticas":
+                return <Record />
             case "reseñas":
                 return <Reviews />
+            case "reservas":
+                return <Reservations />
+            case "mensajes":
+                return <Messages />
+            case "arriendos":
+                return <MyRents />
+            case "historial":
+                return <History />
+            case "eliminar":
                 return (
                     <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
                         <div className="text-center py-8">
@@ -40,7 +59,7 @@ function MyAccount() {
                     </div>
                 );
             default:
-    return <div>Selecciona una opción</div>;
+                return <div>Selecciona una opción</div>;
         }
     };
 
