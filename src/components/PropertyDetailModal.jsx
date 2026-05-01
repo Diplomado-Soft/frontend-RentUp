@@ -352,10 +352,10 @@ function PropertyDetailModal({ apartment, onClose }) {
                 const contactPhone = apartment?.whatsapp || apartment?.user_phonenumber;
                 
                 if (contactPhone) {
+                  // Mensaje con nombre del inmueble y dirección
+                  const mensaje = `Hola, estoy interesado en arrendar el inmueble "*${apartment.barrio}*" ubicado en "*${apartment.direccion_apt}*" publicado en RentUP. Me gustaría más información para proceder con el arriendo.`;
                   window.open(
-                    `https://wa.me/${contactPhone}?text=${encodeURIComponent(
-                      `Hola, estoy interesado en arrendar el inmueble "${apartment.barrio}" publicado en RentUP. Me gustaría más información para proceder con el arriendo.`
-                    )}`,
+                    `https://wa.me/${contactPhone}?text=${encodeURIComponent(mensaje)}`,
                     '_blank'
                   );
                 } else {
