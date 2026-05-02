@@ -5,6 +5,34 @@ import axiosInstance from '../contexts/axiosInstance';
 const API_URL = process.env.REACT_APP_API_URL;
 
 /**
+ * Verifica si un email de Google ya está registrado en el sistema
+ * @param {string} email - Email a verificar
+ * @returns {Promise} - { exists: boolean, user?: object }
+ */
+export const checkGoogleAccountExists = async (email) => {
+    try {
+        console.log('🔍 Verificando si la cuenta existe:', email);
+        
+        const response = await axiosInstance.post(
+            `/auth/check-google-account`,
+            { email }
+        );
+
+        console.log('📥 Respuesta de verificación:', response.data);
+        
+        return {
+            exists: response.data.exists,
+            user: response.data.user || null,
+            requiresRoleSelection: response.data.requiresRoleSelection || false
+        };
+} catch (error) {
+        console.error('❌ Error al verificar cuenta:', error);
+        // Lanzar el error para que el frontend pueda manejarlo
+        throw error;
+    }
+};
+
+/**
  * Autentica con Google usando Firebase y obtiene JWT del backend
  * @param {number} rolId - 1 para usuario estudiante, 2 para arrendador
  * @returns {Promise} - Datos del usuario con JWT

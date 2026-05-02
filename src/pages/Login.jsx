@@ -1,16 +1,21 @@
 import React, { useState, useContext, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { loginUser } from "../apis/loginController";
-import { firebaseGoogleSignIn } from "../apis/firebaseAuthService";
+import { firebaseGoogleSignIn, checkGoogleAccountExists } from "../apis/firebaseAuthService";
 import { UserContext } from "../contexts/UserContext";
+import axiosInstance from "../contexts/axiosInstance";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTimes, faEnvelope, faLock, faHome, faShieldAlt, faUserCheck, faBolt, faHandPaper, faExclamationTriangle, faCheckCircle } from "@fortawesome/free-solid-svg-icons";
+import { faTimes, faEnvelope, faLock, faHome, faShieldAlt, faUserCheck, faBolt, faHandPaper, faExclamationTriangle, faCheckCircle, faUser, faBuilding } from "@fortawesome/free-solid-svg-icons";
+import { faGoogle } from "@fortawesome/free-brands-svg-icons";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [selectedRole, setSelectedRole] = useState(null);
+  const [isVerifying, setIsVerifying] = useState(false);
   const { login } = useContext(UserContext);
   const navigate = useNavigate();
   const location = useLocation();
@@ -42,30 +47,135 @@ const handleSubmit = async (e) => {
     }
   };
 
-const handleGoogleSignIn = async () => {
+// Iniciar autenticación con Google directamente
+const handleGoogleClick = async () => {
     setIsLoading(true);
+    setMessage("");
+    
     try {
-      const result = await firebaseGoogleSignIn(1);
-      if (result.success) {
-        login(result.user);
-        // Verificar si hay una propiedad pendiente para abrir el modal
-        const pendingPropertyId = localStorage.getItem("pendingPropertyId");
-        if (pendingPropertyId) {
-          localStorage.setItem("openPropertyModal", pendingPropertyId);
-          localStorage.removeItem("pendingPropertyId");
-          localStorage.removeItem("pendingPropertyTitle");
+        console.log("🔄 Iniciando flujo de autenticación con Google...");
+        
+        // Autenticarse con Google y obtener el token
+        const result = await firebaseGoogleSignIn(1);
+        
+        console.log("📥 Resultado de firebaseGoogleSignIn:", result);
+        
+        if (result.success) {
+            // Verificar si la cuenta ya está registrada en el sistema
+            console.log("🔍 Verificando si la cuenta existe:", result.user.email);
+            
+            let accountExists = false;
+            let verificationError = null;
+            
+            try {
+                const accountCheck = await checkGoogleAccountExists(result.user.email);
+                console.log("📥 Respuesta de checkGoogleAccountExists:", accountCheck);
+                accountExists = accountCheck.exists;
+            } catch (checkError) {
+                // Guardar el error para decidir qué hacer después
+                verificationError = checkError;
+                console.log("⚠️ Error al verificar cuenta:", checkError.message);
+            }
+            
+            // Si la verificación falló (404 u otro error), asumir que es cuenta existente
+            // para evitar que el modal parezca para cuentas que ya existen
+            if (verificationError) {
+                console.log("⚠️ Endpoint de verificación no disponible - asumiendo cuenta existente para evitar errores");
+                accountExists = true;
+            }
+            
+            if (accountExists) {
+                // La cuenta ya existe - iniciar sesión directamente
+                console.log("✅ Cuenta existente, iniciando sesión...");
+                login(result.user);
+                
+                // Verificar si hay una propiedad pendiente para abrir el modal
+                const pendingPropertyId = localStorage.getItem("pendingPropertyId");
+                if (pendingPropertyId) {
+                    localStorage.setItem("openPropertyModal", pendingPropertyId);
+                    localStorage.removeItem("pendingPropertyId");
+                    localStorage.removeItem("pendingPropertyTitle");
+                }
+                
+                // Redirigir al home
+                goToHome();
+            } else {
+                // Es la primera vez que inicia sesión - mostrar modal de selección de rol
+                console.log("👤 Nueva cuenta, mostrando modal de selección de rol...");
+                // Guardar datos del usuario de Firebase temporalmente
+                localStorage.setItem("pendingGoogleUser", JSON.stringify(result.user));
+                setShowRoleModal(true);
+            }
+        } else {
+            setMessage(result.error || "Error al autenticar");
         }
-        // Siempre redirigir al home - el modal se abrirá automáticamente
-        goToHome();
-      } else {
-        setMessage(result.error || "Error al autenticar");
-      }
     } catch (error) {
-      setMessage(error.message || "Error al autenticar con Google");
+        console.error("❌ Error en Google Sign-In:", error);
+        setMessage(error.message || "Error al autenticar con Google");
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
-  };
+};
+
+// Manejar la selección de rol y completar registro
+const handleRoleSelect = async (role) => {
+    setSelectedRole(role);
+    
+    // Obtener datos del usuario de Firebase guardados temporalmente
+    const googleUserData = localStorage.getItem("pendingGoogleUser");
+    
+    if (!googleUserData) {
+        setMessage("Error: No se pudieron obtener los datos de Google. Intenta de nuevo.");
+        setShowRoleModal(false);
+        setIsLoading(false);
+        return;
+    }
+    
+    const user = JSON.parse(googleUserData);
+    
+    // Convertir rol seleccionado a rolId (1 = usuario, 2 = arrendador)
+    const rolId = role === "arrendador" ? 2 : 1;
+    
+    try {
+        // Enviar los datos al backend con el rol seleccionado
+        const response = await axiosInstance.post(`/auth/firebase-login`, {
+            firebaseToken: user.token,
+            rolId,
+            email: user.email,
+            nombre: user.nombre || user.email,
+            apellido: user.apellido || '',
+            photoURL: user.photoURL || null,
+        });
+
+        if (response.data.success) {
+            // Limpiar datos temporales
+            localStorage.removeItem("pendingGoogleUser");
+            setShowRoleModal(false);
+            
+            // Iniciar sesión con los datos del nuevo usuario
+            login(response.data.user);
+            
+            // Verificar si hay una propiedad pendiente para abrir el modal
+            const pendingPropertyId = localStorage.getItem("pendingPropertyId");
+            if (pendingPropertyId) {
+                localStorage.setItem("openPropertyModal", pendingPropertyId);
+                localStorage.removeItem("pendingPropertyId");
+                localStorage.removeItem("pendingPropertyTitle");
+            }
+            
+            // Redirigir al home
+            goToHome();
+        } else {
+            setMessage(response.data.message || "Error al completar el registro");
+        }
+    } catch (error) {
+        console.error("Error al completar registro:", error);
+        setMessage(error.response?.data?.message || "Error al completar el registro con Google");
+    } finally {
+        setIsLoading(false);
+        setSelectedRole(null);
+    }
+};
 
   return (
     <div className="min-h-screen grid lg:grid-cols-[1fr_1.2fr] grid-cols-1 items-center bg-gradient-to-br from-surface-800 via-surface-700 to-surface-900 relative overflow-hidden">
@@ -160,10 +270,10 @@ const handleGoogleSignIn = async () => {
             </p>
           </div>
 
-          {/* Google Login Button */}
+{/* Google Login Button */}
           <button
             type="button"
-            onClick={handleGoogleSignIn}
+            onClick={handleGoogleClick}
             disabled={isLoading}
             className="w-full flex items-center justify-center gap-3 py-4 px-4 bg-white hover:bg-surface-50 text-surface-700 font-semibold rounded-xl transition-all duration-300 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 border-2 border-surface-200 hover:border-primary-300 disabled:opacity-60 disabled:cursor-not-allowed"
           >
@@ -229,18 +339,106 @@ const handleGoogleSignIn = async () => {
               <span>Iniciar Sesión</span>
               <span className="text-xl group-hover:translate-x-1 transition-transform">→</span>
             </button>
-            <p className="text-surface-500 text-center pt-4">
-              ¿No tienes cuenta?{" "}
-              <span
-                onClick={() => navigate("/signup")}
-                className="text-primary-600 font-semibold cursor-pointer hover:text-primary-700 hover:underline transition-colors"
+      <p className="text-surface-500 text-center pt-4">
+        ¿No tienes cuenta?{" "}
+        <span
+          onClick={() => navigate("/signup")}
+          className="text-primary-600 font-semibold cursor-pointer hover:text-primary-700 hover:underline transition-colors"
+        >
+          Regístrate aquí
+        </span>
+      </p>
+    </div>
+  </div>
+</div>
+
+{/* Modal de Selección de Rol */}
+      {showRoleModal && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
+          onClick={() => setShowRoleModal(false)}
+        >
+          <div 
+            className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-surface-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-5">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-lg">
+                  <FontAwesomeIcon icon={faGoogle} className="text-white text-lg" />
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold text-lg">Selecciona tu tipo de cuenta</h3>
+                  <p className="text-white/80 text-sm">para continuar con Google</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <p className="text-surface-600 text-sm text-center mb-4">
+                ¿Cómo usarás la plataforma? Selecciona una opción para continuar:
+              </p>
+
+              {/* Opción: Usuario */}
+              <div 
+                className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 ${
+                  selectedRole === 'usuario' 
+                    ? 'border-primary-500 bg-primary-50 shadow-lg' 
+                    : 'border-surface-200 hover:border-surface-300 hover:shadow-md'
+                }`}
+                onClick={() => handleRoleSelect('usuario')}
+                disabled={isLoading}
               >
-                Regístrate aquí
-              </span>
-            </p>
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                    selectedRole === 'usuario' 
+                      ? 'bg-primary-500 text-white' 
+                      : 'bg-surface-100 text-surface-600'
+                  }`}>
+                    <FontAwesomeIcon icon={faUser} className="text-xl" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-surface-800">Usuario</h4>
+                    <p className="text-surface-500 text-sm">Busco alquilar un apartamento</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Opción: Arrendador */}
+              <div 
+                className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 ${
+                  selectedRole === 'arrendador' 
+                    ? 'border-primary-500 bg-primary-50 shadow-lg' 
+                    : 'border-surface-200 hover:border-surface-300 hover:shadow-md'
+                }`}
+                onClick={() => handleRoleSelect('arrendador')}
+                disabled={isLoading}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                    selectedRole === 'arrendador' 
+                      ? 'bg-primary-500 text-white' 
+                      : 'bg-surface-100 text-surface-600'
+                  }`}>
+                    <FontAwesomeIcon icon={faBuilding} className="text-xl" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-surface-800">Arrendador</h4>
+                    <p className="text-surface-500 text-sm">Tengo propiedades para alquilar</p>
+                  </div>
+                </div>
+              </div>
+
+              <button 
+                className="w-full py-3 bg-surface-100 text-surface-600 font-semibold rounded-xl hover:bg-surface-200 transition-colors"
+                onClick={() => setShowRoleModal(false)}
+              >
+                Cancelar
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
