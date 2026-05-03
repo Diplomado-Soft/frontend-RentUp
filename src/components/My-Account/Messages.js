@@ -31,7 +31,7 @@ function Messages() {
       </div>
       
       <div className="messages-container">
-        <ChatList />
+        <ChatList arrendador_id={user.id} />
       </div>
     </div>
   );

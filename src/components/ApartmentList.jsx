@@ -5,8 +5,6 @@ import ReviewSection from "./ReviewSection";
 import { 
   FaMapMarkerAlt, 
   FaImages, 
-  FaUser, 
-  FaEnvelope, 
   FaChevronLeft,
   FaChevronRight,
   FaExpand,
