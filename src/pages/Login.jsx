@@ -1,12 +1,13 @@
 import React, { useState, useContext, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { loginUser } from "../apis/loginController";
-import { firebaseGoogleSignIn, checkGoogleAccountExists } from "../apis/firebaseAuthService";
+import { firebaseGoogleSignIn } from "../apis/firebaseAuthService";
 import { UserContext } from "../contexts/UserContext";
 import axiosInstance from "../contexts/axiosInstance";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTimes, faEnvelope, faLock, faHome, faShieldAlt, faUserCheck, faBolt, faHandPaper, faExclamationTriangle, faCheckCircle, faUser, faBuilding } from "@fortawesome/free-solid-svg-icons";
+import { faTimes, faEnvelope, faLock, faHome, faShieldAlt, faUserCheck, faBolt, faHandPaper, faExclamationTriangle, faCheckCircle, faUser, faBuilding, faL } from "@fortawesome/free-solid-svg-icons";
 import { faGoogle } from "@fortawesome/free-brands-svg-icons";
+import { auth } from "../firebaseConfig";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -15,167 +16,122 @@ function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
-  const [isVerifying, setIsVerifying] = useState(false);
+  // ← ELIMINADO: isVerifying obsoleto
   const { login } = useContext(UserContext);
   const navigate = useNavigate();
   const location = useLocation();
-    
+  
   const goToHome = () => navigate("/");
-  const goToMyAccount = () => navigate("/my-account");
+
+  // modal
+  const handlePendingProperty = () => {
+    const id = localStorage.getItem("pendingPropertyId");
+    if (id) {
+      localStorage.setItem("openPropertyModal", id);
+      localStorage.removeItem("pendingPropertyId");
+      localStorage.removeItem("pendingPropertyTitle");
+    }
+  };
 
   useEffect(() => {
-    if (location.state?.errorMsg) {
-      setMessage(location.state.errorMsg);
-    }
+    if (location.state?.errorMsg) setMessage(location.state.errorMsg);
   }, [location.state]);
 
-const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const result = await loginUser({ email, password, login });
     if (result.success) {
-      // Verificar si hay una propiedad pendiente para abrir el modal
-      const pendingPropertyId = localStorage.getItem("pendingPropertyId");
-      if (pendingPropertyId) {
-        localStorage.setItem("openPropertyModal", pendingPropertyId);
-        localStorage.removeItem("pendingPropertyId");
-        localStorage.removeItem("pendingPropertyTitle");
-      }
-      // Siempre redirigir al home - el modal se abrirá automáticamente
+      handlePendingProperty();  // ← UNA LLAMADA
       goToHome();
     } else {
       setMessage(result.message);
     }
   };
 
-// Iniciar autenticación con Google directamente
-const handleGoogleClick = async () => {
+  // GOOGLE LOGIN: Maneja nueva + reactivada sin rol
+  const handleGoogleClick = async () => {
     setIsLoading(true);
     setMessage("");
-    
     try {
-        console.log("🔄 Iniciando flujo de autenticación con Google...");
-        
-        // Autenticarse con Google y obtener el token
-        const result = await firebaseGoogleSignIn(1);
-        
-        console.log("📥 Resultado de firebaseGoogleSignIn:", result);
-        
-        if (result.success) {
-            // Verificar si la cuenta ya está registrada en el sistema
-            console.log("🔍 Verificando si la cuenta existe:", result.user.email);
-            
-            let accountExists = false;
-            let verificationError = null;
-            
-            try {
-                const accountCheck = await checkGoogleAccountExists(result.user.email);
-                console.log("📥 Respuesta de checkGoogleAccountExists:", accountCheck);
-                accountExists = accountCheck.exists;
-            } catch (checkError) {
-                // Guardar el error para decidir qué hacer después
-                verificationError = checkError;
-                console.log("⚠️ Error al verificar cuenta:", checkError.message);
-            }
-            
-            // Si la verificación falló (404 u otro error), asumir que es cuenta existente
-            // para evitar que el modal parezca para cuentas que ya existen
-            if (verificationError) {
-                console.log("⚠️ Endpoint de verificación no disponible - asumiendo cuenta existente para evitar errores");
-                accountExists = true;
-            }
-            
-            if (accountExists) {
-                // La cuenta ya existe - iniciar sesión directamente
-                console.log("✅ Cuenta existente, iniciando sesión...");
-                login(result.user);
-                
-                // Verificar si hay una propiedad pendiente para abrir el modal
-                const pendingPropertyId = localStorage.getItem("pendingPropertyId");
-                if (pendingPropertyId) {
-                    localStorage.setItem("openPropertyModal", pendingPropertyId);
-                    localStorage.removeItem("pendingPropertyId");
-                    localStorage.removeItem("pendingPropertyTitle");
-                }
-                
-                // Redirigir al home
-                goToHome();
-            } else {
-                // Es la primera vez que inicia sesión - mostrar modal de selección de rol
-                console.log("👤 Nueva cuenta, mostrando modal de selección de rol...");
-                // Guardar datos del usuario de Firebase temporalmente
-                localStorage.setItem("pendingGoogleUser", JSON.stringify(result.user));
-                setShowRoleModal(true);
-            }
-        } else {
-            setMessage(result.error || "Error al autenticar");
-        }
+      console.log("🔄 Google login...");
+      const result = await firebaseGoogleSignIn();
+      console.log("Backend:", result);
+      
+      // Modal si: nueva cuenta O reactivada sin rol
+      if (result.requiresRoleSelection || !result.user?.rol) {
+console.log("👤 Mostrar modal (nueva/reactivada)");
+        localStorage.setItem('pendingGoogleUser', JSON.stringify(result.user));
+        setShowRoleModal(true);
+      } else {
+        console.log("✅ Login directo");
+        login(result.user);
+        handlePendingProperty();
+        goToHome();
+      }
     } catch (error) {
-        console.error("❌ Error en Google Sign-In:", error);
-        setMessage(error.message || "Error al autenticar con Google");
+      console.error("❌ Error:", error);
+      setMessage(error.message || "Error Google");
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
-};
+  };
 
-// Manejar la selección de rol y completar registro
-const handleRoleSelect = async (role) => {
+  // SELECCIÓN ROL: Completar con rolId
+  const handleRoleSelect = async (role) => {
     setSelectedRole(role);
-    
-    // Obtener datos del usuario de Firebase guardados temporalmente
     const googleUserData = localStorage.getItem("pendingGoogleUser");
-    
     if (!googleUserData) {
-        setMessage("Error: No se pudieron obtener los datos de Google. Intenta de nuevo.");
-        setShowRoleModal(false);
-        setIsLoading(false);
-        return;
+      setMessage("Error datos Google");
+      setShowRoleModal(false);
+      return;
     }
-    
     const user = JSON.parse(googleUserData);
-    
-    // Convertir rol seleccionado a rolId (1 = usuario, 2 = arrendador)
-    const rolId = role === "arrendador" ? 2 : 1;
+
+    //REFRESCAR TOKEN
+    const firebaseUser = auth.currentUser;
+    if(!firebaseUser) {
+      setMessage("Sesion de Google no disponible");
+      showRoleModal(false);
+      return;
+    }
+    let refreshToken;
+    try {
+      refreshToken = await firebaseUser.getIdToken(true); //feurza renovacion
+    } catch (error) {
+      console.log("Error al refrescar Token de Firebase", error);
+      setMessage("Error de autenticacion")
+      setShowRoleModal(false);
+      return;
+    }
+
+    const rolId = role === "arrendador" ? 2 : 1;  // 1=usuario, 2=propietario
     
     try {
-        // Enviar los datos al backend con el rol seleccionado
-        const response = await axiosInstance.post(`/auth/firebase-login`, {
-            firebaseToken: user.token,
-            rolId,
-            email: user.email,
-            nombre: user.nombre || user.email,
-            apellido: user.apellido || '',
-            photoURL: user.photoURL || null,
-        });
-
-        if (response.data.success) {
-            // Limpiar datos temporales
-            localStorage.removeItem("pendingGoogleUser");
-            setShowRoleModal(false);
-            
-            // Iniciar sesión con los datos del nuevo usuario
-            login(response.data.user);
-            
-            // Verificar si hay una propiedad pendiente para abrir el modal
-            const pendingPropertyId = localStorage.getItem("pendingPropertyId");
-            if (pendingPropertyId) {
-                localStorage.setItem("openPropertyModal", pendingPropertyId);
-                localStorage.removeItem("pendingPropertyId");
-                localStorage.removeItem("pendingPropertyTitle");
-            }
-            
-            // Redirigir al home
-            goToHome();
-        } else {
-            setMessage(response.data.message || "Error al completar el registro");
-        }
+      const response = await axiosInstance.post(`/auth/firebase-login`, {
+        firebaseToken: refreshToken,
+        rolId,
+        email: user.email,
+        nombre: user.nombre || user.email,
+        apellido: user.apellido || '',
+        photoURL: user.photoURL || null,
+      });
+      if (response.data.success) {
+        localStorage.removeItem("pendingGoogleUser");
+        setShowRoleModal(false);
+        login(response.data.user);
+        handlePendingProperty();
+        goToHome();
+      } else {
+        setMessage(response.data.message || "Error registro");
+      }
     } catch (error) {
-        console.error("Error al completar registro:", error);
-        setMessage(error.response?.data?.message || "Error al completar el registro con Google");
+      setMessage(error.response?.data?.message || "Error completar");
     } finally {
-        setIsLoading(false);
-        setSelectedRole(null);
+      setIsLoading(false);
+      setSelectedRole(null);
     }
-};
+  };
+
 
   return (
     <div className="min-h-screen grid lg:grid-cols-[1fr_1.2fr] grid-cols-1 items-center bg-gradient-to-br from-surface-800 via-surface-700 to-surface-900 relative overflow-hidden">

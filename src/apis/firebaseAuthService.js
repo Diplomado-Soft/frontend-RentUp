@@ -37,7 +37,7 @@ export const checkGoogleAccountExists = async (email) => {
  * @param {number} rolId - 1 para usuario estudiante, 2 para arrendador
  * @returns {Promise} - Datos del usuario con JWT
  */
-export const firebaseGoogleSignIn = async (rolId = 1) => {
+export const firebaseGoogleSignIn = async () => { // se quita (rolId = 1)
     try {
         console.log('🚀 Iniciando Firebase Google Sign-In...');
         
@@ -60,7 +60,7 @@ export const firebaseGoogleSignIn = async (rolId = 1) => {
             `/auth/firebase-login`,
             {
                 firebaseToken,
-                rolId,
+            //  rolId,
                 email: user.email,
                 nombre: user.displayName?.split(' ')[0] || user.email,
                 apellido: user.displayName?.split(' ').slice(1).join(' ') || '',
@@ -68,7 +68,7 @@ export const firebaseGoogleSignIn = async (rolId = 1) => {
             }
         );
 
-        console.log('📥 Respuesta del backend recibida:', response.data);
+console.log('📥 Respuesta del backend recibida:', response.data);
 
         if (response.data.success) {
             console.log('✅ Autenticación completada exitosamente');
@@ -76,6 +76,7 @@ export const firebaseGoogleSignIn = async (rolId = 1) => {
                 success: true,
                 user: response.data.user,
                 token: response.data.token,
+                requiresRoleSelection: response.data.requiresRoleSelection || false,
             };
         } else {
             throw new Error(response.data.message || 'Error al autenticar');
