@@ -6,7 +6,7 @@ import LandlordReviews from '../components/LandlordReviews';
 import Toast from '../components/Toast';
 import { UserContext } from '../contexts/UserContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faList, faChartLine, faTrash, faExclamationTriangle, faFileContract, faStar } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faList, faTrash, faExclamationTriangle, faFileContract, faStar } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 
 function Dashboard() {

@@ -1,93 +1,156 @@
-import React, { useState, useEffect } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faComment, faUser, faHome, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+// src/components/ChatList.jsx
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import ChatComponent from "./ChatComponent";
 import "../styles/ChatList.css";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:9000";
-
-function ChatList({ onSelectChat, selectedChatId }) {
-  const [conversations, setConversations] = useState([]);
+export default function ChatList({ arrendador_id }) {
+  const [conversaciones, setConversaciones] = useState([]);
+  const [conversacionActiva, setConversacionActiva] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Cargar lista de conversaciones del arrendador
   useEffect(() => {
-    fetchConversations();
-  }, []);
-
-  const fetchConversations = async () => {
-    try {
-      setLoading(true);
-      const userData = JSON.parse(localStorage.getItem("user") || "{}");
-      if (!userData.token) return;
-
-      const response = await fetch(`${API_URL}/chat/conversaciones/${userData.id}`, {
-        headers: { Authorization: `Bearer ${userData.token}` }
+    if (!arrendador_id) return;
+    
+    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    const token = userData?.token;
+    
+    axios
+      .get(`${process.env.REACT_APP_API_URL || 'http://localhost:9000'}/api/chat/conversaciones/${arrendador_id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      })
+      .then((res) => {
+        // Dedupe defensively by usuario_id in case backend returns duplicates
+        const uniqueByUser = [];
+        const seen = new Set();
+        for (const conv of res.data || []) {
+          if (!seen.has(conv.usuario_id)) {
+            seen.add(conv.usuario_id);
+            uniqueByUser.push(conv);
+          }
+        }
+        setConversaciones(uniqueByUser);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error al cargar conversaciones:", err);
+        setLoading(false);
       });
-      const data = await response.json();
-      if (data.success) {
-        setConversations(data.conversations || []);
-      }
-    } catch (err) {
-      console.error("Error fetching conversations:", err);
-    } finally {
-      setLoading(false);
-    }
+  }, [arrendador_id]);
+
+  const abrirChat = (usuario) => {
+    setConversacionActiva(usuario);
+  };
+
+  const cerrarChat = () => {
+    setConversacionActiva(null);
   };
 
   if (loading) {
-    return <div className="loading-spinner">Cargando conversaciones...</div>;
-  }
-
-  if (conversations.length === 0) {
     return (
-      <div className="empty-state">
-        <div className="empty-icon"><FontAwesomeIcon icon={faComment} /></div>
-        <h3>No tienes mensajes</h3>
-        <p>Cuando contactes a un arrendador, aparecerán aquí</p>
+      <div className="chat-list-container">
+        <div className="loading-spinner">Cargando conversaciones...</div>
       </div>
     );
   }
 
   return (
-    <div className="conversaciones-grid">
-      {conversations.map((conv) => (
-        <div
-          key={conv.id}
-          className={`conversacion-card ${selectedChatId === conv.id ? 'selected' : ''}`}
-          onClick={() => onSelectChat(conv)}
-        >
-          <div className="conversacion-avatar">
-            <div className="avatar-circle">
-              {(conv.other_user_name || "U").charAt(0)}
-            </div>
-            {conv.unread_count > 0 && (
-              <span className="badge-unread">{conv.unread_count}</span>
-            )}
+    <div className="chat-list-container">
+      {!conversacionActiva ? (
+        <div className="conversaciones-lista">
+          <div className="chat-list-header">
+            <h2>💬 Mis Conversaciones</h2>
+            <p className="subtitle">Mensajes de usuarios interesados en tus propiedades</p>
           </div>
-          <div className="conversacion-info">
-            <div className="conversacion-header">
-              <h4 className="usuario-nombre">
-                {conv.other_user_name} {conv.other_user_lastname || ''}
-              </h4>
-              <span className="timestamp">
-                {conv.last_message_at ? new Date(conv.last_message_at).toLocaleDateString("es-CO") : ''}
-              </span>
+
+          {conversaciones.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">📭</div>
+              <h3>No tienes conversaciones</h3>
+              <p>Cuando los usuarios te contacten, aparecerán aquí</p>
             </div>
-            <p className="ultimo-mensaje">
-              {conv.last_message || "Sin mensajes"}
-            </p>
-            {conv.property_title && (
-              <span className="propiedad-tag">
-                <FontAwesomeIcon icon={faHome} /> {conv.property_title}
-              </span>
-            )}
+          ) : (
+            <div className="conversaciones-grid">
+              {conversaciones.map((conv) => (
+                <div
+                  key={conv.usuario_id}
+                  className="conversacion-card"
+                  onClick={() => abrirChat(conv)}
+                >
+                  <div className="conversacion-avatar">
+                    <div className="avatar-circle">
+                      {conv.usuario_nombre?.charAt(0).toUpperCase()}
+                    </div>
+                    {conv.mensajes_no_leidos > 0 && (
+                      <span className="badge-unread">{conv.mensajes_no_leidos}</span>
+                    )}
+                  </div>
+
+                  <div className="conversacion-info">
+                    <div className="conversacion-header">
+                      <h3 className="usuario-nombre">
+                        {conv.usuario_nombre} {conv.usuario_apellido}
+                      </h3>
+                      <span className="timestamp">
+                        {new Date(conv.ultimo_mensaje_fecha).toLocaleDateString('es-ES', {
+                          day: '2-digit',
+                          month: 'short'
+                        })}
+                      </span>
+                    </div>
+                    <p className="ultimo-mensaje">
+                      {conv.ultimo_mensaje?.substring(0, 50)}
+                      {conv.ultimo_mensaje?.length > 50 ? '...' : ''}
+                    </p>
+                    {conv.apartamento_direccion && (
+                      <span className="propiedad-tag">
+                        🏠 {conv.apartamento_direccion}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="conversacion-action">
+                    <button className="btn-abrir-chat">
+                      Abrir chat →
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="chat-activo-container">
+          <div className="chat-header">
+            <button className="btn-volver" onClick={cerrarChat}>
+              ← Volver a conversaciones
+            </button>
+            <div className="chat-user-info">
+              <div className="avatar-small">
+                {conversacionActiva.usuario_nombre?.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <h3>
+                  {conversacionActiva.usuario_nombre} {conversacionActiva.usuario_apellido}
+                </h3>
+                {conversacionActiva.apartamento_direccion && (
+                  <p className="chat-propiedad">
+                    Interesado en: {conversacionActiva.apartamento_direccion}
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="conversacion-action">
-            <button className="btn-abrir-chat">Abrir</button>
+
+          <div className="chat-wrapper">
+            <ChatComponent
+              emisor_id={arrendador_id}
+              receptor_id={conversacionActiva.usuario_id}
+            />
           </div>
         </div>
-      ))}
+      )}
     </div>
   );
 }
-
-export default ChatList;

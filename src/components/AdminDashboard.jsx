@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaCheckCircle, FaTimesCircle, FaHistory, FaSpinner, FaFilePdf, FaDownload, FaBell, FaFileExcel, FaMapMarkerAlt, FaUser, FaMoneyBill, FaBed, FaBath, FaRulerCombined, FaImage, FaEdit, FaTrash, FaInfoCircle, FaBuilding } from 'react-icons/fa';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFlag, faStar, faBell as faBellSolid, faCheck, faTimes, faBuilding, faClipboardList, faRobot } from '@fortawesome/free-solid-svg-icons';
+import { faFlag, faStar, faBell as faBellSolid, faCheck, faTimes, faRobot } from '@fortawesome/free-solid-svg-icons';
 import adminApartmentController from '../apis/adminApartmentController';
 import Toast from './Toast';
 import ImageModal from './ImageModal';

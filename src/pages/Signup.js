@@ -2,7 +2,7 @@ import React, { useState, useContext, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import SucessModal from '../components/SuccessModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faUser, faEnvelope, faPhone, faLock, faUserTie, faHome, faExclamationTriangle, faCheckCircle } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faUser, faPhone, faUserTie, faHome, faExclamationTriangle, faCheckCircle } from '@fortawesome/free-solid-svg-icons';
 import '../styles/log.css';
 import { signupUser } from '../apis/signupController';
 import { UserContext } from "../contexts/UserContext";

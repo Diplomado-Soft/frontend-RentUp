@@ -1,6 +1,6 @@
 import React from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCreditCard, faFileInvoice, faCalendarAlt, faHistory } from '@fortawesome/free-solid-svg-icons';
+import { faCreditCard, faFileInvoice } from '@fortawesome/free-solid-svg-icons';
 
 function Billing() {
     return (
