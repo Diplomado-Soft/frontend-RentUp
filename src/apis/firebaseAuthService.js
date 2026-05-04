@@ -5,11 +5,39 @@ import axiosInstance from '../contexts/axiosInstance';
 const API_URL = process.env.REACT_APP_API_URL;
 
 /**
+ * Verifica si un email de Google ya está registrado en el sistema
+ * @param {string} email - Email a verificar
+ * @returns {Promise} - { exists: boolean, user?: object }
+ */
+export const checkGoogleAccountExists = async (email) => {
+    try {
+        console.log('🔍 Verificando si la cuenta existe:', email);
+        
+        const response = await axiosInstance.post(
+            `/auth/check-google-account`,
+            { email }
+        );
+
+        console.log('📥 Respuesta de verificación:', response.data);
+        
+        return {
+            exists: response.data.exists,
+            user: response.data.user || null,
+            requiresRoleSelection: response.data.requiresRoleSelection || false
+        };
+} catch (error) {
+        console.error('❌ Error al verificar cuenta:', error);
+        // Lanzar el error para que el frontend pueda manejarlo
+        throw error;
+    }
+};
+
+/**
  * Autentica con Google usando Firebase y obtiene JWT del backend
  * @param {number} rolId - 1 para usuario estudiante, 2 para arrendador
  * @returns {Promise} - Datos del usuario con JWT
  */
-export const firebaseGoogleSignIn = async (rolId = 1) => {
+export const firebaseGoogleSignIn = async () => { // se quita (rolId = 1)
     try {
         console.log('🚀 Iniciando Firebase Google Sign-In...');
         
@@ -32,7 +60,7 @@ export const firebaseGoogleSignIn = async (rolId = 1) => {
             `/auth/firebase-login`,
             {
                 firebaseToken,
-                rolId,
+            //  rolId,
                 email: user.email,
                 nombre: user.displayName?.split(' ')[0] || user.email,
                 apellido: user.displayName?.split(' ').slice(1).join(' ') || '',
@@ -40,7 +68,7 @@ export const firebaseGoogleSignIn = async (rolId = 1) => {
             }
         );
 
-        console.log('📥 Respuesta del backend recibida:', response.data);
+console.log('📥 Respuesta del backend recibida:', response.data);
 
         if (response.data.success) {
             console.log('✅ Autenticación completada exitosamente');
@@ -48,6 +76,7 @@ export const firebaseGoogleSignIn = async (rolId = 1) => {
                 success: true,
                 user: response.data.user,
                 token: response.data.token,
+                requiresRoleSelection: response.data.requiresRoleSelection || false,
             };
         } else {
             throw new Error(response.data.message || 'Error al autenticar');
