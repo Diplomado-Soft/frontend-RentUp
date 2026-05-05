@@ -91,7 +91,7 @@ console.log("👤 Mostrar modal (nueva/reactivada)");
     const firebaseUser = auth.currentUser;
     if(!firebaseUser) {
       setMessage("Sesion de Google no disponible");
-      showRoleModal(false);
+      setShowRoleModal(false);
       return;
     }
     let refreshToken;

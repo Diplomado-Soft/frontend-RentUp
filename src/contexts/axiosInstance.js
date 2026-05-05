@@ -31,7 +31,8 @@ async (error) => {
     if (
     error.response &&
     error.response.status === 401 &&
-    !originalRequest._retry
+    !originalRequest._retry &&
+    !originalRequest.url.includes('/users/delete-account')
     ) {
     originalRequest._retry = true;
     const storedUser = localStorage.getItem('user');
