@@ -93,7 +93,7 @@ function Login() {
     const firebaseUser = auth.currentUser;
     if(!firebaseUser) {
       setMessage("Sesion de Google no disponible");
-      showRoleModal(false);
+      setShowRoleModal(false);
       return;
     }
     let refreshToken;
