@@ -1,21 +1,35 @@
 // axiosInstance.js
 import Axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL;
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:9000';
+console.log('axiosInstance baseURL:', API_URL);
 
 const axiosInstance = Axios.create({
-baseURL: API_URL,
+    baseURL: API_URL,
 });
 
 // Request interceptor: agrega el token de acceso si existe en el localStorage
 axiosInstance.interceptors.request.use(
 (config) => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-    const user = JSON.parse(storedUser);
-    if (user.token) {
-        config.headers['Authorization'] = `Bearer ${user.token}`;
+    // Buscar token en localStorage.token y luego en user.token
+    let token = localStorage.getItem('token');
+    if (!token) {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            try {
+                const user = JSON.parse(storedUser);
+                token = user.token;
+            } catch (e) {
+                console.error('Error parseando user de localStorage:', e);
+            }
+        }
     }
+    
+    if (token) {
+        config.headers['Authorization'] = `Bearer ${token}`;
+        console.log('Enviando petición a:', config.url, '| Token (primeros 20):', token.substring(0, 20) + '...');
+    } else {
+        console.warn('No hay token disponible para', config.url);
     }
     return config;
 },

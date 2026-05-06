@@ -4,6 +4,7 @@ import { FaCheckCircle, FaTimesCircle, FaHistory, FaSpinner, FaFilePdf, FaDownlo
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFlag, faStar, faBell as faBellSolid, faCheck, faTimes, faRobot } from '@fortawesome/free-solid-svg-icons';
 import adminApartmentController from '../apis/adminApartmentController';
+import axiosInstance from '../contexts/axiosInstance';
 import Toast from './Toast';
 import ImageModal from './ImageModal';
 import './AdminDashboard.css';
@@ -40,6 +41,20 @@ function AdminDashboard() {
     const [reviewsLoading, setReviewsLoading] = useState(false);
     const [analyzingReviews, setAnalyzingReviews] = useState(false);
     const [ollamaStatus, setOllamaStatus] = useState(null);
+
+    // Users state
+    const [users, setUsers] = useState([]);
+    const [usersLoading, setUsersLoading] = useState(false);
+    const [userSearch, setUserSearch] = useState('');
+    const [userRoleFilter, setUserRoleFilter] = useState('');
+    const [userPagination, setUserPagination] = useState({ offset: 0, limit: 20, total: 0 });
+    const [actionLoading, setActionLoading] = useState(null);
+const [showBlockModal, setShowBlockModal] = useState(false);
+const [userToBlock, setUserToBlock] = useState(null);
+const [blockReason, setBlockReason] = useState('');
+
+    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    const token = userData?.token;
 
     // Cargar apartamentos pendientes
     const fetchPendingApartments = async (offset = 0) => {
@@ -177,18 +192,73 @@ function AdminDashboard() {
 
     const markAllRead = async () => {
         try {
-            const ud = JSON.parse(localStorage.getItem('user') || '{}');
-            await fetch(
-                `${process.env.REACT_APP_API_URL || 'http://localhost:9000'}/admin/notifications/read-all`,
-                { method: 'PUT', headers: { 'Authorization': `Bearer ${ud?.token}` } }
-            );
+            await axiosInstance.put('/admin/notifications/read-all');
             setNotifications(prev => prev.map(n => ({ ...n, read_at: new Date() })));
             setUnreadCount(0);
         } catch (e) { console.error(e); }
     };
 
-    const userData = JSON.parse(localStorage.getItem('user') || '{}');
-    const token = userData?.token;
+    // Obtener usuarios
+    const fetchUsers = async (offset = 0, roleFilter = null) => {
+        try {
+            setUsersLoading(true);
+            // Asegurar que tengamos el rol correcto
+            const currentRole = roleFilter !== null ? roleFilter : userRoleFilter;
+            console.log('🔍 Fetching users - offset:', offset, 'role:', currentRole, 'search:', userSearch);
+            const params = {
+                limit: userPagination.limit,
+                offset,
+                search: userSearch,
+                role: currentRole
+            };
+            console.log('Fetching users with params:', params);
+            const res = await axiosInstance.get('/admin/users', { params });
+            console.log('Users response:', res.data);
+            console.log('First user sample:', res.data?.users?.[0]);
+            if (res.data?.users) {
+                setUsers(res.data.users);
+                setUserPagination({
+                    ...userPagination,
+                    offset,
+                    total: res.data.total
+                });
+            }
+        } catch (error) {
+            console.error('Error cargando usuarios:', error);
+            const errorMessage = error.response?.data?.error || error.message || 'Error al cargar usuarios';
+            setToast({ message: errorMessage, type: 'error' });
+        } finally {
+            setUsersLoading(false);
+        }
+    };
+
+    // Bloquear usuario
+    const handleBlockUser = async (userId, reason = 'Bloqueado por admin') => {
+        try {
+            setActionLoading(userId);
+            await axiosInstance.put(`/admin/users/${userId}/block`, { reason });
+            setToast({ message: 'Usuario bloqueado exitosamente', type: 'success' });
+            fetchUsers(userPagination.offset);
+        } catch (error) {
+            setToast({ message: 'Error al bloquear usuario', type: 'error' });
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    // Desbloquear usuario
+    const handleUnblockUser = async (userId) => {
+        try {
+            setActionLoading(userId);
+            await axiosInstance.put(`/admin/users/${userId}/unblock`);
+            setToast({ message: 'Usuario desbloqueado exitosamente', type: 'success' });
+            fetchUsers(userPagination.offset);
+        } catch (error) {
+            setToast({ message: 'Error al desbloquear usuario', type: 'error' });
+        } finally {
+            setActionLoading(null);
+        }
+    };
 
     // Obtener reportes disponibles
     const fetchReports = async () => {
@@ -308,12 +378,8 @@ function AdminDashboard() {
 
     const handleApproveReview = async (review_id) => {
         try {
-            const ud = JSON.parse(localStorage.getItem('user') || '{}');
-            const res = await fetch(`${API_URL}/reviews/admin/${review_id}/approve`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${ud?.token}` }
-            });
-            if (res.ok) {
+            const res = await axiosInstance.post(`/reviews/admin/${review_id}/approve`);
+            if (res.data) {
                 setToast({ message: 'Reseña aprobada', type: 'success' });
                 setFlaggedReviews(flaggedReviews.filter(r => r.review_id !== review_id));
             }
@@ -324,12 +390,8 @@ function AdminDashboard() {
 
     const handleRejectReview = async (review_id) => {
         try {
-            const ud = JSON.parse(localStorage.getItem('user') || '{}');
-            const res = await fetch(`${API_URL}/reviews/admin/${review_id}/reject`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${ud?.token}` }
-            });
-            if (res.ok) {
+            const res = await axiosInstance.post(`/reviews/admin/${review_id}/reject`);
+            if (res.data) {
                 setToast({ message: 'Reseña rechazada', type: 'success' });
                 setFlaggedReviews(flaggedReviews.filter(r => r.review_id !== review_id));
             }
@@ -342,6 +404,8 @@ function AdminDashboard() {
         if (activeTab === 'reviews') {
             fetchFlaggedReviews();
             checkOllamaHealth();
+        } else if (activeTab === 'users') {
+            fetchUsers(0, userRoleFilter);
         }
     }, [activeTab]);
 
@@ -365,38 +429,55 @@ function AdminDashboard() {
                 <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
                     {/* Tabs */}
                     <div style={{ display:'flex', gap:4 }}>
-                        <button
-                            onClick={() => setActiveTab('apartments')}
-                            style={{
-                                padding:'8px 16px',
-                                border:'none',
-                                borderRadius:8,
-                                cursor:'pointer',
-                                fontWeight:600,
-                                background: activeTab === 'apartments' ? '#6A6BEF' : '#e5e7eb',
-                                color: activeTab === 'apartments' ? '#fff' : '#374151'
-                            }}
-                        >
-                            <FaBuilding style={{marginRight:6}} /> Apartamentos
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('reviews')}
-                            style={{
-                                padding:'8px 16px',
-                                border:'none',
-                                borderRadius:8,
-                                cursor:'pointer',
-                                fontWeight:600,
-                                background: activeTab === 'reviews' ? '#6A6BEF' : '#e5e7eb',
-                                color: activeTab === 'reviews' ? '#fff' : '#374151',
-                                display:'flex',
-                                alignItems:'center',
-                                gap:6
-                            }}
-                        >
-                            <FontAwesomeIcon icon={faStar} /> Reseñas
-                        </button>
-                    </div>
+                         <button
+                             onClick={() => setActiveTab('apartments')}
+                             style={{
+                                 padding:'8px 16px',
+                                 border:'none',
+                                 borderRadius:8,
+                                 cursor:'pointer',
+                                 fontWeight:600,
+                                 background: activeTab === 'apartments' ? '#6A6BEF' : '#e5e7eb',
+                                 color: activeTab === 'apartments' ? '#fff' : '#374151'
+                             }}
+                         >
+                             <FaBuilding style={{marginRight:6}} /> Apartamentos
+                         </button>
+                         <button
+                             onClick={() => setActiveTab('reviews')}
+                             style={{
+                                 padding:'8px 16px',
+                                 border:'none',
+                                 borderRadius:8,
+                                 cursor:'pointer',
+                                 fontWeight:600,
+                                 background: activeTab === 'reviews' ? '#6A6BEF' : '#e5e7eb',
+                                 color: activeTab === 'reviews' ? '#fff' : '#374151',
+                                 display:'flex',
+                                 alignItems:'center',
+                                 gap:6
+                             }}
+                         >
+                             <FontAwesomeIcon icon={faStar} /> Reseñas
+                         </button>
+                         <button
+                             onClick={() => { setActiveTab('users'); if (activeTab !== 'users') fetchUsers(0); }}
+                             style={{
+                                 padding:'8px 16px',
+                                 border:'none',
+                                 borderRadius:8,
+                                 cursor:'pointer',
+                                 fontWeight:600,
+                                 background: activeTab === 'users' ? '#6A6BEF' : '#e5e7eb',
+                                 color: activeTab === 'users' ? '#fff' : '#374151',
+                                 display:'flex',
+                                 alignItems:'center',
+                                 gap:6
+                             }}
+                         >
+                             <FaUser style={{marginRight:6}} /> Usuarios
+                         </button>
+                     </div>
                     
                     {/* Notifications */}
                     <button
@@ -579,6 +660,162 @@ function AdminDashboard() {
                                     </div>
                                 </div>
                             ))}
+                        </div>
+                    )}
+                </div>
+            ) : activeTab === 'users' ? (
+                /* ===== SECCIÓN DE USUARIOS ===== */
+                <div className="users-section">
+                    {/* Header y filtros */}
+                    <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
+                        <div>
+                            <h2 className="text-xl font-bold flex items-center gap-2">
+                                <FaUser className="text-blue-500" />
+                                Gestión de Usuarios
+                            </h2>
+                            <p className="text-gray-600 text-sm">Administra y controla el acceso de usuarios</p>
+                        </div>
+                    </div>
+
+                    {/* Filtros de búsqueda */}
+                    <div className="mb-6 flex flex-wrap gap-3">
+                        <input
+                            type="text"
+                            placeholder="Buscar por nombre o email..."
+                            value={userSearch}
+                            onChange={(e) => {
+                                setUserSearch(e.target.value);
+                                // Búsqueda automática después de 500ms
+                                clearTimeout(window.searchTimeout);
+                                window.searchTimeout = setTimeout(() => fetchUsers(0, userRoleFilter), 500);
+                            }}
+                            className="px-4 py-2 border border-gray-300 rounded-lg flex-1 min-w-[250px]"
+                        />
+                        <select
+                            value={userRoleFilter}
+                            onChange={(e) => {
+                                const newRole = e.target.value;
+                                setUserRoleFilter(newRole);
+                                setUsers([]); // Limpiar lista inmediatamente
+                                setUsersLoading(true);
+                                // Pasar el rol directamente a fetchUsers
+                                setTimeout(() => fetchUsers(0, newRole), 50);
+                            }}
+                            className="px-4 py-2 border border-gray-300 rounded-lg"
+                        >
+                            <option value="">Todos los roles</option>
+                            <option value="0">Sin rol</option>
+                            <option value="1">Usuario</option>
+                            <option value="2">Arrendador</option>
+                            <option value="3">Admin</option>
+                        </select>
+                    </div>
+
+                    {/* Lista de usuarios */}
+                    {usersLoading ? (
+                        <div className="loadingSpinner">
+                            <FaSpinner className="spinning" />
+                            Cargando usuarios...
+                        </div>
+                    ) : users.length === 0 ? (
+                        <div className="alert-box alert-info">
+                            <FaInfoCircle className="mr-2" />
+                            No se encontraron usuarios
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {users.map(user => (
+                                <div key={user.user_id} className="user-card p-4 border rounded-lg bg-white shadow-sm">
+                                    <div className="flex items-center justify-between flex-wrap gap-4">
+                                        <div className="flex items-center gap-4">
+                                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold ${
+                                                user.is_active ? 'bg-blue-500' : 'bg-red-500'
+                                            }`}>
+                                                {(user.user_name || 'U').charAt(0).toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <p className="font-semibold">{user.user_name} {user.user_lastname}</p>
+                                                <p className="text-sm text-gray-500">{user.user_email}</p>
+                                                {user.user_phonenumber && (
+                                                    <p className="text-xs text-gray-400">{user.user_phonenumber}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-3">
+                                            {/* Rol */}
+                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                                user.rol_id === 3 ? 'bg-purple-100 text-purple-700' :
+                                                user.rol_id === 2 ? 'bg-green-100 text-green-700' :
+                                                user.rol_id === 1 ? 'bg-blue-100 text-blue-700' :
+                                                'bg-gray-100 text-gray-500'
+                                            }`}>
+                                                {user.rol_id === 3 ? 'Admin' :
+                                                 user.rol_id === 2 ? 'Arrendador' :
+                                                 user.rol_id === 1 ? 'Usuario' :
+                                                 'Sin rol'}
+                                            </span>
+                                            
+                                            {/* Estado */}
+                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                                user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                            }`}>
+                                                {user.is_active ? 'Activo' : 'Bloqueado'}
+                                            </span>
+                                            
+                                            {/* Acciones */}
+                                            {actionLoading === user.user_id ? (
+                                                <FaSpinner className="spinning text-gray-500" />
+                                            ) : user.is_active ? (
+                                                <button
+                                                    onClick={() => {
+                                                        setUserToBlock(user);
+                                                        setShowBlockModal(true);
+                                                    }}
+                                                    className="btn btn-danger btn-sm"
+                                                    disabled={user.rol_id === 3}
+                                                    title={user.rol_id === 3 ? 'No puedes bloquear a otro admin' : 'Bloquear usuario'}
+                                                >
+                                                    <FaTimesCircle /> Bloquear
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={() => handleUnblockUser(user.user_id)}
+                                                    className="btn btn-success btn-sm"
+                                                >
+                                                    <FaCheckCircle /> Desbloquear
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Fecha de registro */}
+                                    <p className="text-xs text-gray-400 mt-2">
+                                        Registrado: {new Date(user.created_at).toLocaleString('es-CO')}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Paginación de usuarios */}
+                    {users.length > 0 && (
+                        <div className="pagination mt-6">
+                            <button 
+                                disabled={userPagination.offset === 0}
+                                onClick={() => fetchUsers(Math.max(0, userPagination.offset - userPagination.limit))}
+                            >
+                                ← Anterior
+                            </button>
+                            <span>
+                                Mostrando {userPagination.offset + 1}-{Math.min(userPagination.offset + userPagination.limit, userPagination.total)} de {userPagination.total}
+                            </span>
+                            <button 
+                                disabled={userPagination.offset + userPagination.limit >= userPagination.total}
+                                onClick={() => fetchUsers(userPagination.offset + userPagination.limit)}
+                            >
+                                Siguiente →
+                            </button>
                         </div>
                     )}
                 </div>
@@ -900,6 +1137,56 @@ function AdminDashboard() {
                     onPrev={() => setCurrentImageIndex((prev) => (prev === 0 ? modalImages.length - 1 : prev - 1))}
                     onNext={() => setCurrentImageIndex((prev) => (prev === modalImages.length - 1 ? 0 : prev + 1))}
                 />
+            )}
+
+            {/* Modal de bloqueo de usuario */}
+            {showBlockModal && userToBlock && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h3>Bloquear Usuario</h3>
+                        <div className="user-info">
+                            <p><strong>Nombre:</strong> {userToBlock.user_name} {userToBlock.user_lastname}</p>
+                            <p><strong>Email:</strong> {userToBlock.user_email}</p>
+                            <p><strong>Rol:</strong> {userToBlock.rol_id === 3 ? 'Admin' : userToBlock.rol_id === 2 ? 'Arrendador' : 'Usuario'}</p>
+                        </div>
+                        <div className="form-group">
+                            <label>Motivo del bloqueo:</label>
+                            <textarea
+                                value={blockReason}
+                                onChange={(e) => setBlockReason(e.target.value)}
+                                placeholder="Ingresa el motivo del bloqueo..."
+                                className="form-control"
+                                rows="4"
+                            />
+                        </div>
+                        <div className="modal-actions">
+                            <button
+                                className="btn btn-danger"
+                                onClick={() => {
+                                    if (blockReason.trim()) {
+                                        handleBlockUser(userToBlock.user_id, blockReason);
+                                        setShowBlockModal(false);
+                                        setBlockReason('');
+                                        setUserToBlock(null);
+                                    }
+                                }}
+                                disabled={!blockReason.trim() || actionLoading === userToBlock.user_id}
+                            >
+                                {actionLoading === userToBlock.user_id ? <FaSpinner className="spinning" /> : 'Bloquear'}
+                            </button>
+                            <button
+                                className="btn btn-secondary"
+                                onClick={() => {
+                                    setShowBlockModal(false);
+                                    setBlockReason('');
+                                    setUserToBlock(null);
+                                }}
+                            >
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* Toast de notificaciones */}

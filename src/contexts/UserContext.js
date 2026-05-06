@@ -13,9 +13,11 @@ export const UserProvider = ({ children }) => {
     });
 
     const login = (userData) => {
-        const data = userData.token 
-            ? userData 
-            : { ...userData, token: userData.token };
+        // Asegurar que el token está en el objeto userData
+        const data = {
+            ...userData,
+            token: userData.token || userData.accessToken || localStorage.getItem('token')
+        };
         setUser(data);
         localStorage.setItem('user', JSON.stringify(data));
         

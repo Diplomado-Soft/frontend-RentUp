@@ -57,17 +57,19 @@ function Login() {
       const result = await firebaseGoogleSignIn();
       console.log("Backend:", result);
       
-      // Modal si: nueva cuenta O reactivada sin rol
-      if (result.requiresRoleSelection || !result.user?.rol) {
-console.log("👤 Mostrar modal (nueva/reactivada)");
-        localStorage.setItem('pendingGoogleUser', JSON.stringify(result.user));
-        setShowRoleModal(true);
-      } else {
-        console.log("✅ Login directo");
-        login(result.user);
-        handlePendingProperty();
-        goToHome();
-      }
+       // Modal si: nueva cuenta O reactivada sin rol
+       if (result.requiresRoleSelection || !result.user?.rol) {
+ console.log("👤 Mostrar modal (nueva/reactivada)");
+         localStorage.setItem('pendingGoogleUser', JSON.stringify(result.user));
+         setShowRoleModal(true);
+       } else {
+         console.log("Login directo");
+         // Asegurar que el token esté en el objeto user
+         const userWithToken = { ...result.user, token: result.token };
+         login(userWithToken);
+         handlePendingProperty();
+         goToHome();
+       }
     } catch (error) {
       console.error("❌ Error:", error);
       setMessage(error.message || "Error Google");
@@ -106,24 +108,26 @@ console.log("👤 Mostrar modal (nueva/reactivada)");
 
     const rolId = role === "arrendador" ? 2 : 1;  // 1=usuario, 2=propietario
     
-    try {
-      const response = await axiosInstance.post(`/auth/firebase-login`, {
-        firebaseToken: refreshToken,
-        rolId,
-        email: user.email,
-        nombre: user.nombre || user.email,
-        apellido: user.apellido || '',
-        photoURL: user.photoURL || null,
-      });
-      if (response.data.success) {
-        localStorage.removeItem("pendingGoogleUser");
-        setShowRoleModal(false);
-        login(response.data.user);
-        handlePendingProperty();
-        goToHome();
-      } else {
-        setMessage(response.data.message || "Error registro");
-      }
+     try {
+       const response = await axiosInstance.post(`/auth/firebase-login`, {
+         firebaseToken: refreshToken,
+         rolId,
+         email: user.email,
+         nombre: user.nombre || user.email,
+         apellido: user.apellido || '',
+         photoURL: user.photoURL || null,
+       });
+       if (response.data.success) {
+         localStorage.removeItem("pendingGoogleUser");
+         setShowRoleModal(false);
+         // Asegurar que el token esté en el objeto user
+         const userWithToken = { ...response.data.user, token: response.data.token };
+         login(userWithToken);
+         handlePendingProperty();
+         goToHome();
+       } else {
+         setMessage(response.data.message || "Error registro");
+       }
     } catch (error) {
       setMessage(error.response?.data?.message || "Error completar");
     } finally {
