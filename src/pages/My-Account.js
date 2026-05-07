@@ -11,6 +11,7 @@ import Messages from '../components/My-Account/Messages';
 import History from '../components/My-Account/History';
 import { UserContext } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
+import axiosInstance from "../contexts/axiosInstance";
 
 function MyAccount() {
     const [activeTab, setActiveTab] = useState("datos");
@@ -45,10 +46,15 @@ function MyAccount() {
                             <h2 className="text-xl font-bold text-surface-800 mb-2">Eliminar cuenta</h2>
                             <p className="text-surface-500 mb-6">¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer.</p>
                             <button
-                                onClick={() => {
+                                onClick={async () => {
                                     if (window.confirm('¿Confirmas que deseas eliminar tu cuenta?')) {
-                                        logout();
-                                        navigate('/');
+                                        try {
+                                            await axiosInstance.delete('/users/delete-account');
+                                            alert('Cienta eliminada correctamente')
+                                        } catch(error) {
+                                            console.error('Error al eliminar la cuenta', error)
+                                            alert('Error al eliminar la cuenta')
+                                        }
                                     }
                                 }}
                                 className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-all duration-300"
