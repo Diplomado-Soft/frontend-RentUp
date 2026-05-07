@@ -299,15 +299,23 @@ function Login() {
               <span>Iniciar Sesión</span>
               <span className="text-xl group-hover:translate-x-1 transition-transform">→</span>
             </button>
-      <p className="text-surface-500 text-center pt-4">
-        ¿No tienes cuenta?{" "}
-        <span
-          onClick={() => navigate("/signup")}
-          className="text-primary-600 font-semibold cursor-pointer hover:text-primary-700 hover:underline transition-colors"
-        >
-          Regístrate aquí
-        </span>
-      </p>
+       <p className="text-surface-500 text-center pt-4">
+         ¿No tienes cuenta?{" "}
+         <span
+           onClick={() => navigate("/signup")}
+           className="text-primary-600 font-semibold cursor-pointer hover:text-primary-700 hover:underline transition-colors"
+         >
+           Regístrate aquí
+         </span>
+       </p>
+       <p className="text-center pt-2">
+         <span
+           onClick={() => navigate("/forgot-password")}
+           className="text-primary-600 text-sm font-semibold cursor-pointer hover:text-primary-700 hover:underline transition-colors"
+         >
+           ¿Olvidaste tu contraseña?
+         </span>
+       </p>
     </div>
   </div>
 </div>

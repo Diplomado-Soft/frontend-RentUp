@@ -10,30 +10,39 @@ const axiosInstance = Axios.create({
 
 // Request interceptor: agrega el token de acceso si existe en el localStorage
 axiosInstance.interceptors.request.use(
-(config) => {
-    // Buscar token en localStorage.token y luego en user.token
-    let token = localStorage.getItem('token');
-    if (!token) {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            try {
-                const user = JSON.parse(storedUser);
-                token = user.token;
-            } catch (e) {
-                console.error('Error parseando user de localStorage:', e);
+    (config) => {
+        // Rutas públicas que no requieren token
+        const publicPaths = ['/auth/forgot-password', '/auth/reset-password', '/auth/login', '/auth/register'];
+        const isPublic = publicPaths.some(path => config.url.includes(path));
+        
+        if (isPublic) {
+            console.log('Ruta pública, no se requiere token:', config.url);
+            return config;
+        }
+        
+        // Buscar token en localStorage.token y luego en user.token
+        let token = localStorage.getItem('token');
+        if (!token) {
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+                try {
+                    const user = JSON.parse(storedUser);
+                    token = user.token;
+                } catch (e) {
+                    console.error('Error parseando user de localStorage:', e);
+                }
             }
         }
-    }
-    
-    if (token) {
-        config.headers['Authorization'] = `Bearer ${token}`;
-        console.log('Enviando petición a:', config.url, '| Token (primeros 20):', token.substring(0, 20) + '...');
-    } else {
-        console.warn('No hay token disponible para', config.url);
-    }
-    return config;
-},
-(error) => Promise.reject(error)
+        
+        if (token) {
+            config.headers['Authorization'] = `Bearer ${token}`;
+            console.log('Enviando petición a:', config.url, '| Token (primeros 20):', token.substring(0, 20) + '...');
+        } else {
+            console.warn('No hay token disponible para', config.url);
+        }
+        return config;
+    },
+    (error) => Promise.reject(error)
 );
 
 // Response interceptor: intenta renovar el access token si se obtiene un 401

@@ -15,6 +15,8 @@ import RoleSelection from './pages/RoleSelection';
 import MyAccount from './pages/My-Account';
 import GitHubCallback from './pages/GitHubCallback';
 import AdminDashboard from './components/AdminDashboard';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 import './App.css';
 
 function AppContent() {
@@ -90,6 +92,8 @@ function AppContent() {
             </ProtectedRoute>
           } 
         />
+        <Route path='/forgot-password' element={<ForgotPassword />} />
+        <Route path='/reset-password' element={<ResetPassword />} />
       </Routes>
     </>
   );
