@@ -17,6 +17,13 @@ jest.mock('react-router-dom', () => ({
 
 jest.mock('../apis/signupController');
 jest.mock('../apis/firebaseAuthService');
+jest.mock('../firebaseConfig', () => ({
+  __esModule: true,
+  auth: {
+    currentUser: null,
+  },
+  googleProvider: {},
+}));
 
 const renderSignup = () => {
   return render(
