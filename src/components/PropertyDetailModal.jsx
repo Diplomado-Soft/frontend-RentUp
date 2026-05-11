@@ -330,48 +330,53 @@ function PropertyDetailModal({ apartment, onClose }) {
         {/* Footer con botones de acción */}
         <div className="px-6 py-4 border-t border-surface-200 bg-surface-50 flex-shrink-0">
           <div className="flex gap-3">
-            {/* Botón Arrendar - Solo para usuarios NO logueados */}
-            {!user && (
-              <button
-                onClick={handleRentClick}
-                className="flex-1 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-              >
-                <FaHome className="text-lg" />
-                <span>Iniciar proceso de arriendo</span>
-              </button>
-            )}
           </div>
         </div>
 
-{/* Botón flotante de WhatsApp - Solo para usuarios logueados */}
-        {user && (
-          <div className="absolute bottom-4 right-4 z-10">
-            <button
-              onClick={() => {
-                // SOLUCIÓN DINÁMICA: Usar whatsapp si existe, si no usar user_phonenumber
-                const contactPhone = apartment?.whatsapp || apartment?.user_phonenumber;
-                
-                if (contactPhone) {
-                  // Mensaje con nombre del inmueble y dirección
-                  const mensaje = `Hola, estoy interesado en arrendar el inmueble "*${apartment.barrio}*" ubicado en "*${apartment.direccion_apt}*" publicado en RentUP. Me gustaría más información para proceder con el arriendo.`;
-                  window.open(
-                    `https://wa.me/${contactPhone}?text=${encodeURIComponent(mensaje)}`,
-                    '_blank'
-                  );
-                } else {
-                  alert("El propietario no tiene WhatsApp disponible. Te contactaremos pronto.");
-                }
-              }}
-              className="py-3 px-5 bg-green-500 hover:bg-green-600 text-white rounded-full font-semibold transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-            >
-              <FaWhatsapp className="text-xl" />
-              <span className="text-sm font-semibold">Arrendar ahora</span>
-            </button>
-          </div>
-        )}
+{/* Botón flotante de WhatsApp - Redirige al login si no hay sesión */}
+        <div className="absolute bottom-4 right-4 z-10">
+          <button
+            onClick={() => {
+              if (!user) {
+                localStorage.setItem("pendingPropertyId", apartment.id_apt);
+                localStorage.setItem("pendingPropertyTitle", apartment.barrio);
+
+                // Redirigir al login si no ha iniciado sesion
+                navigate("/login", {
+                  state: { from: "/", propertyId: apartment.id_apt },
+                });
+                return;
+              }
+
+              // SOLUCIÓN DINÁMICA: Usar whatsapp si existe, si no usar user_phonenumber
+              // Además, normalizamos el teléfono dejándolo solo con dígitos.
+              const rawPhone = apartment?.whatsapp || apartment?.user_phonenumber;
+              const contactPhone = String(rawPhone).replace(/\D/g, '')
+
+              if (contactPhone) {
+
+                // Mensaje con nombre del inmueble y dirección
+                const mensaje = `Hola, estoy interesado en arrendar el inmueble "*${apartment.barrio}*" ubicado en "*${apartment.direccion_apt}*" publicado en RentUP. Me gustaría más información para proceder con el arriendo.`;
+                window.open(
+                  `https://wa.me/${contactPhone}?text=${encodeURIComponent(mensaje)}`,
+                  "_blank"
+                );
+              } else {
+                alert("El propietario no tiene WhatsApp disponible. Te contactaremos pronto.");
+              }
+            }}
+            className="py-3 px-5 bg-green-500 hover:bg-green-600 text-white rounded-full font-semibold transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+          >
+            <FaWhatsapp className="text-xl" />
+            WhatsApp
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
+
 export default PropertyDetailModal;
+
+

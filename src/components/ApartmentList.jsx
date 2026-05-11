@@ -401,7 +401,7 @@ const formatPrice = (price) => {
                     <div className="flex gap-2 mt-auto">
                       {apartment.whatsapp && (
                         <a
-                          href={`https://wa.me/${apartment.whatsapp}?text=${encodeURIComponent(`Hola, estoy interesado en el inmueble "${apartment.barrio}" publicado en RentUP.`)}`}
+                          href={`https://wa.me/${apartment.whatsapp}?text=${encodeURIComponent(`Hola, estoy interesado en arrendar el inmueble "*${apartment.barrio}*" ubicado en "*${apartment.direccion_apt}*" publicado en RentUP. Me gustaría más información para proceder con el arriendo.`)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex-1 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
