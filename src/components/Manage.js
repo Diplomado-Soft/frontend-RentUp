@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useManageController from "../apis/manageController";
-import { FaTrash, FaEye, FaFilePdf, FaFileExcel, FaEdit, FaHome, FaSync, FaSave, FaTimes, FaPlus, FaMapMarkerAlt, FaInfoCircle } from 'react-icons/fa';
+import { FaTrash, FaEye, FaFilePdf, FaFileExcel, FaEdit, FaHome, FaSync, FaSave, FaTimes, FaPlus, FaMapMarkerAlt, FaInfoCircle, FaCheckCircle, FaHourglassHalf, FaTimesCircle, FaDoorOpen, FaKey } from 'react-icons/fa';
 import MapModal from './MapModal';
 import Toast from './Toast';
 
@@ -70,6 +70,53 @@ const handleSelectLocation = ({ lat, lng }) => {
         longitud_apt: lng.toString()
     };
     setEditFormData(updatedFormData);
+};
+
+const getPublicationBadge = (pubStatus) => {
+    const styles = {
+        pending: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+        approved: 'bg-green-100 text-green-800 border-green-300',
+        rejected: 'bg-red-100 text-red-800 border-red-300'
+    };
+    const labels = {
+        pending: 'Pendiente',
+        approved: 'Aprobado',
+        rejected: 'Rechazado'
+    };
+    const icons = {
+        pending: <FaHourglassHalf className="mr-1" />,
+        approved: <FaCheckCircle className="mr-1" />,
+        rejected: <FaTimesCircle className="mr-1" />
+    };
+    const style = styles[pubStatus] || styles.pending;
+    return (
+        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${style}`}>
+            {icons[pubStatus] || icons.pending}
+            {labels[pubStatus] || pubStatus}
+        </span>
+    );
+};
+
+const getStatusBadge = (status) => {
+    const styles = {
+        available: 'bg-green-100 text-green-800 border-green-300',
+        rented: 'bg-blue-100 text-blue-800 border-blue-300'
+    };
+    const labels = {
+        available: 'Disponible',
+        rented: 'Arrendado'
+    };
+    const icons = {
+        available: <FaDoorOpen className="mr-1" />,
+        rented: <FaKey className="mr-1" />
+    };
+    const style = styles[status] || styles.available;
+    return (
+        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${style}`}>
+            {icons[status] || icons.available}
+            {labels[status] || status}
+        </span>
+    );
 };
 
 const downloadDocument = (id, type) => {
@@ -229,6 +276,10 @@ return (
                         <FaHome className="text-blue-600" />
                         Apartamento #{apt.id_apt}
                     </h3>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                        {getPublicationBadge(apt.publication_status)}
+                        {getStatusBadge(apt.status)}
+                    </div>
                     </div>
                     <div className="flex gap-2">
                     <button onClick={() => downloadDocument(apt.id_apt, "pdf")} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition shadow-md font-medium" title="Descargar PDF">

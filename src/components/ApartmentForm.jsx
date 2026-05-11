@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { UserContext } from '../contexts/UserContext';
 import { submitApartment } from '../apis/apartmentformController';
-import { FaTrash, FaEye, FaSave, FaMapMarkerAlt, FaHome, FaMapPin, FaInfoCircle, FaImages, FaPlus } from 'react-icons/fa';
+import { FaTrash, FaEye, FaSave, FaMapMarkerAlt, FaHome, FaMapPin, FaInfoCircle, FaImages, FaPlus, FaHourglassHalf } from 'react-icons/fa';
 import MapModal from './MapModal';
 
 function ApartmentForm({ onApartmentAdded }) {
@@ -215,6 +215,11 @@ return (
             : 'bg-red-50 border-red-500 text-red-700'
         }`}>
         <p className="font-medium">{message}</p>
+        {message.includes('éxito') && (
+            <p className="text-sm mt-1 text-green-600">
+                <FaHourglassHalf className="inline mr-1" />El apartamento quedó pendiente de aprobación por un administrador.
+            </p>
+        )}
         </div>
     )}
 
