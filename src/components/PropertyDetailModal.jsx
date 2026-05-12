@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../contexts/UserContext";
+import ReviewSection from "./ReviewSection";
 import {
   FaTimes,
   FaMapMarkerAlt,
@@ -14,7 +15,11 @@ import {
   FaHome,
   FaCalendarAlt,
   FaCheck,
-  FaExclamationTriangle
+  FaShareAlt,
+  FaHeart,
+  FaStar,
+  FaShieldAlt,
+  FaMedal
 } from "react-icons/fa";
 
 function PropertyDetailModal({ apartment, onClose }) {
@@ -22,6 +27,28 @@ function PropertyDetailModal({ apartment, onClose }) {
   const { user: contextUser } = useContext(UserContext);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageUrls, setImageUrls] = useState([]);
+  const [isFavorite, setIsFavorite] = useState(() => {
+    try {
+      const saved = localStorage.getItem("rentup_favorites");
+      const favs = saved ? JSON.parse(saved) : {};
+      return !!favs[apartment?.id_apt];
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("rentup_favorites");
+      const favs = saved ? JSON.parse(saved) : {};
+      if (isFavorite) {
+        favs[apartment.id_apt] = true;
+      } else {
+        delete favs[apartment.id_apt];
+      }
+      localStorage.setItem("rentup_favorites", JSON.stringify(favs));
+    } catch {}
+  }, [isFavorite]);
   const [user, setUser] = useState(() => {
     try {
       const stored = localStorage.getItem("user");
@@ -31,7 +58,6 @@ function PropertyDetailModal({ apartment, onClose }) {
     }
   });
 
-  // Escuchar cambios en localStorage (para cuando el usuario inicia sesión)
   useEffect(() => {
     const checkUser = () => {
       try {
@@ -43,13 +69,10 @@ function PropertyDetailModal({ apartment, onClose }) {
       }
     };
     checkUser();
-    
-    // Escuchar cambios de storage
     window.addEventListener('storage', checkUser);
     return () => window.removeEventListener('storage', checkUser);
   }, [contextUser]);
 
-  // Extraer URLs de imágenes
   useEffect(() => {
     if (apartment?.images) {
       let urls = [];
@@ -66,31 +89,27 @@ function PropertyDetailModal({ apartment, onClose }) {
     }
   }, [apartment]);
 
-  // Formatear precio
   const formatPrice = (price) => {
+    const value = Number(price);
+    if (isNaN(value)) return 'Precio no disponible';
     return new Intl.NumberFormat("es-CO", {
       style: "currency",
       currency: "COP",
       maximumFractionDigits: 0,
-    }).format(price);
+    }).format(value);
   };
 
-  // Navegar a la página de contrato
   const handleRentClick = () => {
     if (!user) {
-      // Guardar el ID del apartamento para después del login
       localStorage.setItem("pendingPropertyId", apartment.id_apt);
       localStorage.setItem("pendingPropertyTitle", apartment.barrio);
-      // Redirigir al login
       navigate("/login", { state: { from: "/", propertyId: apartment.id_apt } });
     } else {
-      // Usuario logueado - continuar con el flujo de contrato
-      navigate("/contract", { state: { propertyId: apartment.id_apt, property: apartment } });
+      navigate("/my-account", { state: { tab: "arriendos" } });
     }
     onClose();
   };
 
-  // Navegación del carrusel
   const handlePrevImage = () => {
     setCurrentImageIndex((prev) => (prev === 0 ? imageUrls.length - 1 : prev - 1));
   };
@@ -99,277 +118,343 @@ function PropertyDetailModal({ apartment, onClose }) {
     setCurrentImageIndex((prev) => (prev === imageUrls.length - 1 ? 0 : prev + 1));
   };
 
-  // Manejo de error de imagen
   const handleImageError = (e) => {
     e.target.src = "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
+  };
+
+  const getInitials = (name, lastname) => {
+    return `${(name || "U").charAt(0)}${(lastname || "").charAt(0) || ""}`;
   };
 
   if (!apartment) return null;
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 z-50 overflow-y-auto bg-white"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col relative"
+        className="min-h-full w-full relative"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header del modal */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-surface-200 bg-surface-50 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center text-white">
-              <FaHome className="text-lg" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-surface-800">{apartment.barrio}</h2>
-              <p className="text-sm text-surface-500 flex items-center gap-1">
-                <FaMapMarkerAlt className="text-xs" />
-                {apartment.direccion_apt}
-              </p>
+        {/* Header */}
+        <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-surface-100">
+          <div className="max-w-6xl mx-auto px-4 sm:px-8 flex items-center justify-between h-14">
+            <button
+              onClick={onClose}
+              className="flex items-center gap-2 text-surface-600 hover:text-surface-900 transition-colors text-sm font-medium"
+            >
+              <FaTimes className="text-base" />
+              <span className="hidden sm:inline">Cerrar</span>
+            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsFavorite(!isFavorite)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-surface-600 hover:text-surface-900 hover:bg-surface-50 rounded-lg transition-colors"
+              >
+                <FaHeart className={isFavorite ? "text-red-500" : ""} />
+                <span className="hidden sm:inline">Guardar</span>
+              </button>
+              <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-surface-600 hover:text-surface-900 hover:bg-surface-50 rounded-lg transition-colors">
+                <FaShareAlt />
+                <span className="hidden sm:inline">Compartir</span>
+              </button>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="w-10 h-10 rounded-xl bg-surface-100 hover:bg-surface-200 text-surface-600 hover:text-surface-800 transition-colors flex items-center justify-center"
-          >
-            <FaTimes className="text-xl" />
-          </button>
         </div>
 
-        {/* Contenido scrolleable */}
-        <div className="overflow-y-auto flex-1">
-          {/* Sección de imágenes - Carrusel */}
-          {imageUrls.length > 0 && (
-            <div className="relative h-56 sm:h-64 bg-surface-100">
+        {/* Image Gallery */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 mt-4 mb-8">
+          {imageUrls.length > 0 ? (
+            <div className="relative w-full aspect-[2/1] rounded-2xl overflow-hidden bg-surface-100">
               <img
                 src={imageUrls[currentImageIndex]}
-                alt={`Apartamento ${currentImageIndex + 1}`}
+                alt={`${apartment.barrio} - Foto ${currentImageIndex + 1}`}
                 className="w-full h-full object-cover"
                 onError={handleImageError}
               />
 
-              {/* Badge de precio */}
-              <div className="absolute top-4 left-4 px-4 py-2 bg-primary-600 text-white font-bold rounded-xl shadow-lg">
-                {formatPrice(apartment.precio_apt)}
-                <span className="text-sm font-normal opacity-80">/mes</span>
-              </div>
+              {imageUrls.length > 1 && (
+                <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/50 backdrop-blur-sm rounded-lg text-white text-sm font-medium">
+                  {currentImageIndex + 1} / {imageUrls.length}
+                </div>
+              )}
 
-              {/* Controles del carrusel */}
               {imageUrls.length > 1 && (
                 <>
                   <button
                     onClick={handlePrevImage}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-colors"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105"
                   >
                     <FaChevronLeft className="text-surface-700" />
                   </button>
                   <button
                     onClick={handleNextImage}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105"
                   >
                     <FaChevronRight className="text-surface-700" />
                   </button>
                 </>
               )}
 
-              {/* Indicador de imagen */}
-              <div className="absolute bottom-4 right-4 px-3 py-1.5 bg-black/50 text-white text-sm rounded-lg">
-                {currentImageIndex + 1} / {imageUrls.length}
-              </div>
-
-              {/* Indicadores de puntos */}
               {imageUrls.length > 1 && (
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
                   {imageUrls.map((_, idx) => (
                     <button
                       key={idx}
                       onClick={() => setCurrentImageIndex(idx)}
-                      className={`h-2 rounded-full transition-all ${
+                      className={`rounded-full transition-all ${
                         idx === currentImageIndex
-                          ? "w-6 bg-white"
-                          : "w-2 bg-white/50 hover:bg-white/75"
+                          ? "w-2 h-2 bg-white"
+                          : "w-2 h-2 bg-white/50 hover:bg-white/75"
                       }`}
                     />
                   ))}
                 </div>
               )}
-            </div>
-          )}
 
-          {/* Información principal */}
-          <div className="p-6">
-            {/* Características */}
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="bg-surface-50 rounded-xl p-4 text-center border border-surface-100">
-                <FaBed className="text-primary-600 text-xl mx-auto mb-2" />
-                <div className="text-lg font-bold text-surface-800">
-                  {apartment.habitaciones || "1"}
-                </div>
-                <div className="text-xs text-surface-500">Habitaciones</div>
-              </div>
-              <div className="bg-surface-50 rounded-xl p-4 text-center border border-surface-100">
-                <FaBath className="text-primary-600 text-xl mx-auto mb-2" />
-                <div className="text-lg font-bold text-surface-800">
-                  {apartment.banos || "1"}
-                </div>
-                <div className="text-xs text-surface-500">Baños</div>
-              </div>
-              <div className="bg-surface-50 rounded-xl p-4 text-center border border-surface-100">
-                <FaRulerCombined className="text-primary-600 text-xl mx-auto mb-2" />
-                <div className="text-lg font-bold text-surface-800">
-                  {apartment.metros_apt || "30"}m²
-                </div>
-                <div className="text-xs text-surface-500">Área total</div>
-              </div>
-            </div>
-
-            {/* Descripción */}
-            {apartment.info_add_apt && (
-              <div className="mb-6">
-                <h3 className="text-lg font-bold text-surface-800 mb-3 flex items-center gap-2">
-                  <FaHome className="text-primary-600" />
-                  Descripción
-                </h3>
-                <p className="text-surface-600 leading-relaxed bg-surface-50 rounded-xl p-4 border border-surface-100">
-                  {apartment.info_add_apt}
-                </p>
-              </div>
-            )}
-
-            {/* comodidades */}
-            {apartment.comodidades && (
-              <div className="mb-6">
-                <h3 className="text-lg font-bold text-surface-800 mb-3">
-                  Comodidades
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {apartment.comodidades.split(",").map((comodidad, idx) => (
-                    <span
+              {imageUrls.length > 1 && (
+                <div className="absolute bottom-4 right-4 hidden sm:flex gap-1.5">
+                  {imageUrls.map((url, idx) => (
+                    <button
                       key={idx}
-                      className="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-sm font-medium border border-green-100 flex items-center gap-1"
+                      onClick={() => setCurrentImageIndex(idx)}
+                      className={`w-14 h-10 rounded-lg overflow-hidden border-2 transition-all ${
+                        idx === currentImageIndex
+                          ? "border-white opacity-100"
+                          : "border-transparent opacity-60 hover:opacity-90"
+                      }`}
                     >
-                      <FaCheck className="text-xs" />
-                      {comodidad.trim()}
-                    </span>
+                      <img src={url} alt="" className="w-full h-full object-cover" />
+                    </button>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+          ) : (
+            <div className="w-full aspect-[2/1] rounded-2xl bg-surface-100 flex items-center justify-center">
+              <FaHome className="text-surface-300 text-6xl" />
+            </div>
+          )}
+        </div>
 
-            {/* Información del arrendador */}
-            <div className="mb-6">
-              <h3 className="text-lg font-bold text-surface-800 mb-3 flex items-center gap-2">
-                <FaUser className="text-primary-600" />
-                Información del arrendador
-              </h3>
-              <div className="bg-surface-50 rounded-xl p-4 border border-surface-100">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white text-xl font-bold">
-                    {apartment.user_name?.charAt(0)}
-                    {apartment.user_lastname?.charAt(0)}
+        {/* Content */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 pb-24">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-12">
+            {/* Left Column */}
+            <div className="space-y-10">
+              {/* Title + Host Row */}
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-surface-900 leading-tight">
+                  {apartment.barrio || "Sin nombre"}
+                </h1>
+                <div className="flex items-center gap-2 mt-1.5 text-surface-500 text-sm">
+                  <FaMapMarkerAlt className="text-xs" />
+                  <span>{apartment.direccion_apt || "Sin dirección"}</span>
+                </div>
+                <div className="flex items-center gap-4 mt-4 pt-4 border-t border-surface-100">
+                  <div className="w-11 h-11 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                    {getInitials(apartment.user_name, apartment.user_lastname)}
                   </div>
-                  <div className="flex-1">
-                    <p className="font-bold text-surface-800 text-lg">
+                  <div>
+                    <p className="font-medium text-surface-800 text-sm">
                       {apartment.user_name} {apartment.user_lastname}
                     </p>
-                    <p className="text-surface-500 text-sm flex items-center gap-1">
-                      <FaUser className="text-xs" />
+                    <p className="text-surface-400 text-xs flex items-center gap-1">
+                      <FaMedal className="text-amber-500 text-[10px]" />
                       Arrendador verificado
                     </p>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Disponibilidad */}
-            {apartment.disponibilidad && (
-              <div className="mb-6">
-                <h3 className="text-lg font-bold text-surface-800 mb-3 flex items-center gap-2">
-                  <FaCalendarAlt className="text-primary-600" />
-                  Disponibilidad
-                </h3>
-                <div className="bg-blue-50 rounded-xl p-4 border border-blue-100 flex items-center gap-3">
-                  <FaCalendarAlt className="text-blue-600 text-xl" />
-                  <div>
-                    <p className="font-medium text-blue-800">
-                      Disponible desde: {apartment.disponibilidad}
-                    </p>
+              {/* Features */}
+              <div className="bg-surface-50 rounded-xl p-5">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <FaBed className="text-primary-600 text-lg mx-auto mb-1.5" />
+                    <p className="text-lg font-bold text-surface-800">{apartment.habitaciones || "1"}</p>
+                    <p className="text-xs text-surface-400">Habitaciones</p>
+                  </div>
+                  <div className="text-center border-x border-surface-200">
+                    <FaBath className="text-primary-600 text-lg mx-auto mb-1.5" />
+                    <p className="text-lg font-bold text-surface-800">{apartment.banos || "1"}</p>
+                    <p className="text-xs text-surface-400">Baños</p>
+                  </div>
+                  <div className="text-center">
+                    <FaRulerCombined className="text-primary-600 text-lg mx-auto mb-1.5" />
+                    <p className="text-lg font-bold text-surface-800">{apartment.metros_apt || "30"}</p>
+                    <p className="text-xs text-surface-400">m²</p>
                   </div>
                 </div>
               </div>
-            )}
 
-            {/* Información de ubicación */}
-            {apartment.distance_km && (
-              <div className="mb-6">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-50 text-primary-700 rounded-full text-sm font-medium border border-primary-100">
-                  <FaMapMarkerAlt className="text-xs" />
-                  A {apartment.distance_km} km de Uniputumayo
-                </div>
-              </div>
-            )}
-
-            {/* Alerta para el usuario no logueado */}
-            {!user && (
-              <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-                <FaExclamationTriangle className="text-amber-500 mt-0.5" />
+              {/* Description */}
+              {apartment.info_add_apt && (
                 <div>
-                  <p className="text-amber-800 font-medium text-sm">
-                    Para arrendar necesitas una cuenta
-                  </p>
-                  <p className="text-amber-700 text-xs mt-1">
-                    Te redirigiremos al login para que crees una cuenta o inices sesión
+                  <h2 className="text-lg font-bold text-surface-900 mb-3">
+                    Acerca de este lugar
+                  </h2>
+                  <p className="text-surface-600 leading-relaxed text-sm whitespace-pre-line">
+                    {apartment.info_add_apt}
                   </p>
                 </div>
+              )}
+
+              {/* Amenities */}
+              {apartment.comodidades && (
+                <div>
+                  <h2 className="text-lg font-bold text-surface-900 mb-4">
+                    Comodidades
+                  </h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {apartment.comodidades.split(",").map((comodidad, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-3 text-surface-700 p-3 rounded-lg border border-surface-100"
+                      >
+                        <FaCheck className="text-green-500 text-xs flex-shrink-0" />
+                        <span className="text-sm">{comodidad.trim()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Availability + Location */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {apartment.disponibilidad && (
+                  <div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
+                    <div className="flex items-center gap-2 mb-1">
+                      <FaCalendarAlt className="text-blue-600 text-sm" />
+                      <h3 className="font-semibold text-blue-900 text-sm">Disponibilidad</h3>
+                    </div>
+                    <p className="text-blue-700 text-sm mt-1">
+                      Desde: <span className="font-medium">{apartment.disponibilidad}</span>
+                    </p>
+                  </div>
+                )}
+                {apartment.distance_km && (
+                  <div className="p-4 rounded-xl bg-primary-50 border border-primary-100">
+                    <div className="flex items-center gap-2 mb-1">
+                      <FaMapMarkerAlt className="text-primary-600 text-sm" />
+                      <h3 className="font-semibold text-primary-900 text-sm">Ubicación</h3>
+                    </div>
+                    <p className="text-primary-700 text-sm mt-1">
+                      A <span className="font-medium">{apartment.distance_km} km</span> de Uniputumayo
+                    </p>
+                    <p className="text-primary-500 text-xs mt-0.5">{apartment.direccion_apt}</p>
+                  </div>
+                )}
               </div>
-            )}
+
+              {/* Reviews */}
+              <div>
+                <h2 className="text-lg font-bold text-surface-900 mb-4 flex items-center gap-2">
+                  <FaStar className="text-amber-400 text-base" />
+                  Reseñas
+                </h2>
+                <ReviewSection
+                  propertyId={apartment.id_apt}
+                  isOwner={apartment.user_id === user?.id}
+                />
+              </div>
+            </div>
+
+            {/* Right Column - Sticky Card */}
+            <div className="hidden lg:block">
+              <div className="sticky top-20">
+                <div className="p-6 rounded-xl border border-surface-200 shadow-lg bg-white">
+                  <div className="flex items-baseline gap-1 mb-5">
+                    <span className="text-2xl font-bold text-surface-900">
+                      {formatPrice(apartment.precio_apt)}
+                    </span>
+                    <span className="text-surface-400 text-sm">/mes</span>
+                  </div>
+
+                  <div className="space-y-3 pb-5 mb-5 border-b border-surface-100">
+                    <div className="flex items-center gap-3 text-sm text-surface-600">
+                      <FaBed className="text-surface-400 w-4" />
+                      <span>{apartment.habitaciones || "1"} habitación</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-surface-600">
+                      <FaBath className="text-surface-400 w-4" />
+                      <span>{apartment.banos || "1"} baño</span>
+                    </div>
+                    {apartment.metros_apt && (
+                      <div className="flex items-center gap-3 text-sm text-surface-600">
+                        <FaRulerCombined className="text-surface-400 w-4" />
+                        <span>{apartment.metros_apt} m²</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 mb-5 text-xs text-surface-500">
+                    <FaShieldAlt />
+                    <span>Pago seguro con RentUP</span>
+                  </div>
+
+                  {/* CTA */}
+                  {user && (apartment.whatsapp || apartment.user_phonenumber) ? (
+                    <a
+                      href={`https://wa.me/${apartment.whatsapp || apartment.user_phonenumber}?text=${encodeURIComponent(
+                        `Hola, estoy interesado en arrendar el inmueble "${apartment.barrio}" ubicado en "${apartment.direccion_apt}" publicado en RentUP. Me gustaría más información para proceder con el arriendo.`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-3.5 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg text-sm"
+                    >
+                      <FaWhatsapp className="text-lg" />
+                      Contactar por WhatsApp
+                    </a>
+                  ) : !user ? (
+                    <>
+                      <button
+                        onClick={handleRentClick}
+                        className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg text-sm"
+                      >
+                        <FaHome className="text-lg" />
+                        Iniciar proceso de arriendo
+                      </button>
+                      <p className="text-xs text-surface-400 text-center mt-3">
+                        Necesitas una cuenta para continuar
+                      </p>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Footer con botones de acción */}
-        <div className="px-6 py-4 border-t border-surface-200 bg-surface-50 flex-shrink-0">
-          <div className="flex gap-3">
+        {/* Mobile Bottom Bar */}
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-surface-200 p-4 flex items-center gap-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+          <div className="flex-1">
+            <span className="text-lg font-bold text-surface-900">
+              {formatPrice(apartment.precio_apt)}
+            </span>
+            <span className="text-surface-400 text-sm"> /mes</span>
           </div>
-        </div>
-
-{/* Botón flotante de WhatsApp - Redirige al login si no hay sesión */}
-        <div className="absolute bottom-4 right-4 z-10">
-          <button
-            onClick={() => {
-              if (!user) {
-                localStorage.setItem("pendingPropertyId", apartment.id_apt);
-                localStorage.setItem("pendingPropertyTitle", apartment.barrio);
-
-                // Redirigir al login si no ha iniciado sesion
-                navigate("/login", {
-                  state: { from: "/", propertyId: apartment.id_apt },
-                });
-                return;
-              }
-
-              // SOLUCIÓN DINÁMICA: Usar whatsapp si existe, si no usar user_phonenumber
-              // Además, normalizamos el teléfono dejándolo solo con dígitos.
-              const rawPhone = apartment?.whatsapp || apartment?.user_phonenumber;
-              const contactPhone = String(rawPhone).replace(/\D/g, '')
-
-              if (contactPhone) {
-
-                // Mensaje con nombre del inmueble y dirección
-                const mensaje = `Hola, estoy interesado en arrendar el inmueble "*${apartment.barrio}*" ubicado en "*${apartment.direccion_apt}*" publicado en RentUP. Me gustaría más información para proceder con el arriendo.`;
-                window.open(
-                  `https://wa.me/${contactPhone}?text=${encodeURIComponent(mensaje)}`,
-                  "_blank"
-                );
-              } else {
-                alert("El propietario no tiene WhatsApp disponible. Te contactaremos pronto.");
-              }
-            }}
-            className="py-3 px-5 bg-green-500 hover:bg-green-600 text-white rounded-full font-semibold transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-          >
-            <FaWhatsapp className="text-xl" />
-            WhatsApp
-          </button>
+          {user && (apartment.whatsapp || apartment.user_phonenumber) ? (
+            <a
+              href={`https://wa.me/${apartment.whatsapp || apartment.user_phonenumber}?text=${encodeURIComponent(
+                `Hola, estoy interesado en arrendar el inmueble "${apartment.barrio}" ubicado en "${apartment.direccion_apt}" publicado en RentUP. Me gustaría más información para proceder con el arriendo.`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold transition-all flex items-center gap-2 shadow-md text-sm"
+            >
+              <FaWhatsapp className="text-lg" />
+              Contactar
+            </a>
+          ) : (
+            <button
+              onClick={handleRentClick}
+              className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold transition-all shadow-md text-sm"
+            >
+              Arrendar
+            </button>
+          )}
         </div>
       </div>
     </div>

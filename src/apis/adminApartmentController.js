@@ -1,23 +1,4 @@
-import axios from 'axios';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:9000';
-
-const axiosInstance = axios.create({
-    baseURL: API_URL,
-    headers: {
-        'Content-Type': 'application/json',
-    }
-});
-
-// Agregar interceptor para incluir token
-axiosInstance.interceptors.request.use((config) => {
-    const userData = JSON.parse(localStorage.getItem('user') || '{}');
-    const token = userData?.token;
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-});
+import axiosInstance from '../contexts/axiosInstance';
 
 const adminApartmentController = {
     // Obtener apartamentos pendientes

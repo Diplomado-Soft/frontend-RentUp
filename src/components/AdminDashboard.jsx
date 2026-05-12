@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaCheckCircle, FaTimesCircle, FaHistory, FaSpinner, FaFilePdf, FaDownload, FaBell, FaFileExcel, FaMapMarkerAlt, FaUser, FaMoneyBill, FaBed, FaBath, FaRulerCombined, FaImage, FaEdit, FaTrash, FaInfoCircle, FaBuilding } from 'react-icons/fa';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFlag, faStar, faBell as faBellSolid, faCheck, faTimes, faRobot } from '@fortawesome/free-solid-svg-icons';
+import { faFlag, faStar, faBell as faBellSolid, faCheck, faTimes } from '@fortawesome/free-solid-svg-icons';
 import adminApartmentController from '../apis/adminApartmentController';
 import axiosInstance from '../contexts/axiosInstance';
 import Toast from './Toast';
 import ImageModal from './ImageModal';
+import AdminReviewsPanel from './AdminReviewsPanel';
+import AdminUsersPanel from './AdminUsersPanel';
 import './AdminDashboard.css';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:9000';
 
 function AdminDashboard() {
     const navigate = useNavigate();
@@ -49,9 +49,14 @@ function AdminDashboard() {
     const [userRoleFilter, setUserRoleFilter] = useState('');
     const [userPagination, setUserPagination] = useState({ offset: 0, limit: 20, total: 0 });
     const [actionLoading, setActionLoading] = useState(null);
-const [showBlockModal, setShowBlockModal] = useState(false);
-const [userToBlock, setUserToBlock] = useState(null);
-const [blockReason, setBlockReason] = useState('');
+    const [showBlockModal, setShowBlockModal] = useState(false);
+    const [userToBlock, setUserToBlock] = useState(null);
+    const [blockReason, setBlockReason] = useState('');
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [rejectTargetId, setRejectTargetId] = useState(null);
+    const [rejectReason, setRejectReason] = useState('');
+    const searchTimeoutRef = useRef(null);
+    const roleTimeoutRef = useRef(null);
 
     const userData = JSON.parse(localStorage.getItem('user') || '{}');
     const token = userData?.token;
@@ -116,33 +121,32 @@ const [blockReason, setBlockReason] = useState('');
         }
     };
 
-    // Rechazar apartamento
-    const handleReject = async (id_apt) => {
-        if (!rejectNotes.trim()) {
-            setToast({
-                message: 'Ingresa un motivo para el rechazo',
-                type: 'warning'
-            });
+    // Abrir modal de rechazo
+    const openRejectModal = (id_apt) => {
+        setRejectTargetId(id_apt);
+        setRejectReason('');
+        setShowRejectModal(true);
+    };
+
+    // Ejecutar rechazo desde modal
+    const confirmReject = async () => {
+        if (!rejectReason.trim()) {
+            setToast({ message: 'Ingresa un motivo para el rechazo', type: 'warning' });
             return;
         }
 
         try {
-            setRejectingId(id_apt);
-            await adminApartmentController.rejectApartment(id_apt, rejectNotes);
-            setToast({
-                message: 'Apartamento rechazado correctamente',
-                type: 'success'
-            });
-            // Remover del listado y limpiar
-            setPendingApartments(pendingApartments.filter(apt => apt.id_apt !== id_apt));
+            setRejectingId(rejectTargetId);
+            await adminApartmentController.rejectApartment(rejectTargetId, rejectReason);
+            setToast({ message: 'Apartamento rechazado correctamente', type: 'success' });
+            setPendingApartments(pendingApartments.filter(apt => apt.id_apt !== rejectTargetId));
             setPagination({ ...pagination, total: pagination.total - 1 });
-            setSelectedApartment(null);
-            setRejectNotes('');
+            setSelectedApartmentDetail(null);
+            setShowRejectModal(false);
+            setRejectReason('');
+            setRejectTargetId(null);
         } catch (error) {
-            setToast({
-                message: error.response?.data?.error || 'Error al rechazar',
-                type: 'error'
-            });
+            setToast({ message: error.response?.data?.error || 'Error al rechazar', type: 'error' });
         } finally {
             setRejectingId(null);
         }
@@ -164,27 +168,15 @@ const [blockReason, setBlockReason] = useState('');
 
     const fetchNotifications = async () => {
         try {
-            const ud = JSON.parse(localStorage.getItem('user') || '{}');
-            const tok = ud?.token;
-            const res = await fetch(
-                `${process.env.REACT_APP_API_URL || 'http://localhost:9000'}/admin/notifications`,
-                { headers: { 'Authorization': `Bearer ${tok}` } }
-            );
-            if (res.ok) {
-                const data = await res.json();
-                setNotifications(data.notifications || []);
-                setUnreadCount((data.notifications || []).filter(n => !n.read_at).length);
-            }
+            const res = await axiosInstance.get('/admin/notifications');
+            setNotifications(res.data.notifications || []);
+            setUnreadCount((res.data.notifications || []).filter(n => !n.read_at).length);
         } catch (e) { console.error('Error cargando notificaciones:', e); }
     };
 
     const markNotificationRead = async (id) => {
         try {
-            const ud = JSON.parse(localStorage.getItem('user') || '{}');
-            await fetch(
-                `${process.env.REACT_APP_API_URL || 'http://localhost:9000'}/admin/notifications/${id}/read`,
-                { method: 'PUT', headers: { 'Authorization': `Bearer ${ud?.token}` } }
-            );
+            await axiosInstance.put(`/admin/notifications/${id}/read`);
             setNotifications(prev => prev.map(n => n.id === id ? { ...n, read_at: new Date() } : n));
             setUnreadCount(prev => Math.max(0, prev - 1));
         } catch (e) { console.error(e); }
@@ -263,14 +255,8 @@ const [blockReason, setBlockReason] = useState('');
     // Obtener reportes disponibles
     const fetchReports = async () => {
         try {
-            const response = await fetch(
-                `${process.env.REACT_APP_API_URL || 'http://localhost:9000'}/admin/reports/available`,
-                {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                }
-            );
-            const data = await response.json();
-            setReports(data);
+            const response = await axiosInstance.get('/admin/reports/available');
+            setReports(response.data);
         } catch (error) {
             setToast({ message: 'Error al cargar reportes', type: 'error' });
         }
@@ -280,11 +266,10 @@ const [blockReason, setBlockReason] = useState('');
     const downloadReport = async (year, month) => {
         try {
             setDownloadingReport(true);
-            const response = await fetch(
-                `${process.env.REACT_APP_API_URL || 'http://localhost:9000'}/admin/reports/monthly?year=${year}&month=${month}`,
-                { headers: { 'Authorization': `Bearer ${token}` } }
-            );
-            const blob = await response.blob();
+            const response = await axiosInstance.get(`/admin/reports/monthly?year=${year}&month=${month}`, {
+                responseType: 'blob'
+            });
+            const blob = response.data;
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -314,19 +299,9 @@ const [blockReason, setBlockReason] = useState('');
     const fetchFlaggedReviews = async () => {
         try {
             setReviewsLoading(true);
-            const ud = JSON.parse(localStorage.getItem('user') || '{}');
-            const res = await fetch(`${API_URL}/reviews/admin/flagged`, {
-                headers: { 'Authorization': `Bearer ${ud?.token}` }
-            });
-            const data = await res.json();
-            console.log('Reviews response:', data);
-            if (res.ok) {
-                // El backend devuelve {reviews: [...], total, limit, offset}
-                const reviews = data.reviews?.reviews || data.reviews || [];
-                setFlaggedReviews(Array.isArray(reviews) ? reviews : []);
-            } else {
-                setToast({ message: data.error || 'Error al cargar reseñas marcadas', type: 'error' });
-            }
+            const res = await axiosInstance.get('/reviews/admin/flagged');
+            const reviews = res.data.reviews?.reviews || res.data.reviews || [];
+            setFlaggedReviews(Array.isArray(reviews) ? reviews : []);
         } catch (error) {
             setToast({ message: 'Error al cargar reseñas marcadas', type: 'error' });
         } finally {
@@ -336,14 +311,8 @@ const [blockReason, setBlockReason] = useState('');
 
     const checkOllamaHealth = async () => {
         try {
-            const ud = JSON.parse(localStorage.getItem('user') || '{}');
-            const res = await fetch(`${API_URL}/reviews/admin/ai/health`, {
-                headers: { 'Authorization': `Bearer ${ud?.token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setOllamaStatus(data.data?.ollama?.available ? 'online' : 'offline');
-            }
+            const res = await axiosInstance.get('/reviews/admin/ai/health');
+            setOllamaStatus(res.data.data?.ollama?.available ? 'online' : 'offline');
         } catch (error) {
             setOllamaStatus('offline');
         }
@@ -352,25 +321,12 @@ const [blockReason, setBlockReason] = useState('');
     const handleAnalyzeAllReviews = async () => {
         try {
             setAnalyzingReviews(true);
-            const ud = JSON.parse(localStorage.getItem('user') || '{}');
-            const res = await fetch(`${API_URL}/reviews/admin/analyze-pending`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${ud?.token}`
-                },
-                body: JSON.stringify({ batchSize: 50 })
-            });
-            const data = await res.json();
-            if (res.ok) {
-                setToast({ message: data.message || 'Análisis completado', type: 'success' });
-                fetchFlaggedReviews();
-                checkOllamaHealth();
-            } else {
-                setToast({ message: data.error || 'Error en análisis', type: 'error' });
-            }
+            const res = await axiosInstance.post('/reviews/admin/analyze-pending', { batchSize: 50 });
+            setToast({ message: res.data.message || 'Análisis completado', type: 'success' });
+            fetchFlaggedReviews();
+            checkOllamaHealth();
         } catch (error) {
-            setToast({ message: 'Error al analizar reseñas', type: 'error' });
+            setToast({ message: error.response?.data?.error || 'Error en análisis', type: 'error' });
         } finally {
             setAnalyzingReviews(false);
         }
@@ -523,302 +479,35 @@ const [blockReason, setBlockReason] = useState('');
 
             {/* Contenido basado en pestaña activa */}
             {activeTab === 'reviews' ? (
-                /* ===== SECCIÓN DE RESEÑAS ===== */
-                <div className="reviews-section">
-                    {/* Header de sección */}
-                    <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
-                        <div>
-                            <h2 className="text-xl font-bold flex items-center gap-2">
-                                <FontAwesomeIcon icon={faStar} className="text-yellow-500" />
-                                Gestión de Reseñas
-                            </h2>
-                            <p className="text-gray-600 text-sm">Revisa y modera reseñas marcadas por la IA</p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            {/* Estado de Ollama */}
-                            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
-                                ollamaStatus === 'online' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                            }`}>
-                                <FontAwesomeIcon icon={faRobot} />
-                                <span className="text-sm font-medium">
-                                    Ollama: {ollamaStatus === 'online' ? 'En línea' : 'Apagado'}
-                                </span>
-                            </div>
-                            
-                            {/* Botón analizar */}
-                            <button
-                                onClick={handleAnalyzeAllReviews}
-                                disabled={analyzingReviews || ollamaStatus !== 'online'}
-                                className="btn btn-primary flex items-center gap-2"
-                            >
-                                {analyzingReviews ? (
-                                    <><FaSpinner className="spinning" /> Analizando...</>
-                                ) : (
-                                    <><FontAwesomeIcon icon={faRobot} /> Analizar Reseñas con IA</>
-                                )}
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Lista de reseñas marcadas */}
-                    {reviewsLoading ? (
-                        <div className="loadingSpinner">
-                            <FaSpinner className="spinning" />
-                            Cargando reseñas...
-                        </div>
-                    ) : flaggedReviews.length === 0 ? (
-                        <div className="alert-box alert-success flex items-center gap-3">
-                            <FontAwesomeIcon icon={faCheck} className="text-xl" />
-                            <div>
-                                <p className="font-semibold">No hay reseñas pendientes de revisión</p>
-                                <p className="text-sm">Todas las reseñas han sido moderadas</p>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="space-y-4">
-                            <p className="text-gray-600">
-                                <FontAwesomeIcon icon={faFlag} className="text-red-500 mr-2" />
-                                {flaggedReviews.length} reseña(s) marcada(s) requieren revisión
-                            </p>
-                            
-                            {flaggedReviews.map(review => (
-                                <div key={review.review_id} className="review-card p-4 border border-red-200 bg-red-50 rounded-lg">
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <div className="w-10 h-10 bg-red-200 rounded-full flex items-center justify-center">
-                                                    <span className="text-red-700 font-bold">{review.user_name?.charAt(0) || 'U'}</span>
-                                                </div>
-                                                <div>
-                                                    <p className="font-semibold">{review.user_name} {review.user_lastname}</p>
-                                                    <p className="text-sm text-gray-500">
-                                                        {review.barrio || 'Sin barrio'} - {review.direccion_apt}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            
-                                            {/* Estrellas */}
-                                            <div className="flex items-center gap-1 mb-2">
-                                                {[1,2,3,4,5].map(star => (
-                                                    <FontAwesomeIcon 
-                                                        key={star}
-                                                        icon={faStar}
-                                                        className={star <= review.rating ? 'text-yellow-400' : 'text-gray-300'}
-                                                    />
-                                                ))}
-                                                <span className="ml-2 text-sm text-gray-500">
-                                                    {review.rating}/5
-                                                </span>
-                                            </div>
-                                            
-                                            {/* Comentario */}
-                                            <p className="text-gray-700 mb-2">{review.comment}</p>
-                                            
-                                            {/* Razón del flag */}
-                                            {review.flag_reason && (
-                                                <div className="flex items-center gap-2 text-red-600 text-sm bg-red-100 p-2 rounded">
-                                                    <FontAwesomeIcon icon={faFlag} />
-                                                    <span>{review.flag_reason}</span>
-                                                </div>
-                                            )}
-                                            
-                                            {/* Sentimiento */}
-                                            {review.sentiment && (
-                                                <div className="mt-2 text-sm">
-                                                    <span className={`px-2 py-1 rounded ${
-                                                        review.sentiment === 'positive' ? 'bg-green-100 text-green-700' :
-                                                        review.sentiment === 'negative' ? 'bg-red-100 text-red-700' :
-                                                        'bg-gray-100 text-gray-700'
-                                                    }`}>
-                                                        Sentimiento: {review.sentiment}
-                                                    </span>
-                                                </div>
-                                            )}
-                                            
-                                            <p className="text-xs text-gray-400 mt-2">
-                                                {new Date(review.created_at).toLocaleString('es-CO')}
-                                            </p>
-                                        </div>
-                                        
-                                        {/* Acciones */}
-                                        <div className="flex flex-col gap-2">
-                                            <button
-                                                onClick={() => handleApproveReview(review.review_id)}
-                                                className="btn btn-success btn-sm flex items-center gap-1"
-                                                title="Aprobar reseña"
-                                            >
-                                                <FontAwesomeIcon icon={faCheck} /> Aprobar
-                                            </button>
-                                            <button
-                                                onClick={() => handleRejectReview(review.review_id)}
-                                                className="btn btn-danger btn-sm flex items-center gap-1"
-                                                title="Rechazar reseña"
-                                            >
-                                                <FontAwesomeIcon icon={faTimes} /> Rechazar
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                <AdminReviewsPanel
+                    flaggedReviews={flaggedReviews}
+                    reviewsLoading={reviewsLoading}
+                    ollamaStatus={ollamaStatus}
+                    analyzingReviews={analyzingReviews}
+                    handleAnalyzeAllReviews={handleAnalyzeAllReviews}
+                    handleApproveReview={handleApproveReview}
+                    handleRejectReview={handleRejectReview}
+                />
             ) : activeTab === 'users' ? (
-                /* ===== SECCIÓN DE USUARIOS ===== */
-                <div className="users-section">
-                    {/* Header y filtros */}
-                    <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
-                        <div>
-                            <h2 className="text-xl font-bold flex items-center gap-2">
-                                <FaUser className="text-blue-500" />
-                                Gestión de Usuarios
-                            </h2>
-                            <p className="text-gray-600 text-sm">Administra y controla el acceso de usuarios</p>
-                        </div>
-                    </div>
-
-                    {/* Filtros de búsqueda */}
-                    <div className="mb-6 flex flex-wrap gap-3">
-                        <input
-                            type="text"
-                            placeholder="Buscar por nombre o email..."
-                            value={userSearch}
-                            onChange={(e) => {
-                                setUserSearch(e.target.value);
-                                // Búsqueda automática después de 500ms
-                                clearTimeout(window.searchTimeout);
-                                window.searchTimeout = setTimeout(() => fetchUsers(0, userRoleFilter), 500);
-                            }}
-                            className="px-4 py-2 border border-gray-300 rounded-lg flex-1 min-w-[250px]"
-                        />
-                        <select
-                            value={userRoleFilter}
-                            onChange={(e) => {
-                                const newRole = e.target.value;
-                                setUserRoleFilter(newRole);
-                                setUsers([]); // Limpiar lista inmediatamente
-                                setUsersLoading(true);
-                                // Pasar el rol directamente a fetchUsers
-                                setTimeout(() => fetchUsers(0, newRole), 50);
-                            }}
-                            className="px-4 py-2 border border-gray-300 rounded-lg"
-                        >
-                            <option value="">Todos los roles</option>
-                            <option value="0">Sin rol</option>
-                            <option value="1">Usuario</option>
-                            <option value="2">Arrendador</option>
-                            <option value="3">Admin</option>
-                        </select>
-                    </div>
-
-                    {/* Lista de usuarios */}
-                    {usersLoading ? (
-                        <div className="loadingSpinner">
-                            <FaSpinner className="spinning" />
-                            Cargando usuarios...
-                        </div>
-                    ) : users.length === 0 ? (
-                        <div className="alert-box alert-info">
-                            <FaInfoCircle className="mr-2" />
-                            No se encontraron usuarios
-                        </div>
-                    ) : (
-                        <div className="space-y-4">
-                            {users.map(user => (
-                                <div key={user.user_id} className="user-card p-4 border rounded-lg bg-white shadow-sm">
-                                    <div className="flex items-center justify-between flex-wrap gap-4">
-                                        <div className="flex items-center gap-4">
-                                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold ${
-                                                user.is_active ? 'bg-blue-500' : 'bg-red-500'
-                                            }`}>
-                                                {(user.user_name || 'U').charAt(0).toUpperCase()}
-                                            </div>
-                                            <div>
-                                                <p className="font-semibold">{user.user_name} {user.user_lastname}</p>
-                                                <p className="text-sm text-gray-500">{user.user_email}</p>
-                                                {user.user_phonenumber && (
-                                                    <p className="text-xs text-gray-400">{user.user_phonenumber}</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="flex items-center gap-3">
-                                            {/* Rol */}
-                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                                user.rol_id === 3 ? 'bg-purple-100 text-purple-700' :
-                                                user.rol_id === 2 ? 'bg-green-100 text-green-700' :
-                                                user.rol_id === 1 ? 'bg-blue-100 text-blue-700' :
-                                                'bg-gray-100 text-gray-500'
-                                            }`}>
-                                                {user.rol_id === 3 ? 'Admin' :
-                                                 user.rol_id === 2 ? 'Arrendador' :
-                                                 user.rol_id === 1 ? 'Usuario' :
-                                                 'Sin rol'}
-                                            </span>
-                                            
-                                            {/* Estado */}
-                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                                user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                            }`}>
-                                                {user.is_active ? 'Activo' : 'Bloqueado'}
-                                            </span>
-                                            
-                                            {/* Acciones */}
-                                            {actionLoading === user.user_id ? (
-                                                <FaSpinner className="spinning text-gray-500" />
-                                            ) : user.is_active ? (
-                                                <button
-                                                    onClick={() => {
-                                                        setUserToBlock(user);
-                                                        setShowBlockModal(true);
-                                                    }}
-                                                    className="btn btn-danger btn-sm"
-                                                    disabled={user.rol_id === 3}
-                                                    title={user.rol_id === 3 ? 'No puedes bloquear a otro admin' : 'Bloquear usuario'}
-                                                >
-                                                    <FaTimesCircle /> Bloquear
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    onClick={() => handleUnblockUser(user.user_id)}
-                                                    className="btn btn-success btn-sm"
-                                                >
-                                                    <FaCheckCircle /> Desbloquear
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                    
-                                    {/* Fecha de registro */}
-                                    <p className="text-xs text-gray-400 mt-2">
-                                        Registrado: {new Date(user.created_at).toLocaleString('es-CO')}
-                                    </p>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Paginación de usuarios */}
-                    {users.length > 0 && (
-                        <div className="pagination mt-6">
-                            <button 
-                                disabled={userPagination.offset === 0}
-                                onClick={() => fetchUsers(Math.max(0, userPagination.offset - userPagination.limit))}
-                            >
-                                ← Anterior
-                            </button>
-                            <span>
-                                Mostrando {userPagination.offset + 1}-{Math.min(userPagination.offset + userPagination.limit, userPagination.total)} de {userPagination.total}
-                            </span>
-                            <button 
-                                disabled={userPagination.offset + userPagination.limit >= userPagination.total}
-                                onClick={() => fetchUsers(userPagination.offset + userPagination.limit)}
-                            >
-                                Siguiente →
-                            </button>
-                        </div>
-                    )}
-                </div>
+                <AdminUsersPanel
+                    users={users}
+                    usersLoading={usersLoading}
+                    userSearch={userSearch}
+                    userRoleFilter={userRoleFilter}
+                    userPagination={userPagination}
+                    actionLoading={actionLoading}
+                    searchTimeoutRef={searchTimeoutRef}
+                    roleTimeoutRef={roleTimeoutRef}
+                    setUserSearch={setUserSearch}
+                    setUserRoleFilter={setUserRoleFilter}
+                    setUsersLoading={setUsersLoading}
+                    setUsers={setUsers}
+                    fetchUsers={fetchUsers}
+                    handleBlockUser={handleBlockUser}
+                    handleUnblockUser={handleUnblockUser}
+                    setShowBlockModal={setShowBlockModal}
+                    setUserToBlock={setUserToBlock}
+                />
             ) : loading ? (
                 <div className="loadingSpinner">
                     <FaSpinner className="spinning" />
@@ -1055,25 +744,7 @@ const [blockReason, setBlockReason] = useState('');
                             }} disabled={approvingId === selectedApartmentDetail.id_apt}>
                                 <FaCheckCircle /> Aprobar
                             </button>
-                            <button className="btn btn-danger" onClick={async () => {
-                                const reason = prompt('Ingresa el motivo del rechazo:');
-                                if (reason && reason.trim()) {
-                                    setRejectingId(selectedApartmentDetail.id_apt);
-                                    try {
-                                        await adminApartmentController.rejectApartment(selectedApartmentDetail.id_apt, reason);
-                                        setToast({ message: 'Apartamento rechazado correctamente', type: 'success' });
-                                        setPendingApartments(pendingApartments.filter(apt => apt.id_apt !== selectedApartmentDetail.id_apt));
-                                        setPagination({ ...pagination, total: pagination.total - 1 });
-                                        setSelectedApartmentDetail(null);
-                                    } catch (error) {
-                                        setToast({ message: error.response?.data?.error || 'Error al rechazar', type: 'error' });
-                                    } finally {
-                                        setRejectingId(null);
-                                    }
-                                } else {
-                                    setToast({ message: 'Ingresa un motivo para el rechazo', type: 'warning' });
-                                }
-                            }} disabled={rejectingId === selectedApartmentDetail.id_apt}>
+                            <button className="btn btn-danger" onClick={() => openRejectModal(selectedApartmentDetail.id_apt)} disabled={rejectingId === selectedApartmentDetail.id_apt}>
                                 <FaTimesCircle /> Rechazar
                             </button>
                             <button className="btn btn-secondary" onClick={() => fetchHistory(selectedApartmentDetail.id_apt)}>
@@ -1180,6 +851,44 @@ const [blockReason, setBlockReason] = useState('');
                                     setShowBlockModal(false);
                                     setBlockReason('');
                                     setUserToBlock(null);
+                                }}
+                            >
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de rechazo de apartamento */}
+            {showRejectModal && (
+                <div className="modal-overlay" onClick={() => setShowRejectModal(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <h3>Rechazar Apartamento</h3>
+                        <div className="form-group">
+                            <label>Motivo del rechazo:</label>
+                            <textarea
+                                value={rejectReason}
+                                onChange={(e) => setRejectReason(e.target.value)}
+                                placeholder="Ingresa el motivo del rechazo..."
+                                className="form-control"
+                                rows="4"
+                            />
+                        </div>
+                        <div className="modal-actions">
+                            <button
+                                className="btn btn-danger"
+                                onClick={confirmReject}
+                                disabled={!rejectReason.trim() || rejectingId === rejectTargetId}
+                            >
+                                {rejectingId === rejectTargetId ? <FaSpinner className="spinning" /> : 'Rechazar'}
+                            </button>
+                            <button
+                                className="btn btn-secondary"
+                                onClick={() => {
+                                    setShowRejectModal(false);
+                                    setRejectReason('');
+                                    setRejectTargetId(null);
                                 }}
                             >
                                 Cancelar

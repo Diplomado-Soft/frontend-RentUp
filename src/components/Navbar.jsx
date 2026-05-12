@@ -9,6 +9,8 @@ function Navbar({ goToJoin, setShowAccount }) {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 
+  const userRole = user?.rol || user?.rol_id || user?.rolId || null;
+
   const handleTitleClick = () => {
       localStorage.setItem("mapCenter", JSON.stringify([1.157037, -76.651443]));
       navigate('/');
@@ -45,8 +47,7 @@ function Navbar({ goToJoin, setShowAccount }) {
                   </button>
               ) : (
                   <>
-                  {/* Botón Panel de Gestión - Solo para arrendadores (rol === 2) */}
-                  {user.rol === 2 && (
+                  {userRole === 2 && (
                       <button
                         onClick={() => navigate('/dashboard')}
                         className="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-surface-100 hover:bg-surface-200 text-surface-700 text-xs sm:text-sm font-medium flex items-center gap-1 sm:gap-2 transition-all duration-300 border border-surface-200 hover:border-surface-300"
@@ -57,8 +58,7 @@ function Navbar({ goToJoin, setShowAccount }) {
                       </button>
                   )}
 
-                  {/* Botón Panel Admin - Solo para administradores (rol === 3) */}
-                  {user.rol === 3 && (
+                  {userRole === 3 && (
                       <button
                         onClick={() => navigate('/admin/apartments')}
                         className="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-medium flex items-center gap-1 sm:gap-2 transition-all duration-300 shadow-md hover:shadow-lg"
@@ -115,7 +115,17 @@ function Navbar({ goToJoin, setShowAccount }) {
                 </button>
               ) : (
                 <div className="space-y-2">
-                  {user.rol === 2 && (
+                  <button
+                    onClick={() => {
+                      navigate('/my-account');
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full px-4 py-2 rounded-lg bg-surface-100 hover:bg-surface-200 text-surface-700 text-sm font-medium flex items-center gap-2 transition-all duration-300"
+                  >
+                    <FontAwesomeIcon icon={faUser} />
+                    <span>Mi Cuenta</span>
+                  </button>
+                  {userRole === 2 && (
                       <button
                         onClick={() => {
                           navigate('/dashboard');
@@ -127,7 +137,7 @@ function Navbar({ goToJoin, setShowAccount }) {
                         <span>Panel de Gestión</span>
                       </button>
                   )}
-                  {user.rol === 3 && (
+                  {userRole === 3 && (
                       <button
                         onClick={() => {
                           navigate('/admin/apartments');

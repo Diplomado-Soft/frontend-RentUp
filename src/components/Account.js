@@ -10,10 +10,11 @@ function Account({ onClose, onLogoutSuccess }) {
     const [showConfirmLogout, setShowConfirmLogout] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const userRole = user?.rol || user?.rol_id || user?.rolId || null;
 
     if (!user) return null;
 
-    const roleName = user.rol === 1 ? "USUARIO" : user.rol === 2 ? "ARRENDADOR" : "DESCONOCIDO";
+    const roleName = userRole === 1 ? "USUARIO" : userRole === 2 ? "ARRENDADOR" : userRole === 3 ? "ADMIN" : "DESCONOCIDO";
 
     const goToConfigAccount = () => { navigate('/my-account'); onClose(); };
     const goToDashboard = () => { navigate('/dashboard'); onClose(); };

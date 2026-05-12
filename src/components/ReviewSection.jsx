@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar, faStarHalfAlt, faStar as faStarRegular, faCheckCircle, faPencilAlt, faTimes } from "@fortawesome/free-solid-svg-icons";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:9000";
 
 function ReviewSection({ propertyId, isOwner }) {
   const [reviews, setReviews] = useState([]);

@@ -133,7 +133,7 @@ function Signup() {
             
             // Actualizar teléfono y WhatsApp en el backend
             const response = await fetch(
-                `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/users/update-whatsapp`,
+                `${process.env.REACT_APP_API_URL || 'http://localhost:9000'}/users/update-whatsapp`,
                 {
                     method: 'PUT',
                     headers: {

@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import useManageController from "../apis/manageController";
 import { FaTrash, FaEye, FaFilePdf, FaFileExcel, FaEdit, FaHome, FaSync, FaSave, FaTimes, FaPlus, FaMapMarkerAlt, FaInfoCircle, FaCheckCircle, FaHourglassHalf, FaTimesCircle, FaDoorOpen, FaKey } from 'react-icons/fa';
 import MapModal from './MapModal';
@@ -9,7 +8,6 @@ import Toast from './Toast';
 const API_URL = process.env.REACT_APP_API_URL;
 
 function Manage() {
-const navigate = useNavigate();
 const {
     loading,
     apartmentList,
@@ -24,7 +22,7 @@ const {
     handleCancelEdit,
     toast,
     closeToast,
-} = useManageController(navigate);
+} = useManageController();
 
 const [newImageFiles, setNewImageFiles] = useState([]);
 const [showMap, setShowMap] = useState(false);
