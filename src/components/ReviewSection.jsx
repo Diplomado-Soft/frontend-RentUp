@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar, faStarHalfAlt, faStar as faStarRegular, faCheckCircle, faPencilAlt, faTimes } from "@fortawesome/free-solid-svg-icons";
-
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:9000";
+import axiosInstance from "../contexts/axiosInstance";
 
 function ReviewSection({ propertyId, isOwner }) {
   const [reviews, setReviews] = useState([]);
@@ -27,11 +26,10 @@ function ReviewSection({ propertyId, isOwner }) {
   const fetchReviews = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/reviews/property/${propertyId}`);
-      const data = await response.json();
-      if (data.success) {
-        setReviews(data.reviews || []);
-        setStats(data.stats);
+      const response = await axiosInstance.get(`/reviews/property/${propertyId}`);
+      if (response.data.success) {
+        setReviews(response.data.reviews || []);
+        setStats(response.data.stats);
       }
     } catch (err) {
       console.error("Error fetching reviews:", err);
@@ -42,14 +40,8 @@ function ReviewSection({ propertyId, isOwner }) {
 
   const checkCanReview = async () => {
     try {
-      const userData = JSON.parse(localStorage.getItem("user") || "{}");
-      if (!userData.token) return;
-
-      const response = await fetch(`${API_URL}/reviews/can-review/${propertyId}`, {
-        headers: { Authorization: `Bearer ${userData.token}` }
-      });
-      const data = await response.json();
-      setCanReview(data.canReview);
+      const response = await axiosInstance.get(`/reviews/can-review/${propertyId}`);
+      setCanReview(response.data.canReview);
     } catch (err) {
       console.error("Error checking can review:", err);
     }
@@ -67,34 +59,24 @@ function ReviewSection({ propertyId, isOwner }) {
 
     try {
       setSubmitting(true);
-      const userData = JSON.parse(localStorage.getItem("user") || "{}");
       
-      const response = await fetch(`${API_URL}/reviews`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userData.token}`
-        },
-        body: JSON.stringify({
-          property_id: propertyId,
-          rating: newReview.rating,
-          comment: newReview.comment
-        })
+      const response = await axiosInstance.post('/reviews', {
+        property_id: propertyId,
+        rating: newReview.rating,
+        comment: newReview.comment
       });
-
-      const data = await response.json();
       
-      if (data.success) {
+      if (response.data.success) {
         setSuccess("¡Gracias! Tu reseña ha sido publicada");
         setShowForm(false);
         setNewReview({ rating: 5, comment: "" });
         fetchReviews();
         setCanReview(false);
       } else {
-        setError(data.error || "Error al publicar la reseña");
+        setError(response.data.error || "Error al publicar la reseña");
       }
     } catch (err) {
-      setError("Error de conexión");
+      setError(err.response?.data?.error || "Error de conexión");
     } finally {
       setSubmitting(false);
     }

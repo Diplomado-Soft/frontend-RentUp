@@ -14,7 +14,6 @@ function Navbar({ goToJoin, setShowAccount }) {
   const handleTitleClick = () => {
       localStorage.setItem("mapCenter", JSON.stringify([1.157037, -76.651443]));
       navigate('/');
-      window.location.reload();
   };
 
   const handleUserClick = () => {

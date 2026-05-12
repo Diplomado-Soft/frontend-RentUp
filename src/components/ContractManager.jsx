@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FaUserPlus, FaSearch, FaFileContract, FaCheck, FaTimes, FaUser, FaSpinner } from "react-icons/fa";
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:9000';
+import axiosInstance from "../contexts/axiosInstance";
 
 function ContractManager() {
   const [contracts, setContracts] = useState([]);
@@ -42,20 +41,14 @@ function ContractManager() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const userData = JSON.parse(localStorage.getItem('user') || '{}');
-      const token = userData?.token;
 
       const [contractsRes, apartmentsRes] = await Promise.all([
-        fetch(`${API_URL}/contracts/landlord/contracts`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch(`${API_URL}/contracts/landlord/available-apartments`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
+        axiosInstance.get('/contracts/landlord/contracts'),
+        axiosInstance.get('/contracts/landlord/available-apartments')
       ]);
 
-      const contractsData = await contractsRes.json();
-      const apartmentsData = await apartmentsRes.json();
+      const contractsData = contractsRes.data;
+      const apartmentsData = apartmentsRes.data;
 
       if (Array.isArray(contractsData)) {
         setContracts(contractsData);
@@ -94,12 +87,8 @@ function ContractManager() {
     setShowDropdown(true);
 
     try {
-      const userData = JSON.parse(localStorage.getItem('user') || '{}');
-      const token = userData?.token;
-      const res = await fetch(`${API_URL}/contracts/search-tenants?q=${encodeURIComponent(query)}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
+      const res = await axiosInstance.get(`/contracts/search-tenants`, { params: { q: query } });
+      const data = res.data;
       
       if (Array.isArray(data)) {
         setTenantResults(data);
@@ -168,9 +157,6 @@ function ContractManager() {
     }
 
     try {
-      const userData = JSON.parse(localStorage.getItem('user') || '{}');
-      const token = userData?.token;
-
       const payload = {
         id_apt: parseInt(formData.id_apt),
         tenant_id: parseInt(formData.tenant_id),
@@ -183,56 +169,30 @@ function ContractManager() {
 
       console.log('Payload:', payload);
 
-      const res = await fetch(`${API_URL}/contracts`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
+      const res = await axiosInstance.post('/contracts', payload);
 
-      const result = await res.json();
-      console.log('Response:', res.status, result);
-
-      if (res.ok) {
+      if (res.status === 200 || res.status === 201) {
         showToast('¡Arriendo creado exitosamente!');
         setShowForm(false);
         resetForm();
         fetchData();
-      } else {
-        showToast(result.error || result.message || 'Error al crear arriendo', 'error');
       }
     } catch (error) {
+      const msg = error.response?.data?.error || error.response?.data?.message || 'Error al crear arriendo';
+      showToast(msg, 'error');
       console.error('Error creating contract:', error);
-      showToast('Error al crear el arriendo: ' + error.message, 'error');
     }
   };
 
   const updateContractStatus = async (agreement_id, newStatus) => {
     try {
-      const userData = JSON.parse(localStorage.getItem('user') || '{}');
-      const token = userData?.token;
-
-      const res = await fetch(`${API_URL}/contracts/${agreement_id}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
-
-      if (res.ok) {
-        showToast('Estado actualizado');
-        fetchData();
-      } else {
-        const result = await res.json();
-        showToast(result.error || 'Error al actualizar estado', 'error');
-      }
+      await axiosInstance.put(`/contracts/${agreement_id}/status`, { status: newStatus });
+      showToast('Estado actualizado');
+      fetchData();
     } catch (error) {
+      const msg = error.response?.data?.error || 'Error al actualizar estado';
+      showToast(msg, 'error');
       console.error('Error updating contract:', error);
-      showToast('Error al actualizar el arriendo', 'error');
     }
   };
 

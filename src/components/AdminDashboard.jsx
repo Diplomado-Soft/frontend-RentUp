@@ -40,7 +40,7 @@ function AdminDashboard() {
     const [flaggedReviews, setFlaggedReviews] = useState([]);
     const [reviewsLoading, setReviewsLoading] = useState(false);
     const [analyzingReviews, setAnalyzingReviews] = useState(false);
-    const [ollamaStatus, setOllamaStatus] = useState(null);
+    const [aiStatus, setAiStatus] = useState(null);
 
     // Users state
     const [users, setUsers] = useState([]);
@@ -309,12 +309,12 @@ function AdminDashboard() {
         }
     };
 
-    const checkOllamaHealth = async () => {
+    const checkAIHealth = async () => {
         try {
             const res = await axiosInstance.get('/reviews/admin/ai/health');
-            setOllamaStatus(res.data.data?.ollama?.available ? 'online' : 'offline');
+            setAiStatus(res.data.data?.ai?.available ? 'online' : 'offline');
         } catch (error) {
-            setOllamaStatus('offline');
+            setAiStatus('offline');
         }
     };
 
@@ -324,7 +324,7 @@ function AdminDashboard() {
             const res = await axiosInstance.post('/reviews/admin/analyze-pending', { batchSize: 50 });
             setToast({ message: res.data.message || 'Análisis completado', type: 'success' });
             fetchFlaggedReviews();
-            checkOllamaHealth();
+            checkAIHealth();
         } catch (error) {
             setToast({ message: error.response?.data?.error || 'Error en análisis', type: 'error' });
         } finally {
@@ -346,20 +346,20 @@ function AdminDashboard() {
 
     const handleRejectReview = async (review_id) => {
         try {
-            const res = await axiosInstance.post(`/reviews/admin/${review_id}/reject`);
+            const res = await axiosInstance.post(`/reviews/admin/${review_id}/reject`, { notes: 'Rechazada por el administrador' });
             if (res.data) {
                 setToast({ message: 'Reseña rechazada', type: 'success' });
                 setFlaggedReviews(flaggedReviews.filter(r => r.review_id !== review_id));
             }
         } catch (error) {
-            setToast({ message: 'Error al rechazar reseña', type: 'error' });
+            setToast({ message: error.response?.data?.error || 'Error al rechazar reseña', type: 'error' });
         }
     };
 
     useEffect(() => {
         if (activeTab === 'reviews') {
             fetchFlaggedReviews();
-            checkOllamaHealth();
+            checkAIHealth();
         } else if (activeTab === 'users') {
             fetchUsers(0, userRoleFilter);
         }
@@ -482,7 +482,7 @@ function AdminDashboard() {
                 <AdminReviewsPanel
                     flaggedReviews={flaggedReviews}
                     reviewsLoading={reviewsLoading}
-                    ollamaStatus={ollamaStatus}
+                    aiStatus={aiStatus}
                     analyzingReviews={analyzingReviews}
                     handleAnalyzeAllReviews={handleAnalyzeAllReviews}
                     handleApproveReview={handleApproveReview}

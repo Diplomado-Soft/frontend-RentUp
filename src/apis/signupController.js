@@ -27,7 +27,8 @@ export const signupUser = async (userData, login) => {
                 email: response.data.user.email || userData.email,
                 telefono: userData.telefono,
                 rol: response.data.user.rol || userData.rolId,
-                token: response.data.token
+                token: response.data.token,
+                refreshToken: response.data.refreshToken
             };
             console.log('Guardando usuario en contexto:', userDataWithRole);
             login(userDataWithRole);

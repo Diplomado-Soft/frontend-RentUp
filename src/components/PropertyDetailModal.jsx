@@ -395,7 +395,7 @@ function PropertyDetailModal({ apartment, onClose }) {
                   </div>
 
                   {/* CTA */}
-                  {user && (apartment.whatsapp || apartment.user_phonenumber) ? (
+                  {apartment.whatsapp || apartment.user_phonenumber ? (
                     <a
                       href={`https://wa.me/${apartment.whatsapp || apartment.user_phonenumber}?text=${encodeURIComponent(
                         `Hola, estoy interesado en arrendar el inmueble "${apartment.barrio}" ubicado en "${apartment.direccion_apt}" publicado en RentUP. Me gustaría más información para proceder con el arriendo.`
@@ -407,20 +407,20 @@ function PropertyDetailModal({ apartment, onClose }) {
                       <FaWhatsapp className="text-lg" />
                       Contactar por WhatsApp
                     </a>
-                  ) : !user ? (
-                    <>
-                      <button
-                        onClick={handleRentClick}
-                        className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg text-sm"
-                      >
-                        <FaHome className="text-lg" />
-                        Iniciar proceso de arriendo
-                      </button>
-                      <p className="text-xs text-surface-400 text-center mt-3">
-                        Necesitas una cuenta para continuar
-                      </p>
-                    </>
-                  ) : null}
+                  ) : (
+                    <button
+                      onClick={handleRentClick}
+                      className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg text-sm"
+                    >
+                      <FaHome className="text-lg" />
+                      {user ? 'Solicitar información' : 'Iniciar proceso de arriendo'}
+                    </button>
+                  )}
+                  {!user && (
+                    <p className="text-xs text-surface-400 text-center mt-3">
+                      Necesitas una cuenta para continuar
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -435,7 +435,7 @@ function PropertyDetailModal({ apartment, onClose }) {
             </span>
             <span className="text-surface-400 text-sm"> /mes</span>
           </div>
-          {user && (apartment.whatsapp || apartment.user_phonenumber) ? (
+          {apartment.whatsapp || apartment.user_phonenumber ? (
             <a
               href={`https://wa.me/${apartment.whatsapp || apartment.user_phonenumber}?text=${encodeURIComponent(
                 `Hola, estoy interesado en arrendar el inmueble "${apartment.barrio}" ubicado en "${apartment.direccion_apt}" publicado en RentUP. Me gustaría más información para proceder con el arriendo.`
@@ -452,7 +452,7 @@ function PropertyDetailModal({ apartment, onClose }) {
               onClick={handleRentClick}
               className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold transition-all shadow-md text-sm"
             >
-              Arrendar
+              {user ? 'Solicitar info' : 'Arrendar'}
             </button>
           )}
         </div>

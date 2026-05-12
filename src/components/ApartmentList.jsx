@@ -56,12 +56,19 @@ function ApartmentList({ searchTerm = "", filters = {} }) {
     try {
       setLoading(true);
 
-      let url = `${process.env.REACT_APP_API_URL || 'http://localhost:9000'}/apartments/getapts`;
+      const hasFilters = filters.nearUniversity || filters.priceMin || filters.priceMax || filters.rooms || searchTerm;
+      let url;
       const params = new URLSearchParams();
 
-      if (filters.nearUniversity) {
-        params.append("nearUniversity", "true");
+      if (hasFilters) {
+        if (filters.nearUniversity) params.append("nearUniversity", "true");
+        if (filters.priceMin) params.append("priceMin", filters.priceMin);
+        if (filters.priceMax) params.append("priceMax", filters.priceMax);
+        if (filters.rooms) params.append("bedrooms", filters.rooms);
+        if (searchTerm) params.append("search", searchTerm);
         url = `${process.env.REACT_APP_API_URL || 'http://localhost:9000'}/apartments/getFiltered?${params}`;
+      } else {
+        url = `${process.env.REACT_APP_API_URL || 'http://localhost:9000'}/apartments/getapts`;
       }
 
       const response = await fetch(url);
