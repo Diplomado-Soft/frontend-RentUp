@@ -461,4 +461,7 @@ function PropertyDetailModal({ apartment, onClose }) {
   );
 }
 
+
 export default PropertyDetailModal;
+
+
