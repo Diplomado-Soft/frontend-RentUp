@@ -12,7 +12,7 @@ const axiosInstance = Axios.create({
 axiosInstance.interceptors.request.use(
     (config) => {
         // Rutas públicas que no requieren token
-        const publicPaths = ['/auth/forgot-password', '/auth/reset-password', '/auth/login', '/auth/register'];
+        const publicPaths = ['/auth/forgot-password', '/auth/reset-password', '/auth/login', '/auth/register', '/auth/refresh-token', '/auth/refresh'];
         const isPublic = publicPaths.some(path => config.url.includes(path));
         
         if (isPublic) {

@@ -5,7 +5,7 @@ let socket = null;
 
 export const initSocket = (userId) => {
   if (!socket) {
-    const serverUrl = process.env.REACT_APP_API_URL || "https://localhost:3443";
+    const serverUrl = process.env.REACT_APP_SOCKET_URL || "http://localhost:8080";
     socket = io(serverUrl, {
       transports: ["websocket"],
       secure: true,

@@ -6,7 +6,7 @@ import { faStar, faFlag, faCheck, faTimes, faRobot } from '@fortawesome/free-sol
 function AdminReviewsPanel({
   flaggedReviews,
   reviewsLoading,
-  ollamaStatus,
+  aiStatus,
   analyzingReviews,
   handleAnalyzeAllReviews,
   handleApproveReview,
@@ -45,22 +45,22 @@ function AdminReviewsPanel({
         </div>
         <div className="flex items-center gap-3">
           <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
-            ollamaStatus === 'online' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+            aiStatus === 'online' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
           }`}>
             <FontAwesomeIcon icon={faRobot} />
             <span className="text-sm font-medium">
-              Ollama: {ollamaStatus === 'online' ? 'En línea' : 'Apagado'}
+              IA: {aiStatus === 'online' ? 'En línea' : 'Apagado'}
             </span>
           </div>
           <button
             onClick={handleAnalyzeAllReviews}
-            disabled={analyzingReviews || ollamaStatus !== 'online'}
+            disabled={analyzingReviews || aiStatus !== 'online'}
             className="btn btn-primary flex items-center gap-2"
           >
             {analyzingReviews ? (
               <><FaSpinner className="spinning" /> Analizando...</>
             ) : (
-              <><FontAwesomeIcon icon={faRobot} /> Analizar Reseñas con IA</>
+              <><FontAwesomeIcon icon={faRobot} /> Analizar con IA</>
             )}
           </button>
         </div>

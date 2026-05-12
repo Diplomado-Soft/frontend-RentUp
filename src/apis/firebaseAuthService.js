@@ -76,6 +76,7 @@ console.log('📥 Respuesta del backend recibida:', response.data);
                 success: true,
                 user: response.data.user,
                 token: response.data.token,
+                refreshToken: response.data.refreshToken,
                 requiresRoleSelection: response.data.requiresRoleSelection || false,
             };
         } else {
