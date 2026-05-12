@@ -68,27 +68,6 @@ function User() {
             </div>
 
             <form onSubmit={createNewUserData} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Role selector */}
-                <div className="flex flex-col">
-                    <label htmlFor="rol" className="text-sm font-semibold text-surface-700 mb-2 flex items-center gap-2">
-                        <FontAwesomeIcon icon={faBuilding} className="text-surface-500" />
-                        Tipo de usuario
-                    </label>
-                    <select
-                        id="rol"
-                        name="rol"
-                        value={formData.rol}
-                        onChange={e => {
-                            const val = e.target.value;
-                            handleChange({ target: { name: 'rol', value: isNaN(Number(val)) ? val : Number(val) } });
-                        }}
-                        className="w-full px-4 py-3 border border-surface-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-surface-700"
-                    >
-                        <option value={1}>Usuario</option>
-                        <option value={2}>Arrendador</option>
-                    </select>
-                </div>
-
                 {/* Nombre */}
                 <div className="flex flex-col">
                     <label htmlFor="nombre" className="text-sm font-semibold text-surface-700 mb-2 flex items-center gap-2">

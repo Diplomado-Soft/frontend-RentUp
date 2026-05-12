@@ -6,61 +6,18 @@ import LandlordReviews from '../components/LandlordReviews';
 import Toast from '../components/Toast';
 import { UserContext } from '../contexts/UserContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faList, faTrash, faExclamationTriangle, faFileContract, faStar } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faList, faFileContract, faStar } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 
 function Dashboard() {
   const [activeTab, setActiveTab] = useState('list');
   const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const { logout } = useContext(UserContext);
   const navigate = useNavigate();
 
   const handleApartmentAdded = () => {
     setShowSuccessToast(true);
     setActiveTab('list');
-  };
-
-  const handleDeleteAccount = async () => {
-    try {
-      setDeleting(true);
-      const userData = JSON.parse(localStorage.getItem('user') || '{}');
-      const token = userData?.token;
-      
-      if (!token) {
-        alert('Sesión expirada');
-        logout();
-        navigate('/login');
-        return;
-      }
-
-      const response = await fetch(
-        `${process.env.REACT_APP_API_URL || 'http://localhost:9000'}/users/delete-account`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-
-      if (response.ok) {
-        logout();
-        navigate('/');
-      } else if (response.status === 401) {
-        logout();
-        navigate('/login');
-      } else {
-        alert('Error al eliminar la cuenta');
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Error al eliminar la cuenta');
-    } finally {
-      setDeleting(false);
-      setShowDeleteModal(false);
-    }
   };
 
   return (
@@ -171,50 +128,6 @@ function Dashboard() {
         />
       )}
 
-      {/* Botón para eliminar cuenta */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <button
-          onClick={() => setShowDeleteModal(true)}
-          className="flex items-center gap-2 text-red-600 hover:text-red-700 text-sm font-medium"
-        >
-          <FontAwesomeIcon icon={faTrash} />
-          Eliminar mi cuenta
-        </button>
-      </div>
-
-      {/* Modal de confirmación de eliminación */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-            <div className="flex items-center justify-center mb-4">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-                <FontAwesomeIcon icon={faExclamationTriangle} className="text-red-600 text-2xl" />
-              </div>
-            </div>
-            <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
-              ¿Estás seguro de eliminar tu cuenta?
-            </h2>
-            <p className="text-gray-600 text-center mb-6">
-              Esta acción es irreversible. Se eliminarán todos tus datos, apartamentos y publicaciones.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleDeleteAccount}
-                disabled={deleting}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition disabled:opacity-50"
-              >
-                {deleting ? 'Eliminando...' : 'Sí, eliminar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

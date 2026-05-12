@@ -1,36 +1,45 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import ImageModal from "./ImageModal";
 import PropertyDetailModal from "./PropertyDetailModal";
-import ReviewSection from "./ReviewSection";
-import { 
-  FaMapMarkerAlt, 
-  FaImages, 
+import {
+  FaMapMarkerAlt,
+  FaImages,
   FaChevronLeft,
   FaChevronRight,
-  FaExpand,
-  FaWhatsapp,
   FaBed,
   FaBath,
-  FaRulerCombined,
-  FaStar,
   FaHeart,
-  FaShareAlt
+  FaSortAmountDown,
+  FaSortAmountUp,
+  FaStar,
+  FaFire
 } from "react-icons/fa";
 
 function ApartmentList({ searchTerm = "", filters = {} }) {
-  const [selectedApartment, setSelectedApartment] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [modalImages, setModalImages] = useState([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [carouselIndexes, setCarouselIndexes] = useState({});
   const [apartmentList, setApartmentList] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-// Estado para el modal de detalles del inmueble
+  const [sortBy, setSortBy] = useState("");
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [favorites, setFavorites] = useState(() => {
+    try {
+      const saved = localStorage.getItem("rentup_favorites");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem("rentup_favorites", JSON.stringify(favorites));
+  }, [favorites]);
+
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
-  
-  // Efecto para abrir modal automáticamente después del login
+
   useEffect(() => {
     const openModalId = localStorage.getItem("openPropertyModal");
     if (openModalId && apartmentList.length > 0) {
@@ -46,16 +55,13 @@ function ApartmentList({ searchTerm = "", filters = {} }) {
   const fetchApartments = async () => {
     try {
       setLoading(true);
-      
-      let url = `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/apartments/getapts`;
-      
-      if (filters.nearUniversity || filters.priceMin || filters.priceMax || filters.rooms) {
-        const params = new URLSearchParams();
-        if (filters.nearUniversity) params.append('nearUniversity', 'true');
-        if (filters.priceMin) params.append('priceMin', filters.priceMin);
-        if (filters.priceMax) params.append('priceMax', filters.priceMax);
-        if (filters.rooms) params.append('bedrooms', filters.rooms);
-        url = `${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/apartments/getFiltered?${params}`;
+
+      let url = `${process.env.REACT_APP_API_URL || 'http://localhost:9000'}/apartments/getapts`;
+      const params = new URLSearchParams();
+
+      if (filters.nearUniversity) {
+        params.append("nearUniversity", "true");
+        url = `${process.env.REACT_APP_API_URL || 'http://localhost:9000'}/apartments/getFiltered?${params}`;
       }
 
       const response = await fetch(url);
@@ -67,8 +73,8 @@ function ApartmentList({ searchTerm = "", filters = {} }) {
 
       const processedApartments = data.map(apt => ({
         ...apt,
-        images: typeof apt.images === 'string' 
-          ? apt.images.split(',') 
+        images: typeof apt.images === 'string'
+          ? apt.images.split(',')
           : (Array.isArray(apt.images) ? apt.images : [])
       }));
 
@@ -83,32 +89,12 @@ function ApartmentList({ searchTerm = "", filters = {} }) {
 
   useEffect(() => {
     fetchApartments();
-  }, [filters.nearUniversity, filters.priceMin, filters.priceMax, filters.rooms]);
-
-  const currentUser = JSON.parse(localStorage.getItem("user")) || {};
-  const emisor_id = currentUser?.id;
-
-  const handleMapCenter = (lat, lng) => {
-    if (lat && lng) {
-      localStorage.setItem("mapCenter", JSON.stringify([lat, lng]));
-      window.dispatchEvent(new Event("storage"));
-    }
-  };
-
-  const filteredApartments = apartmentList.filter((apt) => {
-    if (!searchTerm) return true;
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      apt.barrio?.toLowerCase().includes(searchLower) ||
-      apt.direccion_apt?.toLowerCase().includes(searchLower)
-    );
-  });
+  }, [filters.nearUniversity, filters.priceMin, filters.priceMax, filters.rooms, searchTerm]);
 
   useEffect(() => {
-    const intervals = filteredApartments.map((apartment) => {
+    const intervals = apartmentList.map((apartment) => {
       if (apartment?.images) {
         const imageArray = getImageUrls(apartment.images);
-        
         if (imageArray.length > 1) {
           return setInterval(() => {
             setCarouselIndexes((prev) => ({
@@ -122,7 +108,7 @@ function ApartmentList({ searchTerm = "", filters = {} }) {
     }).filter(Boolean);
 
     return () => intervals.forEach(interval => clearInterval(interval));
-  }, [filteredApartments]);
+  }, [apartmentList]);
 
   const getImageUrls = (images) => {
     if (!images) return [];
@@ -176,15 +162,16 @@ function ApartmentList({ searchTerm = "", filters = {} }) {
       (prev) => (prev === modalImages.length - 1 ? 0 : prev + 1)
     );
 
-const formatPrice = (price) => {
+  const formatPrice = (price) => {
+    const value = Number(price);
+    if (isNaN(value)) return 'Precio no disponible';
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
       currency: 'COP',
       maximumFractionDigits: 0
-    }).format(price);
+    }).format(value);
   };
 
-  // Funciones para el modal de detalles del inmueble
   const openDetailModal = (apartment) => {
     setSelectedProperty(apartment);
     setShowDetailModal(true);
@@ -195,231 +182,238 @@ const formatPrice = (price) => {
     setSelectedProperty(null);
   };
 
+  const toggleFavorite = (e, aptId) => {
+    e.stopPropagation();
+    setFavorites(prev => ({ ...prev, [aptId]: !prev[aptId] }));
+  };
+
+  const handleCardClick = (apartment) => {
+    openDetailModal(apartment);
+  };
+
+  const sortedAndFiltered = useMemo(() => {
+    let list = [...apartmentList];
+
+    if (showFavoritesOnly) {
+      list = list.filter(apt => favorites[apt.id_apt]);
+    }
+
+    if (sortBy === "price-asc") {
+      list.sort((a, b) => (a.precio_apt || 0) - (b.precio_apt || 0));
+    } else if (sortBy === "price-desc") {
+      list.sort((a, b) => (b.precio_apt || 0) - (a.precio_apt || 0));
+    } else if (sortBy === "distance") {
+      list.sort((a, b) => (a.distance_km || 999) - (b.distance_km || 999));
+    }
+
+    return list;
+  }, [apartmentList, sortBy, showFavoritesOnly, favorites]);
+
+  const isNewProperty = (apartment) => {
+    const date = apartment.published_date || apartment.created_date;
+    if (!date) return false;
+    const days = (new Date() - new Date(date)) / (1000 * 60 * 60 * 24);
+    return days <= 7;
+  };
+
+  const SkeletonCard = () => (
+    <div className="animate-pulse">
+      <div className="w-full aspect-[4/3] rounded-xl bg-surface-200 mb-2" />
+      <div className="space-y-2 px-0.5">
+        <div className="h-4 bg-surface-200 rounded w-3/4" />
+        <div className="h-3 bg-surface-100 rounded w-1/2" />
+        <div className="h-3 bg-surface-100 rounded w-1/3" />
+        <div className="h-4 bg-surface-200 rounded w-1/4" />
+      </div>
+    </div>
+  );
+
+  const hasFavorites = Object.keys(favorites).length > 0;
+
   return (
     <div className="h-full">
-      {loading ? (
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-600"></div>
-          <p className="text-surface-500 font-medium">Cargando propiedades...</p>
+      {/* Toolbar */}
+      {!loading && apartmentList.length > 0 && (
+        <div className="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-surface-100">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+              disabled={!hasFavorites}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                showFavoritesOnly
+                  ? 'bg-red-50 text-red-600 border border-red-200'
+                  : 'text-surface-500 hover:text-surface-700 hover:bg-surface-50 border border-transparent'
+              } ${!hasFavorites ? 'opacity-40 cursor-not-allowed' : ''}`}
+            >
+              <FaHeart className={showFavoritesOnly ? 'text-red-500' : ''} />
+              Favoritos
+              {hasFavorites && (
+                <span className="text-[10px] ml-0.5">({Object.keys(favorites).length})</span>
+              )}
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-surface-400">
+              {sortedAndFiltered.length} resultado{sortedAndFiltered.length !== 1 ? 's' : ''}
+            </span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="text-xs border border-surface-200 rounded-lg px-2.5 py-1.5 text-surface-600 bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 cursor-pointer"
+            >
+              <option value="">Destacados</option>
+              <option value="price-asc">Precio: menor a mayor</option>
+              <option value="price-desc">Precio: mayor a menor</option>
+              <option value="distance">Más cercanos</option>
+            </select>
+          </div>
         </div>
-      ) : filteredApartments.length === 0 ? (
+      )}
+
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-x-4 gap-y-6">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+      ) : sortedAndFiltered.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-64 gap-4">
           <div className="w-20 h-20 bg-surface-100 rounded-full flex items-center justify-center">
             <FaImages className="text-surface-300 text-3xl" />
           </div>
           <p className="text-surface-500 font-medium">
-            {searchTerm ? "No se encontraron propiedades" : "No hay propiedades disponibles"}
+            {showFavoritesOnly
+              ? "No tienes favoritos guardados"
+              : searchTerm
+                ? "No se encontraron propiedades"
+                : "No hay propiedades disponibles"}
           </p>
-          {searchTerm && (
-            <p className="text-sm text-surface-400">Intenta con otro término de búsqueda</p>
-          )}
+          <p className="text-sm text-surface-400">
+            {showFavoritesOnly
+              ? "Guarda propiedades con el corazón ❤️ para verlas aquí"
+              : searchTerm
+                ? "Intenta con otro término de búsqueda"
+                : ""}
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
-          {filteredApartments.map((apartment) => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-x-4 gap-y-6">
+          {sortedAndFiltered.map((apartment) => {
             const imageArray = getImageUrls(apartment.images);
             const currentIndex = carouselIndexes[apartment.id_apt] || 0;
+            const nuevo = isNewProperty(apartment);
 
             return (
-<div
+              <div
                 key={apartment.id_apt || apartment.user_id}
-                className="card overflow-hidden group hover:shadow-card-hover transition-all duration-300 cursor-pointer"
-                onClick={() => openDetailModal(apartment)}
+                className="group cursor-pointer"
+                onClick={() => handleCardClick(apartment)}
               >
-                <div className="flex flex-col sm:flex-row">
-                  {/* Imagen con Carrusel */}
-                  <div className="w-full sm:w-48 md:w-56 lg:w-64 h-48 sm:h-auto relative flex-shrink-0">
-                    {imageArray.length > 0 ? (
-                      <div className="relative h-full w-full overflow-hidden">
-                        <img
-                          src={imageArray[currentIndex]}
-                          alt={`Apartamento ${currentIndex + 1}`}
-                          className="w-full h-full object-cover cursor-pointer transition-transform duration-500 group-hover:scale-105"
-                          onClick={() => handleMapCenter(apartment.latitud_apt, apartment.longitud_apt)}
-                          onError={(e) => {
-                            e.target.src = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
-                          }}
-                        />
-                        
-                        {/* Overlay gradient */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/10" />
-
-                        {/* Badge de precio */}
-                        <div className="absolute top-2 sm:top-4 left-2 sm:left-4 px-2 sm:px-4 py-1 sm:py-2 bg-primary-600 text-white font-bold text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-lg">
-                          {formatPrice(apartment.precio_apt)}
-                          <span className="text-xs font-normal opacity-80">/mes</span>
-                        </div>
-
-                        {/* Botón expandir */}
-                        <button
-                          onClick={() => openImageModal(apartment.images, currentIndex)}
-                          className="absolute top-4 right-4 p-2.5 bg-white/90 backdrop-blur-sm rounded-xl hover:bg-white transition-all shadow-lg opacity-0 group-hover:opacity-100"
-                          title="Ver en pantalla completa"
-                        >
-                          <FaExpand className="text-surface-700 text-sm" />
-                        </button>
-
-                        {/* Controles de navegación */}
-                        {imageArray.length > 1 && (
-                          <>
-                            <button
-                              onClick={() => handleCarouselPrev(apartment.id_apt, imageArray.length)}
-                              className="absolute left-3 top-1/2 -translate-y-1/2 p-2.5 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-all shadow-lg opacity-0 group-hover:opacity-100"
-                            >
-                              <FaChevronLeft className="text-surface-700 text-sm" />
-                            </button>
-                            <button
-                              onClick={() => handleCarouselNext(apartment.id_apt, imageArray.length)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-all shadow-lg opacity-0 group-hover:opacity-100"
-                            >
-                              <FaChevronRight className="text-surface-700 text-sm" />
-                            </button>
-                          </>
-                        )}
-
-                        {/* Indicadores */}
-                        {imageArray.length > 1 && (
-                          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-                            {imageArray.map((_, idx) => (
-                              <button
-                                key={idx}
-                                onClick={() => setCarouselIndexes((prev) => ({ ...prev, [apartment.id_apt]: idx }))}
-                                className={`h-2 rounded-full transition-all ${
-                                  idx === currentIndex
-                                    ? 'w-8 bg-white'
-                                    : 'w-2 bg-white/50 hover:bg-white/75'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Contador de imágenes */}
-                        <div className="absolute bottom-3 right-3 px-2 py-1 bg-black/50 backdrop-blur-sm rounded-lg text-white text-xs font-medium">
-                          {currentIndex + 1}/{imageArray.length}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="h-full w-full bg-surface-100 flex items-center justify-center">
-                        <FaImages className="text-surface-300 text-5xl" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Información del apartamento */}
-                  <div className="flex-1 p-5 flex flex-col">
-                    {/* Header */}
-                    <div className="mb-3">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <h3 
-                          className="font-bold text-xl text-surface-800 hover:text-primary-600 transition-colors cursor-pointer"
-                          onClick={() => handleMapCenter(apartment.latitud_apt, apartment.longitud_apt)}
-                        >
-                          {apartment.barrio}
-                        </h3>
-                        <div className="flex gap-1">
-                          <button className="p-2 text-surface-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                            <FaHeart />
-                          </button>
-                          <button className="p-2 text-surface-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
-                            <FaShareAlt />
-                          </button>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-1.5 text-surface-500 text-sm">
-                        <FaMapMarkerAlt className="text-xs" />
-                        <span className="line-clamp-1">{apartment.direccion_apt}</span>
-                      </div>
-                    </div>
-
-                    {/* Características */}
-                    <div className="flex items-center gap-4 mb-4 text-surface-600 text-sm">
-                      <div className="flex items-center gap-1.5">
-                        <FaBed className="text-surface-400" />
-                        <span>{apartment.habitaciones || '1'} hab</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <FaBath className="text-surface-400" />
-                        <span>{apartment.banos || '1'} baño</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <FaRulerCombined className="text-surface-400" />
-                        <span>{apartment.metros_apt || '30'}m²</span>
-                      </div>
-                    </div>
-
-                    {/* Descripción */}
-                    {apartment.info_add_apt && (
-                      <p className="text-surface-600 text-sm line-clamp-2 mb-4 flex-1">
-                        {apartment.info_add_apt}
-                      </p>
-                    )}
-
-                    {/* Distancia */}
-                    {apartment.distance_km && (
-                      <div className="mb-4">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 text-primary-700 rounded-full text-xs font-medium border border-primary-100">
-                          <FaMapMarkerAlt className="text-xs" />
-                          A {apartment.distance_km} km de Uniputumayo
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Divider */}
-                    <div className="border-t border-surface-100 my-3"></div>
-
-                    {/* Información del arrendador */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white font-semibold">
-                          {apartment.user_name?.charAt(0)}{apartment.user_lastname?.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="font-medium text-surface-800 text-sm">
-                            {apartment.user_name} {apartment.user_lastname}
-                          </p>
-                          <p className="text-surface-400 text-xs">Arrendador</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        {apartment.whatsapp && (
-                          <a
-                            href={`https://wa.me/${apartment.whatsapp}?text=${encodeURIComponent(`Hola, estoy interesado en el inmueble "${apartment.barrio}" publicado en RentUP.`)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2.5 text-surface-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                            title="WhatsApp"
-                          >
-                            <FaWhatsapp />
-                          </a>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Botones de acción */}
-                    <div className="flex gap-2 mt-auto">
-                      {apartment.whatsapp && (
-                        <a
-                          href={`https://wa.me/${apartment.whatsapp}?text=${encodeURIComponent(`Hola, estoy interesado en el inmueble "${apartment.barrio}" publicado en RentUP.`)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-                        >
-                          <FaWhatsapp className="text-sm" />
-                          <span>WhatsApp</span>
-                        </a>
-                      )}
-                    </div>
-
-                    {/* Reseñas */}
-                    <div className="mt-4 pt-4 border-t border-surface-100">
-                      <ReviewSection 
-                        propertyId={apartment.id_apt} 
-                        isOwner={apartment.user_id === currentUser?.id}
+                <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-surface-100 mb-2">
+                  {imageArray.length > 0 ? (
+                    <>
+                      <img
+                        src={imageArray[currentIndex]}
+                        alt={apartment.barrio || "Apartamento"}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        onError={(e) => {
+                          e.target.src = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+                        }}
                       />
+
+                      <button
+                        onClick={(e) => toggleFavorite(e, apartment.id_apt)}
+                        className="absolute top-2.5 right-2.5 w-8 h-8 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-all shadow-md z-10"
+                      >
+                        <FaHeart
+                          className={`text-sm transition-colors ${
+                            favorites[apartment.id_apt]
+                              ? 'text-red-500'
+                              : 'text-surface-600'
+                          }`}
+                        />
+                      </button>
+
+                      {nuevo && (
+                        <div className="absolute top-2.5 left-2.5 flex items-center gap-1 px-2 py-0.5 bg-green-500 text-white text-[10px] font-semibold rounded-full shadow-md">
+                          <FaFire className="text-[9px]" />
+                          Nuevo
+                        </div>
+                      )}
+
+                      {imageArray.length > 1 && (
+                        <>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleCarouselPrev(apartment.id_apt, imageArray.length); }}
+                            className="absolute left-1.5 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-full bg-white/90 hover:bg-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <FaChevronLeft className="text-surface-700 text-[10px]" />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleCarouselNext(apartment.id_apt, imageArray.length); }}
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-full bg-white/90 hover:bg-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <FaChevronRight className="text-surface-700 text-[10px]" />
+                          </button>
+                        </>
+                      )}
+
+                      {imageArray.length > 1 && (
+                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                          {imageArray.map((_, idx) => (
+                            <button
+                              key={idx}
+                              onClick={(e) => { e.stopPropagation(); setCarouselIndexes((prev) => ({ ...prev, [apartment.id_apt]: idx })); }}
+                              className={`rounded-full transition-all ${
+                                idx === currentIndex
+                                  ? 'w-1.5 h-1.5 bg-white'
+                                  : 'w-1.5 h-1.5 bg-white/50 hover:bg-white/80'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="w-full h-full bg-surface-100 flex items-center justify-center">
+                      <FaImages className="text-surface-300 text-3xl" />
                     </div>
+                  )}
+                </div>
+
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="font-medium text-surface-800 text-sm leading-tight truncate">
+                      {apartment.barrio || "Sin nombre"}
+                    </h3>
                   </div>
+                  {apartment.distance_km && (
+                    <p className="text-surface-400 text-[11px] flex items-center gap-1">
+                      <FaMapMarkerAlt className="text-[9px]" />
+                      A {apartment.distance_km} km de Uniputumayo
+                    </p>
+                  )}
+                  <p className="text-surface-400 text-xs leading-tight truncate">
+                    {apartment.direccion_apt || "Sin dirección"}
+                  </p>
+
+                  <div className="flex items-center gap-2 text-surface-400 text-[11px]">
+                    <span>{apartment.habitaciones || '1'} hab</span>
+                    <span className="text-surface-200">·</span>
+                    <span>{apartment.banos || '1'} baño</span>
+                    {apartment.metros_apt && (
+                      <>
+                        <span className="text-surface-200">·</span>
+                        <span>{apartment.metros_apt} m²</span>
+                      </>
+                    )}
+                  </div>
+
+                  <p className="font-medium text-surface-800 text-sm pt-0.5">
+                    {formatPrice(apartment.precio_apt)}
+                    <span className="font-normal text-surface-400 text-[11px]"> /mes</span>
+                  </p>
                 </div>
               </div>
             );
@@ -427,7 +421,6 @@ const formatPrice = (price) => {
         </div>
       )}
 
-{/* Modal de imágenes */}
       {showModal && (
         <ImageModal
           images={modalImages}
@@ -438,7 +431,6 @@ const formatPrice = (price) => {
         />
       )}
 
-      {/* Modal de detalles del inmueble */}
       {showDetailModal && selectedProperty && (
         <PropertyDetailModal
           apartment={selectedProperty}

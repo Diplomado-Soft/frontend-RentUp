@@ -87,7 +87,7 @@ return () => window.removeEventListener("storage", handleStorageChange);
 useEffect(() => {
 const fetchData = async () => {
     try {
-    const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/apartments/getapts`);
+    const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:9000'}/apartments/getapts`);
     const data = await response.json();
     if (Array.isArray(data)) {
         setApartments(data);

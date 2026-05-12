@@ -32,7 +32,7 @@ function History() {
       const contractsData = await contractsRes.json();
       const reviewsData = await reviewsRes.json();
 
-      if (contractsData.success) setContracts(contractsData.contracts || []);
+      if (Array.isArray(contractsData)) setContracts(contractsData);
       if (reviewsData.success) setReviews(reviewsData.reviews || []);
     } catch (err) {
       console.error("Error fetching history:", err);

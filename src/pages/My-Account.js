@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faFileInvoiceDollar, faStar, faHistory, faTrashAlt, faChartBar, faComments, faTimes, faHome } from "@fortawesome/free-solid-svg-icons";
 import User from '../components/My-Account/User';
@@ -10,13 +10,36 @@ import MyRents from '../components/My-Account/MyRents';
 import Messages from '../components/My-Account/Messages';
 import History from '../components/My-Account/History';
 import { UserContext } from "../contexts/UserContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axiosInstance from "../contexts/axiosInstance";
 
 function MyAccount() {
-    const [activeTab, setActiveTab] = useState("datos");
-    const { user, logout } = useContext(UserContext);
+    const { user } = useContext(UserContext);
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const userRole = user?.rol || user?.rol_id || user?.rolId || null;
+
+    const tabs = useMemo(() => {
+        const allTabs = [
+            { key: 'datos', label: 'Mis datos', icon: faUser, roles: [1, 2, 3] },
+            { key: 'facturacion', label: 'Facturación', icon: faFileInvoiceDollar, roles: [1, 2] },
+            { key: 'estadisticas', label: 'Estadísticas', icon: faChartBar, roles: [2, 3] },
+            { key: 'reseñas', label: 'Reseñas', icon: faStar, roles: [1, 2] },
+            { key: 'reservas', label: 'Reservas', icon: faHistory, roles: [1, 2] },
+            { key: 'arriendos', label: 'Mis Arriendos', icon: faHome, roles: [1] },
+            { key: 'mensajes', label: 'Mensajes', icon: faComments, roles: [2] },
+            { key: 'historial', label: 'Historial', icon: faHistory, roles: [1, 2, 3] },
+            { key: 'eliminar', label: 'Eliminar cuenta', icon: faTrashAlt, roles: [1, 2, 3], danger: true }
+        ];
+        return allTabs.filter(tab => tab.roles.includes(userRole));
+    }, [userRole]);
+
+    const [activeTab, setActiveTab] = useState(() => {
+        const stateTab = location.state?.tab;
+        if (stateTab && tabs.some(t => t.key === stateTab)) return stateTab;
+        return "datos";
+    });
 
     const renderComponent = () => {
         switch (activeTab) {
@@ -50,7 +73,7 @@ function MyAccount() {
                                     if (window.confirm('¿Confirmas que deseas eliminar tu cuenta?')) {
                                         try {
                                             await axiosInstance.delete('/users/delete-account');
-                                            alert('Cienta eliminada correctamente')
+                                            alert('Cuenta eliminada correctamente')
                                         } catch(error) {
                                             console.error('Error al eliminar la cuenta', error)
                                             alert('Error al eliminar la cuenta')
@@ -68,21 +91,6 @@ function MyAccount() {
                 return <div>Selecciona una opción</div>;
         }
     };
-
-    const tabs = [
-        { key: 'datos', label: 'Mis datos', icon: faUser },
-        { key: 'facturacion', label: 'Facturación', icon: faFileInvoiceDollar },
-        { key: 'estadisticas', label: 'Estadísticas', icon: faChartBar },
-        { key: 'reseñas', label: 'Reseñas', icon: faStar },
-        { key: 'reservas', label: 'Reservas', icon: faHistory },
-        ...(user && user.rol === 2 ? [
-            { key: 'mensajes', label: 'Mensajes', icon: faComments }
-        ] : [
-            { key: 'arriendos', label: 'Mis Arriendos', icon: faHome }
-        ]),
-        { key: 'historial', label: 'Historial', icon: faHistory },
-        { key: 'eliminar', label: 'Eliminar cuenta', icon: faTrashAlt, danger: true }
-    ];
 
     return (
         <div className="min-h-[calc(100vh-48px)] sm:min-h-[calc(100vh-56px)] bg-surface-50 py-4 sm:py-6 px-2 sm:px-4">
