@@ -22,7 +22,7 @@ export default function ChatComponent({ emisor_id, receptor_id }) {
   useEffect(() => {
     if (!emisor_id || !receptor_id) return;
     axios
-      .get(`${process.env.REACT_APP_API_URL}/api/chat/${emisor_id}/${receptor_id}`)
+      .get(`${process.env.REACT_APP_API_URL}/chat/${emisor_id}/${receptor_id}`)
       .then((res) => setMensajes(res.data))
       .catch((err) => console.error("Error al cargar mensajes:", err));
   }, [emisor_id, receptor_id]);

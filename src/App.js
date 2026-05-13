@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { UserProvider } from './contexts/UserContext';
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import Home from './pages/Home';
@@ -101,12 +100,12 @@ function AppContent() {
 
 function App() {
   return (
-    <UserProvider>
-      <Router>
-        <AppContent />
-      </Router>
-    </UserProvider>
+    <Router>
+      <AppContent />
+    </Router>
   );
 }
 
 export default App;
+
+

@@ -10,6 +10,7 @@ import ImageModal from './ImageModal';
 import AdminReviewsPanel from './AdminReviewsPanel';
 import AdminUsersPanel from './AdminUsersPanel';
 import './AdminDashboard.css';
+import { initSocket, getSocket } from '../utils/socket';
 
 function AdminDashboard() {
     const navigate = useNavigate();
@@ -48,6 +49,10 @@ function AdminDashboard() {
     const [userSearch, setUserSearch] = useState('');
     const [userRoleFilter, setUserRoleFilter] = useState('');
     const [userPagination, setUserPagination] = useState({ offset: 0, limit: 20, total: 0 });
+
+    // Stats state
+    const [adminStats, setAdminStats] = useState(null);
+    const [statsLoading, setStatsLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState(null);
     const [showBlockModal, setShowBlockModal] = useState(false);
     const [userToBlock, setUserToBlock] = useState(null);
@@ -60,6 +65,24 @@ function AdminDashboard() {
 
     const userData = JSON.parse(localStorage.getItem('user') || '{}');
     const token = userData?.token;
+    const userId = userData?.id;
+
+    // Socket.io para notificaciones en tiempo real
+    useEffect(() => {
+        if (userId) {
+            const socket = initSocket(userId);
+            socket.emit("register_admin");
+
+            socket.on("admin_notification", (notification) => {
+                setToast({ message: notification.title, type: 'info' });
+                fetchNotifications();
+            });
+
+            return () => {
+                socket.off("admin_notification");
+            };
+        }
+    }, [userId]);
 
     // Cargar apartamentos pendientes
     const fetchPendingApartments = async (offset = 0) => {
@@ -356,12 +379,26 @@ function AdminDashboard() {
         }
     };
 
+    const fetchAdminStats = async () => {
+        try {
+            setStatsLoading(true);
+            const res = await axiosInstance.get('/stats/admin');
+            setAdminStats(res.data);
+        } catch (e) {
+            console.error('Error cargando stats:', e);
+        } finally {
+            setStatsLoading(false);
+        }
+    };
+
     useEffect(() => {
         if (activeTab === 'reviews') {
             fetchFlaggedReviews();
             checkAIHealth();
         } else if (activeTab === 'users') {
             fetchUsers(0, userRoleFilter);
+        } else if (activeTab === 'stats') {
+            fetchAdminStats();
         }
     }, [activeTab]);
 
@@ -382,7 +419,7 @@ function AdminDashboard() {
                     <h1>Panel de Administración</h1>
                     <p>Gestiona apartamentos, reseñas y reportes</p>
                 </div>
-                <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                <div style={{ display:'flex', gap:8, flexWrap:'wrap', position:'relative' }}>
                     {/* Tabs */}
                     <div style={{ display:'flex', gap:4 }}>
                          <button
@@ -431,9 +468,26 @@ function AdminDashboard() {
                                  gap:6
                              }}
                          >
-                             <FaUser style={{marginRight:6}} /> Usuarios
-                         </button>
-                     </div>
+                              <FaUser style={{marginRight:6}} /> Usuarios
+                          </button>
+                          <button
+                              onClick={() => setActiveTab('stats')}
+                              style={{
+                                  padding:'8px 16px',
+                                  border:'none',
+                                  borderRadius:8,
+                                  cursor:'pointer',
+                                  fontWeight:600,
+                                  background: activeTab === 'stats' ? '#6A6BEF' : '#e5e7eb',
+                                  color: activeTab === 'stats' ? '#fff' : '#374151',
+                                  display:'flex',
+                                  alignItems:'center',
+                                  gap:6
+                              }}
+                          >
+                              <FontAwesomeIcon icon={faStar} /> Estadísticas
+                          </button>
+                      </div>
                     
                     {/* Notifications */}
                     <button
@@ -508,6 +562,55 @@ function AdminDashboard() {
                     setShowBlockModal={setShowBlockModal}
                     setUserToBlock={setUserToBlock}
                 />
+            ) : activeTab === 'stats' ? (
+                <div className="adminDashboard-section" style={{padding:16}}>
+                    {statsLoading ? (
+                        <div className="loadingSpinner"><FaSpinner className="spinning" /> Cargando estadísticas...</div>
+                    ) : !adminStats ? (
+                        <div className="alert-box alert-warning">No hay datos disponibles</div>
+                    ) : (
+                        <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:16}}>
+                            <div className="stat-card" style={{background:'#EEF2FF', borderRadius:12, padding:16}}>
+                                <h4 style={{margin:0, color:'#4F46E5', fontSize:13}}>Usuarios</h4>
+                                <p style={{margin:'8px 0 0', fontSize:28, fontWeight:700, color:'#1E1B4B'}}>{adminStats.users?.total_users || 0}</p>
+                                <p style={{margin:'4px 0 0', fontSize:12, color:'#6B7280'}}>
+                                    {adminStats.users?.total_landlords || 0} arrendadores · {adminStats.users?.total_tenants || 0} inquilinos
+                                </p>
+                            </div>
+                            <div className="stat-card" style={{background:'#F0FDF4', borderRadius:12, padding:16}}>
+                                <h4 style={{margin:0, color:'#16A34A', fontSize:13}}>Apartamentos</h4>
+                                <p style={{margin:'8px 0 0', fontSize:28, fontWeight:700, color:'#14532D'}}>{adminStats.apartments?.total_apartments || 0}</p>
+                                <p style={{margin:'4px 0 0', fontSize:12, color:'#6B7280'}}>
+                                    {adminStats.apartments?.approved_apartments || 0} aprobados · {adminStats.apartments?.pending_apartments || 0} pendientes
+                                </p>
+                            </div>
+                            <div className="stat-card" style={{background:'#FFF7ED', borderRadius:12, padding:16}}>
+                                <h4 style={{margin:0, color:'#EA580C', fontSize:13}}>Contratos activos</h4>
+                                <p style={{margin:'8px 0 0', fontSize:28, fontWeight:700, color:'#7C2D12'}}>{adminStats.contracts?.active_contracts || 0}</p>
+                                <p style={{margin:'4px 0 0', fontSize:12, color:'#6B7280'}}>
+                                    ${Number(adminStats.contracts?.monthly_revenue || 0).toLocaleString()} /mes
+                                </p>
+                            </div>
+                            <div className="stat-card" style={{background:'#F5F3FF', borderRadius:12, padding:16}}>
+                                <h4 style={{margin:0, color:'#7C3AED', fontSize:13}}>Total contratos</h4>
+                                <p style={{margin:'8px 0 0', fontSize:28, fontWeight:700, color:'#3B0764'}}>{adminStats.contracts?.total_contracts || 0}</p>
+                                <p style={{margin:'4px 0 0', fontSize:12, color:'#6B7280'}}>
+                                    {adminStats.contracts?.expired_contracts || 0} vencidos
+                                </p>
+                            </div>
+                            {adminStats.topLandlords?.length > 0 && (
+                                <div className="stat-card" style={{gridColumn:'1 / -1', background:'#FFFBEB', borderRadius:12, padding:16}}>
+                                    <h4 style={{margin:0, color:'#D97706', fontSize:13}}>Top arrendadores</h4>
+                                    {adminStats.topLandlords.map((l, i) => (
+                                        <p key={l.user_id} style={{margin:'8px 0 0', fontSize:14, color:'#1F2937'}}>
+                                            #{i+1} {l.user_name} {l.user_lastname} — {l.total_apartments} aptos
+                                        </p>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
             ) : loading ? (
                 <div className="loadingSpinner">
                     <FaSpinner className="spinning" />
@@ -703,7 +806,7 @@ function AdminDashboard() {
                                 </div>
                             )}
 
-                            {selectedApartmentDetail.amenities && selectedApartmentDetail.amenities.length > 0 && (
+                            {Array.isArray(selectedApartmentDetail.amenities) && selectedApartmentDetail.amenities.length > 0 && (
                                 <div className="detail-section">
                                     <h3><FaCheckCircle /> Comodidades</h3>
                                     <div className="amenities-list">
@@ -911,3 +1014,4 @@ function AdminDashboard() {
 }
 
 export default AdminDashboard;
+

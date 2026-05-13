@@ -7,7 +7,7 @@ import { faUser, faEnvelope, faPhone, faLock, faBuilding, faSave, faTimes } from
 function User() {
     const { user, login } = useContext(UserContext);
     const { nombre, apellido, email, telefono, rol, token } = user;
-    const defaultRol = rol === 'Arrendador' ? 'Arrendador' : 'Usuario';
+    const defaultRol = Number(rol) === 2 ? 'Arrendador' : 'Usuario';
     const [formData, setFormData] = useState({
         nombre: nombre || '',
         apellido: apellido || '',

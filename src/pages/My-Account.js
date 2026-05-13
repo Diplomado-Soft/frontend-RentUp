@@ -1,14 +1,10 @@
 import React, { useState, useContext, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUser, faFileInvoiceDollar, faStar, faHistory, faTrashAlt, faChartBar, faComments, faTimes, faHome } from "@fortawesome/free-solid-svg-icons";
+import { faUser, faFileInvoiceDollar, faTrashAlt, faChartBar, faTimes, faHome } from "@fortawesome/free-solid-svg-icons";
 import User from '../components/My-Account/User';
 import Billing from '../components/My-Account/Billing';
 import Record from '../components/My-Account/Record';
-import Reviews from '../components/My-Account/Reviews';
-import Reservations from '../components/My-Account/Reservations';
 import MyRents from '../components/My-Account/MyRents';
-import Messages from '../components/My-Account/Messages';
-import History from '../components/My-Account/History';
 import { UserContext } from "../contexts/UserContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import axiosInstance from "../contexts/axiosInstance";
@@ -24,12 +20,8 @@ function MyAccount() {
         const allTabs = [
             { key: 'datos', label: 'Mis datos', icon: faUser, roles: [1, 2, 3] },
             { key: 'facturacion', label: 'Facturación', icon: faFileInvoiceDollar, roles: [1, 2] },
-            { key: 'estadisticas', label: 'Estadísticas', icon: faChartBar, roles: [2, 3] },
-            { key: 'reseñas', label: 'Reseñas', icon: faStar, roles: [1, 2] },
-            { key: 'reservas', label: 'Reservas', icon: faHistory, roles: [1, 2] },
+            { key: 'estadisticas', label: 'Estadísticas', icon: faChartBar, roles: [2] },
             { key: 'arriendos', label: 'Mis Arriendos', icon: faHome, roles: [1] },
-            { key: 'mensajes', label: 'Mensajes', icon: faComments, roles: [2] },
-            { key: 'historial', label: 'Historial', icon: faHistory, roles: [1, 2, 3] },
             { key: 'eliminar', label: 'Eliminar cuenta', icon: faTrashAlt, roles: [1, 2, 3], danger: true }
         ];
         return allTabs.filter(tab => tab.roles.includes(userRole));
@@ -49,16 +41,8 @@ function MyAccount() {
                 return <Billing />
             case "estadisticas":
                 return <Record />
-            case "reseñas":
-                return <Reviews />
-            case "reservas":
-                return <Reservations />
-            case "mensajes":
-                return <Messages />
             case "arriendos":
                 return <MyRents />
-            case "historial":
-                return <History />
             case "eliminar":
                 return (
                     <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">

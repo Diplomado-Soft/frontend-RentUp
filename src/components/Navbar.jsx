@@ -13,6 +13,7 @@ function Navbar({ goToJoin, setShowAccount }) {
 
   const handleTitleClick = () => {
       localStorage.setItem("mapCenter", JSON.stringify([1.157037, -76.651443]));
+      window.dispatchEvent(new CustomEvent("mapCenterChanged", { detail: [1.157037, -76.651443] }));
       navigate('/');
   };
 
@@ -158,3 +159,4 @@ function Navbar({ goToJoin, setShowAccount }) {
 }
 
 export default Navbar;
+

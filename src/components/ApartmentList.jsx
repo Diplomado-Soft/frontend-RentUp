@@ -39,6 +39,8 @@ function ApartmentList({ searchTerm = "", filters = {} }) {
 
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
 
   useEffect(() => {
     const openModalId = localStorage.getItem("openPropertyModal");
@@ -216,6 +218,10 @@ function ApartmentList({ searchTerm = "", filters = {} }) {
     return list;
   }, [apartmentList, sortBy, showFavoritesOnly, favorites]);
 
+  const totalPages = Math.ceil(sortedAndFiltered.length / ITEMS_PER_PAGE);
+  const paginatedList = sortedAndFiltered.slice(0, currentPage * ITEMS_PER_PAGE);
+  const hasMore = currentPage < totalPages;
+
   const isNewProperty = (apartment) => {
     const date = apartment.published_date || apartment.created_date;
     if (!date) return false;
@@ -306,14 +312,14 @@ function ApartmentList({ searchTerm = "", filters = {} }) {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-x-4 gap-y-6">
-          {sortedAndFiltered.map((apartment) => {
+          {paginatedList.map((apartment, index) => {
             const imageArray = getImageUrls(apartment.images);
             const currentIndex = carouselIndexes[apartment.id_apt] || 0;
             const nuevo = isNewProperty(apartment);
 
             return (
               <div
-                key={apartment.id_apt || apartment.user_id}
+                key={apartment.id_apt || `apt-${apartment.user_id}-${index}`}
                 className="group cursor-pointer"
                 onClick={() => handleCardClick(apartment)}
               >
@@ -428,6 +434,17 @@ function ApartmentList({ searchTerm = "", filters = {} }) {
         </div>
       )}
 
+      {!loading && hasMore && (
+        <div className="flex justify-center mt-8">
+          <button
+            onClick={() => setCurrentPage(p => p + 1)}
+            className="px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-xl transition-all shadow-md hover:shadow-lg"
+          >
+            Cargar más ({sortedAndFiltered.length - paginatedList.length} restantes)
+          </button>
+        </div>
+      )}
+
       {showModal && (
         <ImageModal
           images={modalImages}
@@ -449,3 +466,4 @@ function ApartmentList({ searchTerm = "", filters = {} }) {
 }
 
 export default ApartmentList;
+
