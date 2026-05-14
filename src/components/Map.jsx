@@ -64,7 +64,10 @@ return null;
 
 function Map() {
     const [apartments, setApartments] = useState([]);
-    const [center, setCenter] = useState([1.156667, -76.651944]);
+    const [center, setCenter] = useState(() => {
+    const stored = localStorage.getItem("mapCenter");
+    return stored ? JSON.parse(stored) : [1.156667, -76.651944];
+});
     const [routeCoordinates, setRouteCoordinates] = useState([]);
     const [distance, setDistance] = useState(null);
     const [selectedApartment, setSelectedApartment] = useState(null);
@@ -73,15 +76,24 @@ function Map() {
 
 
 useEffect(() => {
-const handleStorageChange = () => {
-    const storedCenter = localStorage.getItem("mapCenter");
-    if (storedCenter) {
-    setCenter(JSON.parse(storedCenter));
-    localStorage.removeItem("mapCenter");
-    }
-};
-window.addEventListener("storage", handleStorageChange);
-return () => window.removeEventListener("storage", handleStorageChange);
+    const handleStorageChange = () => {
+        const storedCenter = localStorage.getItem("mapCenter");
+        if (storedCenter) {
+            setCenter(JSON.parse(storedCenter));
+            localStorage.removeItem("mapCenter");
+        }
+    };
+    const handleCustomEvent = (e) => {
+        if (e.detail) {
+            setCenter(e.detail);
+        }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("mapCenterChanged", handleCustomEvent);
+    return () => {
+        window.removeEventListener("storage", handleStorageChange);
+        window.removeEventListener("mapCenterChanged", handleCustomEvent);
+    };
 }, []);
 
 useEffect(() => {
@@ -367,3 +379,4 @@ return (
 }
 
 export default Map;
+

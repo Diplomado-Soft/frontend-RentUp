@@ -12,7 +12,7 @@ const axiosInstance = Axios.create({
 axiosInstance.interceptors.request.use(
     (config) => {
         // Rutas públicas que no requieren token
-        const publicPaths = ['/auth/forgot-password', '/auth/reset-password', '/auth/login', '/auth/register', '/auth/refresh-token', '/auth/refresh'];
+        const publicPaths = ['/auth/forgot-password', '/auth/reset-password', '/auth/login', '/auth/register', '/auth/refresh-token', '/auth/refresh', '/auth/firebase-login'];
         const isPublic = publicPaths.some(path => config.url.includes(path));
         
         if (isPublic) {
@@ -68,12 +68,11 @@ async (error) => {
             { refreshToken: user.refreshToken }
             );
             const newAccessToken = response.data.accessToken;
-            // Actualiza el token en el localStorage
+            const newRefreshToken = response.data.refreshToken;
             const updatedUser = { ...user, token: newAccessToken };
+            if (newRefreshToken) updatedUser.refreshToken = newRefreshToken;
             localStorage.setItem('user', JSON.stringify(updatedUser));
-            // Actualiza el header del request original
             originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
-            // Reintenta el request original con el nuevo token
             return axiosInstance(originalRequest);
         } catch (refreshError) {
             console.error('Error renovando token', refreshError);

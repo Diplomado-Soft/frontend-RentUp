@@ -20,6 +20,16 @@ export const fetchTopLandlord = async () => {
     }
 };
 
+export const fetchAdminStats = async () => {
+    try {
+        const response = await axiosInstance.get('/stats/admin');
+        return response.data;
+    } catch (error) {
+        console.error('Error al obtener estadísticas de admin:', error);
+        throw error;
+    }
+};
+
 export const fetchMyReviews = async () => {
     try {
         const response = await axiosInstance.get('/reviews/user/my-reviews');

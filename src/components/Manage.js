@@ -36,9 +36,8 @@ const handleNewImageChange = (e) => {
 const handleViewImageExisting = (img) => {
     // Extraer URL si es objeto o string
     const imgUrl = (typeof img === 'object' && img?.url) ? img.url : img;
-    const newTab = window.open();
+    const newTab = window.open(imgUrl, "_blank");
     if (newTab) {
-    newTab.document.write(`<img src="${imgUrl}" style="max-width: 80%; max-height: 80vh;" />`);
     newTab.document.title = "Vista previa de la imagen";
     }
 };
@@ -367,3 +366,4 @@ return (
 }
 
 export default Manage;
+

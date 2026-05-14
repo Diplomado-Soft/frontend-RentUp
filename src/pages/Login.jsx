@@ -39,12 +39,17 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = await loginUser({ email, password, login });
-    if (result.success) {
-      handlePendingProperty();  // ← UNA LLAMADA
-      goToHome();
-    } else {
-      setMessage(result.message);
+    try {
+      const result = await loginUser({ email, password, login });
+      if (result.success) {
+        handlePendingProperty();
+        goToHome();
+      } else {
+        setMessage(result.message);
+      }
+    } catch (error) {
+      console.error("Error en login:", error);
+      setMessage(error.message || "Error al iniciar sesión");
     }
   };
 
@@ -412,3 +417,4 @@ function Login() {
 }
 
 export default Login;
+
