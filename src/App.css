@@ -1,9 +1,1 @@
-/* Para animar el logo si quieres mantenerlo */
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.logo-spin {
-  animation: spin-slow 20s linear infinite;
-}
+/* App-level styles - using Tailwind utility classes */

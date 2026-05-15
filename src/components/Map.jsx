@@ -71,6 +71,11 @@ function Map() {
     const [routeCoordinates, setRouteCoordinates] = useState([]);
     const [distance, setDistance] = useState(null);
     const [selectedApartment, setSelectedApartment] = useState(null);
+    const [highlightedAptId, setHighlightedAptId] = useState(() => {
+        const stored = localStorage.getItem("selectedAptId");
+        localStorage.removeItem("selectedAptId");
+        return stored ? Number(stored) : null;
+    });
 
     const UNIPUTUMAYO_COORDINATES = [1.156667, -76.651944];
 
@@ -123,6 +128,14 @@ iconUrl: '/instituteLogo.png',
 iconSize: [25, 30],
 iconAnchor: [12, 30],
 popupAnchor: [0, -45],
+});
+
+const HighlightedIcon = L.divIcon({
+className: '',
+html: '<div style="width:36px;height:36px;background:#6A6BEF;border:3px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px rgba(106,107,239,0.6);transform:scale(1.15);"><span style="font-size:18px;">📍</span></div>',
+iconSize: [36, 36],
+iconAnchor: [18, 36],
+popupAnchor: [0, -40],
 });
 
 // Función para calcular la ruta usando OSRM (OpenStreetMap Routing Machine)
@@ -191,7 +204,7 @@ const handleApartmentClick = async (apt) => {
 };
 
 return (
-<div className="relative w-full h-full">
+<div className="pt-20 w-full h-screen">
     <MapContainer
     center={center}
     zoom={17}
@@ -220,7 +233,12 @@ return (
         <Marker
         key={apt.id_apt || apt.id_apartamento}
         position={[apt.latitud_apt || apt.latitud_apartamento, apt.longitud_apt || apt.longitud_apartamento]}
-        icon={DefaultIcon}
+        icon={(apt.id_apt || apt.id_apartamento) === highlightedAptId ? HighlightedIcon : DefaultIcon}
+        ref={(ref) => {
+            if (ref && highlightedAptId && (apt.id_apt || apt.id_apartamento) === highlightedAptId) {
+                setTimeout(() => { ref.openPopup(); setHighlightedAptId(null); }, 300);
+            }
+        }}
         eventHandlers={{
             click: () => handleApartmentClick({
                 ...apt,

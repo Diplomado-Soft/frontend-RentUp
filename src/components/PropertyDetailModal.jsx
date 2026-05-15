@@ -2,60 +2,16 @@ import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../contexts/UserContext";
 import ReviewSection from "./ReviewSection";
-import {
-  FaTimes,
-  FaMapMarkerAlt,
-  FaBed,
-  FaBath,
-  FaRulerCombined,
-  FaUser,
-  FaWhatsapp,
-  FaChevronLeft,
-  FaChevronRight,
-  FaHome,
-  FaCalendarAlt,
-  FaCheck,
-  FaShareAlt,
-  FaHeart,
-  FaStar,
-  FaShieldAlt,
-  FaMedal
-} from "react-icons/fa";
 
 function PropertyDetailModal({ apartment, onClose }) {
   const navigate = useNavigate();
   const { user: contextUser } = useContext(UserContext);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageUrls, setImageUrls] = useState([]);
-  const [isFavorite, setIsFavorite] = useState(() => {
-    try {
-      const saved = localStorage.getItem("rentup_favorites");
-      const favs = saved ? JSON.parse(saved) : {};
-      return !!favs[apartment?.id_apt];
-    } catch {
-      return false;
-    }
-  });
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("rentup_favorites");
-      const favs = saved ? JSON.parse(saved) : {};
-      if (isFavorite) {
-        favs[apartment.id_apt] = true;
-      } else {
-        delete favs[apartment.id_apt];
-      }
-      localStorage.setItem("rentup_favorites", JSON.stringify(favs));
-    } catch {}
-  }, [isFavorite]);
   const [user, setUser] = useState(() => {
     try {
       const stored = localStorage.getItem("user");
       return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   });
 
   useEffect(() => {
@@ -64,9 +20,7 @@ function PropertyDetailModal({ apartment, onClose }) {
         const stored = localStorage.getItem("user");
         const storedUser = stored ? JSON.parse(stored) : null;
         setUser(contextUser || storedUser);
-      } catch {
-        setUser(null);
-      }
+      } catch { setUser(null); }
     };
     checkUser();
     window.addEventListener('storage', checkUser);
@@ -91,376 +45,208 @@ function PropertyDetailModal({ apartment, onClose }) {
 
   const formatPrice = (price) => {
     const value = Number(price);
-    if (isNaN(value)) return 'Precio no disponible';
+    if (isNaN(value)) return '$0';
     return new Intl.NumberFormat("es-CO", {
-      style: "currency",
-      currency: "COP",
-      maximumFractionDigits: 0,
+      style: "currency", currency: "COP", maximumFractionDigits: 0,
     }).format(value);
   };
 
-  const handleRentClick = () => {
-    if (!user) {
-      localStorage.setItem("pendingPropertyId", apartment.id_apt);
-      localStorage.setItem("pendingPropertyTitle", apartment.barrio);
-      navigate("/login", { state: { from: "/", propertyId: apartment.id_apt } });
-    } else {
-      navigate("/my-account", { state: { tab: "arriendos" } });
-    }
-    onClose();
-  };
+  const getInitials = (name, lastname) =>
+    `${(name || "U").charAt(0)}${(lastname || "").charAt(0) || ""}`;
 
-  const handlePrevImage = () => {
-    setCurrentImageIndex((prev) => (prev === 0 ? imageUrls.length - 1 : prev - 1));
-  };
+  const amenities = apartment?.comodidades
+    ? apartment.comodidades.split(",").map(s => s.trim()).filter(Boolean)
+    : [];
 
-  const handleNextImage = () => {
-    setCurrentImageIndex((prev) => (prev === imageUrls.length - 1 ? 0 : prev + 1));
-  };
-
-  const handleImageError = (e) => {
-    e.target.src = "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
-  };
-
-  const getInitials = (name, lastname) => {
-    return `${(name || "U").charAt(0)}${(lastname || "").charAt(0) || ""}`;
-  };
+  const imageSrc = (index) => imageUrls[index] || '';
+  const extraCount = imageUrls.length > 5 ? imageUrls.length - 5 : 0;
+  const galleryImages = imageUrls.slice(0, 5);
 
   if (!apartment) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-white"
-      onClick={onClose}
-    >
-      <div
-        className="min-h-full w-full relative"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-surface-100">
-          <div className="max-w-6xl mx-auto px-4 sm:px-8 flex items-center justify-between h-14">
-            <button
-              onClick={onClose}
-              className="flex items-center gap-2 text-surface-600 hover:text-surface-900 transition-colors text-sm font-medium"
-            >
-              <FaTimes className="text-base" />
-              <span className="hidden sm:inline">Cerrar</span>
-            </button>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setIsFavorite(!isFavorite)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-surface-600 hover:text-surface-900 hover:bg-surface-50 rounded-lg transition-colors"
-              >
-                <FaHeart className={isFavorite ? "text-red-500" : ""} />
-                <span className="hidden sm:inline">Guardar</span>
-              </button>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-surface-600 hover:text-surface-900 hover:bg-surface-50 rounded-lg transition-colors">
-                <FaShareAlt />
-                <span className="hidden sm:inline">Compartir</span>
-              </button>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-surface" onClick={onClose}>
+      <div className="min-h-full w-full relative" onClick={e => e.stopPropagation()}>
+        {/* Close button */}
+        <button onClick={onClose} className="fixed top-4 left-4 z-50 w-10 h-10 bg-surface-container-lowest/80 backdrop-blur rounded-full flex items-center justify-center shadow-md hover:bg-surface-container-low transition-colors">
+          <span className="material-symbols-outlined text-on-surface">close</span>
+        </button>
+
+        {/* Hero Section */}
+        <section className="relative h-[450px] min-h-[400px] w-full mt-0 overflow-hidden">
+          <img className="w-full h-full object-cover" alt={apartment.barrio || "Apartamento"} src={imageSrc(0) || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'} />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex flex-col justify-end px-6 pb-8 md:px-12">
+            <div className="max-w-7xl mx-auto w-full">
+              <h1 className="font-headline text-headline-lg text-white mb-1">{apartment.titulo_apt || apartment.barrio || "Apartamento"}</h1>
+              <div className="flex items-center text-white/90 gap-1.5">
+                <span className="material-symbols-outlined text-[20px]">location_on</span>
+                <p className="font-body text-body-md">{apartment.direccion_apt || apartment.barrio || "Zona Universitaria"}</p>
+              </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Image Gallery */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-8 mt-4 mb-8">
-          {imageUrls.length > 0 ? (
-            <div className="relative w-full aspect-[2/1] rounded-2xl overflow-hidden bg-surface-100">
-              <img
-                src={imageUrls[currentImageIndex]}
-                alt={`${apartment.barrio} - Foto ${currentImageIndex + 1}`}
-                className="w-full h-full object-cover"
-                onError={handleImageError}
-              />
-
-              {imageUrls.length > 1 && (
-                <div className="absolute top-4 left-4 px-3 py-1.5 bg-black/50 backdrop-blur-sm rounded-lg text-white text-sm font-medium">
-                  {currentImageIndex + 1} / {imageUrls.length}
+        <main className="max-w-7xl mx-auto px-4 md:px-8 py-6 space-y-6">
+          {/* Gallery Grid */}
+          {galleryImages.length > 0 && (
+            <section className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+              <div className="col-span-2 row-span-2 rounded-xl overflow-hidden shadow-sm">
+                <img className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" alt="Principal" src={imageSrc(0)} />
+              </div>
+              {galleryImages.slice(1, 5).map((url, i) => (
+                <div key={i} className="rounded-xl overflow-hidden shadow-sm aspect-square relative group">
+                  <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={`Foto ${i + 2}`} src={url} />
+                  {i === 3 && extraCount > 0 && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer group-hover:bg-black/50 transition-all">
+                      <span className="text-white font-headline text-headline-md">+{extraCount}</span>
+                    </div>
+                  )}
                 </div>
-              )}
-
-              {imageUrls.length > 1 && (
-                <>
-                  <button
-                    onClick={handlePrevImage}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105"
-                  >
-                    <FaChevronLeft className="text-surface-700" />
-                  </button>
-                  <button
-                    onClick={handleNextImage}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105"
-                  >
-                    <FaChevronRight className="text-surface-700" />
-                  </button>
-                </>
-              )}
-
-              {imageUrls.length > 1 && (
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                  {imageUrls.map((_, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setCurrentImageIndex(idx)}
-                      className={`rounded-full transition-all ${
-                        idx === currentImageIndex
-                          ? "w-2 h-2 bg-white"
-                          : "w-2 h-2 bg-white/50 hover:bg-white/75"
-                      }`}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {imageUrls.length > 1 && (
-                <div className="absolute bottom-4 right-4 hidden sm:flex gap-1.5">
-                  {imageUrls.map((url, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setCurrentImageIndex(idx)}
-                      className={`w-14 h-10 rounded-lg overflow-hidden border-2 transition-all ${
-                        idx === currentImageIndex
-                          ? "border-white opacity-100"
-                          : "border-transparent opacity-60 hover:opacity-90"
-                      }`}
-                    >
-                      <img src={url} alt="" className="w-full h-full object-cover" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="w-full aspect-[2/1] rounded-2xl bg-surface-100 flex items-center justify-center">
-              <FaHome className="text-surface-300 text-6xl" />
-            </div>
+              ))}
+            </section>
           )}
-        </div>
 
-        {/* Content */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-8 pb-24">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-12">
+          {/* Main Details - 3 column layout */}
+          <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column */}
-            <div className="space-y-10">
-              {/* Title + Host Row */}
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-surface-900 leading-tight">
-                  {apartment.barrio || "Sin nombre"}
-                </h1>
-                <div className="flex items-center gap-2 mt-1.5 text-surface-500 text-sm">
-                  <FaMapMarkerAlt className="text-xs" />
-                  <span>{apartment.direccion_apt || "Sin dirección"}</span>
-                </div>
-                <div className="flex items-center gap-4 mt-4 pt-4 border-t border-surface-100">
-                  <div className="w-11 h-11 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                    {getInitials(apartment.user_name, apartment.user_lastname)}
-                  </div>
+            <div className="lg:col-span-2 space-y-6">
+              <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm space-y-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
-                    <p className="font-medium text-surface-800 text-sm">
-                      {apartment.user_name} {apartment.user_lastname}
+                    <h2 className="font-headline text-headline-md text-on-surface">{apartment.titulo_apt || apartment.barrio || "Apartamento"}</h2>
+                    <p className="text-on-surface-variant flex items-center gap-1 mt-0.5">
+                      <span className="material-symbols-outlined text-[18px]">location_on</span>
+                      {apartment.direccion_apt || "Zona Universitaria"}
+                      {apartment.distance_km ? ` • A ${apartment.distance_km} min de la facultad` : ''}
                     </p>
-                    <p className="text-surface-400 text-xs flex items-center gap-1">
-                      <FaMedal className="text-amber-500 text-[10px]" />
-                      Arrendador verificado
-                    </p>
+                  </div>
+                  <div className="text-left md:text-right">
+                    <p className="text-primary font-headline text-headline-md">{formatPrice(apartment.precio_apt)}<span className="text-body-md font-normal text-on-surface-variant">/mes</span></p>
                   </div>
                 </div>
-              </div>
-
-              {/* Features */}
-              <div className="bg-surface-50 rounded-xl p-5">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <FaBed className="text-primary-600 text-lg mx-auto mb-1.5" />
-                    <p className="text-lg font-bold text-surface-800">{apartment.habitaciones || "1"}</p>
-                    <p className="text-xs text-surface-400">Habitaciones</p>
+                {/* Feature Chips */}
+                <div className="flex flex-wrap gap-2 pt-4 border-t border-surface-variant">
+                  <div className="flex items-center gap-1.5 px-4 py-2 bg-surface-container rounded-lg">
+                    <span className="material-symbols-outlined text-[18px] text-primary">bed</span>
+                    <span className="font-label text-label-md">{apartment.habitaciones || '?'} Habitaciones</span>
                   </div>
-                  <div className="text-center border-x border-surface-200">
-                    <FaBath className="text-primary-600 text-lg mx-auto mb-1.5" />
-                    <p className="text-lg font-bold text-surface-800">{apartment.banos || "1"}</p>
-                    <p className="text-xs text-surface-400">Baños</p>
+                  <div className="flex items-center gap-1.5 px-4 py-2 bg-surface-container rounded-lg">
+                    <span className="material-symbols-outlined text-[18px] text-primary">bathtub</span>
+                    <span className="font-label text-label-md">{apartment.banos || '?'} Baños</span>
                   </div>
-                  <div className="text-center">
-                    <FaRulerCombined className="text-primary-600 text-lg mx-auto mb-1.5" />
-                    <p className="text-lg font-bold text-surface-800">{apartment.metros_apt || "30"}</p>
-                    <p className="text-xs text-surface-400">m²</p>
+                  <div className="flex items-center gap-1.5 px-4 py-2 bg-surface-container rounded-lg">
+                    <span className="material-symbols-outlined text-[18px] text-primary">square_foot</span>
+                    <span className="font-label text-label-md">{apartment.metros_apt || '?'}m²</span>
                   </div>
+                  {amenities.slice(0, 2).map((a, i) => (
+                    <div key={i} className="flex items-center gap-1.5 px-4 py-2 bg-surface-container rounded-lg">
+                      <span className="material-symbols-outlined text-[18px] text-primary">{i === 0 ? 'directions_car' : 'wifi'}</span>
+                      <span className="font-label text-label-md">{a}</span>
+                    </div>
+                  ))}
                 </div>
-              </div>
-
-              {/* Description */}
-              {apartment.info_add_apt && (
-                <div>
-                  <h2 className="text-lg font-bold text-surface-900 mb-3">
-                    Acerca de este lugar
-                  </h2>
-                  <p className="text-surface-600 leading-relaxed text-sm whitespace-pre-line">
-                    {apartment.info_add_apt}
+                {/* Description */}
+                <div className="pt-2">
+                  <h3 className="font-headline text-[20px] mb-2">Descripción</h3>
+                  <p className="text-on-surface-variant leading-relaxed">
+                    {apartment.info_add_apt || "Sin descripción disponible"}
                   </p>
                 </div>
-              )}
+              </div>
 
-              {/* Amenities */}
-              {apartment.comodidades && (
-                <div>
-                  <h2 className="text-lg font-bold text-surface-900 mb-4">
-                    Comodidades
-                  </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {apartment.comodidades.split(",").map((comodidad, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center gap-3 text-surface-700 p-3 rounded-lg border border-surface-100"
-                      >
-                        <FaCheck className="text-green-500 text-xs flex-shrink-0" />
-                        <span className="text-sm">{comodidad.trim()}</span>
+              {/* Amenities Section */}
+              {amenities.length > 0 && (
+                <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm">
+                  <h3 className="font-headline text-headline-md mb-6">Comodidades</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    {amenities.map((a, i) => (
+                      <div key={i} className="flex flex-col items-center text-center gap-2">
+                        <div className="w-12 h-12 rounded-full bg-secondary-fixed flex items-center justify-center">
+                          <span className="material-symbols-outlined text-secondary">{['local_laundry_service', 'fitness_center', 'pool', 'security', 'wifi', 'kitchen', 'tv', 'ac_unit'][i % 8]}</span>
+                        </div>
+                        <span className="font-label text-label-md text-on-surface">{a}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Availability + Location */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {apartment.disponibilidad && (
-                  <div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
-                    <div className="flex items-center gap-2 mb-1">
-                      <FaCalendarAlt className="text-blue-600 text-sm" />
-                      <h3 className="font-semibold text-blue-900 text-sm">Disponibilidad</h3>
-                    </div>
-                    <p className="text-blue-700 text-sm mt-1">
-                      Desde: <span className="font-medium">{apartment.disponibilidad}</span>
-                    </p>
-                  </div>
-                )}
-                {apartment.distance_km && (
-                  <div className="p-4 rounded-xl bg-primary-50 border border-primary-100">
-                    <div className="flex items-center gap-2 mb-1">
-                      <FaMapMarkerAlt className="text-primary-600 text-sm" />
-                      <h3 className="font-semibold text-primary-900 text-sm">Ubicación</h3>
-                    </div>
-                    <p className="text-primary-700 text-sm mt-1">
-                      A <span className="font-medium">{apartment.distance_km} km</span> de Uniputumayo
-                    </p>
-                    <p className="text-primary-500 text-xs mt-0.5">{apartment.direccion_apt}</p>
-                  </div>
-                )}
+              {/* Reviews */}
+              <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm">
+                <h3 className="font-headline text-headline-md mb-4">Reseñas</h3>
+                <ReviewSection propertyId={apartment.id_apt} isOwner={apartment.user_id === user?.id} />
               </div>
 
-              {/* Reviews */}
-              <div>
-                <h2 className="text-lg font-bold text-surface-900 mb-4 flex items-center gap-2">
-                  <FaStar className="text-amber-400 text-base" />
-                  Reseñas
-                </h2>
-                <ReviewSection
-                  propertyId={apartment.id_apt}
-                  isOwner={apartment.user_id === user?.id}
-                />
-              </div>
             </div>
 
-            {/* Right Column - Sticky Card */}
-            <div className="hidden lg:block">
-              <div className="sticky top-20">
-                <div className="p-6 rounded-xl border border-surface-200 shadow-lg bg-white">
-                  <div className="flex items-baseline gap-1 mb-5">
-                    <span className="text-2xl font-bold text-surface-900">
-                      {formatPrice(apartment.precio_apt)}
-                    </span>
-                    <span className="text-surface-400 text-sm">/mes</span>
+            {/* Right Column - Landlord Card */}
+            <aside className="space-y-6">
+              <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm lg:sticky lg:top-24">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-16 h-16 rounded-full bg-primary-fixed flex items-center justify-center font-bold text-[20px] text-on-primary-fixed">
+                    {getInitials(apartment.user_name, apartment.user_lastname)}
+                  </div>
+                  <div>
+                    <h4 className="font-headline text-[18px] text-on-surface">{apartment.user_name ? [apartment.user_name, apartment.user_lastname].filter(Boolean).join(' ') : "Anónimo"}</h4>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-on-surface-variant">
+                    <span className="material-symbols-outlined text-[20px]">phone</span>
+                    <span className="font-body text-body-md">{apartment.whatsapp || apartment.user_phonenumber || "No disponible"}</span>
                   </div>
 
-                  <div className="space-y-3 pb-5 mb-5 border-b border-surface-100">
-                    <div className="flex items-center gap-3 text-sm text-surface-600">
-                      <FaBed className="text-surface-400 w-4" />
-                      <span>{apartment.habitaciones || "1"} habitación</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm text-surface-600">
-                      <FaBath className="text-surface-400 w-4" />
-                      <span>{apartment.banos || "1"} baño</span>
-                    </div>
-                    {apartment.metros_apt && (
-                      <div className="flex items-center gap-3 text-sm text-surface-600">
-                        <FaRulerCombined className="text-surface-400 w-4" />
-                        <span>{apartment.metros_apt} m²</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2 mb-5 text-xs text-surface-500">
-                    <FaShieldAlt />
-                    <span>Pago seguro con RentUP</span>
-                  </div>
-
-                  {/* CTA */}
+                </div>
+                <div className="mt-6 space-y-3">
                   {apartment.whatsapp || apartment.user_phonenumber ? (
-                    <a
-                      href={`https://wa.me/${apartment.whatsapp || apartment.user_phonenumber}?text=${encodeURIComponent(
-                        `Hola, estoy interesado en arrendar el inmueble "${apartment.barrio}" ubicado en "${apartment.direccion_apt}" publicado en RentUP. Me gustaría más información para proceder con el arriendo.`
-                      )}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full py-3.5 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg text-sm"
-                    >
-                      <FaWhatsapp className="text-lg" />
-                      Contactar por WhatsApp
+                    <a href={`https://wa.me/${apartment.whatsapp || apartment.user_phonenumber}?text=${encodeURIComponent(`Hola, estoy interesado en el inmueble "${apartment.barrio}" en RentUp.`)}`} target="_blank" rel="noopener noreferrer" className="w-full py-3 bg-tertiary text-on-tertiary rounded-lg font-headline text-[16px] flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                      <span className="material-symbols-outlined">chat</span>
+                      WhatsApp
                     </a>
-                  ) : (
-                    <button
-                      onClick={handleRentClick}
-                      className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg text-sm"
-                    >
-                      <FaHome className="text-lg" />
-                      {user ? 'Solicitar información' : 'Iniciar proceso de arriendo'}
-                    </button>
-                  )}
-                  {!user && (
-                    <p className="text-xs text-surface-400 text-center mt-3">
-                      Necesitas una cuenta para continuar
-                    </p>
-                  )}
+                  ) : null}
+                  <button onClick={() => {
+                    localStorage.setItem("mapCenter", JSON.stringify([parseFloat(apartment.latitud_apt) || 1.156667, parseFloat(apartment.longitud_apt) || -76.651944]));
+                    localStorage.setItem("selectedAptId", apartment.id_apt);
+                    window.dispatchEvent(new CustomEvent("mapCenterChanged", { detail: [parseFloat(apartment.latitud_apt) || 1.156667, parseFloat(apartment.longitud_apt) || -76.651944] }));
+                    navigate('/map');
+                  }} className="w-full py-3 border border-outline text-on-surface rounded-lg font-headline text-[16px] active:scale-95 transition-transform">
+                    Ver en Mapa
+                  </button>
                 </div>
               </div>
+            </aside>
+          </section>
+        </main>
+
+        {/* Mobile Bottom Bar */}
+        <div className="fixed bottom-0 left-0 right-0 bg-surface/90 backdrop-blur-md px-4 py-3 border-t border-surface-variant md:hidden z-50">
+          <div className="flex items-center justify-between max-w-7xl mx-auto">
+            <div>
+              <p className="font-headline text-[18px] text-primary">{formatPrice(apartment.precio_apt)}</p>
+              <p className="text-[12px] text-on-surface-variant">Por mes</p>
             </div>
+            {apartment.whatsapp || apartment.user_phonenumber ? (
+              <a href={`https://wa.me/${apartment.whatsapp || apartment.user_phonenumber}?text=${encodeURIComponent(`Hola, estoy interesado en "${apartment.barrio}" de RentUp.`)}`} target="_blank" rel="noopener noreferrer" className="bg-primary text-on-primary px-6 py-3 rounded-lg font-headline text-[16px] shadow-lg active:scale-95 transition-all flex items-center gap-2">
+                <span className="material-symbols-outlined">chat</span>
+                Contactar
+              </a>
+            ) : null}
           </div>
         </div>
 
-        {/* Mobile Bottom Bar */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-surface-200 p-4 flex items-center gap-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-          <div className="flex-1">
-            <span className="text-lg font-bold text-surface-900">
-              {formatPrice(apartment.precio_apt)}
-            </span>
-            <span className="text-surface-400 text-sm"> /mes</span>
-          </div>
+        {/* Desktop Floating Action */}
+        <div className="hidden md:block fixed bottom-6 right-6 z-50">
           {apartment.whatsapp || apartment.user_phonenumber ? (
-            <a
-              href={`https://wa.me/${apartment.whatsapp || apartment.user_phonenumber}?text=${encodeURIComponent(
-                `Hola, estoy interesado en arrendar el inmueble "${apartment.barrio}" ubicado en "${apartment.direccion_apt}" publicado en RentUP. Me gustaría más información para proceder con el arriendo.`
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold transition-all flex items-center gap-2 shadow-md text-sm"
-            >
-              <FaWhatsapp className="text-lg" />
+            <a href={`https://wa.me/${apartment.whatsapp || apartment.user_phonenumber}?text=${encodeURIComponent(`Hola, estoy interesado en "${apartment.barrio}" de RentUp.`)}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-full font-headline shadow-2xl hover:scale-105 active:scale-95 transition-all">
+              <span className="material-symbols-outlined">chat</span>
               Contactar
             </a>
-          ) : (
-            <button
-              onClick={handleRentClick}
-              className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold transition-all shadow-md text-sm"
-            >
-              {user ? 'Solicitar info' : 'Arrendar'}
-            </button>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
   );
 }
-
 
 export default PropertyDetailModal;
 

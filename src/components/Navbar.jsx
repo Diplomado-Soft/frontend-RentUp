@@ -1,19 +1,16 @@
 import React, { useContext } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faClipboardList, faShieldAlt, faSignInAlt, faBars, faTimes, faHome } from '@fortawesome/free-solid-svg-icons';
 import { UserContext } from '../contexts/UserContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 function Navbar({ goToJoin, setShowAccount }) {
   const { user } = useContext(UserContext);
   const navigate = useNavigate();
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 
   const userRole = user?.rol || user?.rol_id || user?.rolId || null;
 
   const handleTitleClick = () => {
-      localStorage.setItem("mapCenter", JSON.stringify([1.157037, -76.651443]));
-      window.dispatchEvent(new CustomEvent("mapCenterChanged", { detail: [1.157037, -76.651443] }));
       navigate('/');
   };
 
@@ -21,142 +18,103 @@ function Navbar({ goToJoin, setShowAccount }) {
       setShowAccount(prev => !prev);
   };
 
+  const isActive = (path) => location.pathname === path;
+
+  const navLinks = [
+    { label: 'Home', path: '/' },
+    { label: 'Listings', path: '/listings' },
+    { label: 'Map', path: '/map' },
+  ];
+
   return (
-      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b border-surface-200 shadow-soft">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4">
-          <div className="flex justify-between items-center h-12 sm:h-14">
-            {/* Logo */}
-            <div className="flex items-center gap-2 sm:gap-3 cursor-pointer" onClick={handleTitleClick}>
-              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg sm:rounded-xl flex items-center justify-center shadow-md">
-                  <FontAwesomeIcon icon={faHome} className="text-white text-sm sm:text-lg" />
-              </div>
-              <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
-                  RentUp
-              </h1>
-            </div>
-
-            {/* Desktop Menu */}
-            <div className="hidden md:flex items-center gap-2 sm:gap-3">
-              {!user ? (
-                  <button
-                      onClick={goToJoin}
-                      className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-xs sm:text-sm font-semibold flex items-center gap-1 sm:gap-2 transition-all duration-300 shadow-button hover:shadow-lg hover:-translate-y-0.5"
-                  >
-                      <FontAwesomeIcon icon={faSignInAlt} className="text-xs sm:text-sm" />
-                      <span className="hidden sm:inline">Iniciar Sesión</span>
+    <nav className="fixed top-0 w-full z-50 bg-surface/70 backdrop-blur-md shadow-sm">
+      <div className="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
+        <div onClick={handleTitleClick} className="font-headline text-headline-md font-bold text-primary cursor-pointer">
+          RentUp
+        </div>
+        <div className="hidden md:flex items-center gap-8">
+          {navLinks.map((link) => (
+            <button
+              key={link.label}
+              onClick={() => navigate(link.path)}
+              className={`font-label text-label-md transition-all duration-300 ease-in-out active:scale-95 ${
+                isActive(link.path)
+                  ? 'text-primary font-bold border-b-2 border-primary pb-1'
+                  : 'text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-lg p-2'
+              }`}
+            >
+              {link.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-4">
+          <button className="text-on-surface-variant p-2 hover:bg-surface-container-low rounded-lg transition-colors">
+            <span className="material-symbols-outlined">search</span>
+          </button>
+          {!user ? (
+            <button onClick={goToJoin} className="bg-primary text-on-primary px-6 py-2.5 rounded-lg font-label text-label-md transition-all duration-300 ease-in-out active:scale-95">
+              Sign In
+            </button>
+          ) : (
+            <div className="flex items-center gap-3">
+              {userRole === 2 && (
+                  <button onClick={() => navigate('/dashboard')} className="px-4 py-2 rounded-lg bg-surface-container-high text-on-surface text-label-md hover:bg-surface-container-highest transition-all duration-300 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-lg">dashboard</span>
+                    <span>Panel</span>
                   </button>
-              ) : (
-                  <>
-                  {userRole === 2 && (
-                      <button
-                        onClick={() => navigate('/dashboard')}
-                        className="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-surface-100 hover:bg-surface-200 text-surface-700 text-xs sm:text-sm font-medium flex items-center gap-1 sm:gap-2 transition-all duration-300 border border-surface-200 hover:border-surface-300"
-                        title="Panel de Gestión"
-                      >
-                        <FontAwesomeIcon icon={faClipboardList} className="text-xs sm:text-sm" />
-                        <span className="hidden sm:inline text-xs">Panel</span>
-                      </button>
-                  )}
-
-                  {userRole === 3 && (
-                      <button
-                        onClick={() => navigate('/admin/apartments')}
-                        className="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-medium flex items-center gap-1 sm:gap-2 transition-all duration-300 shadow-md hover:shadow-lg"
-                        title="Panel de Admin"
-                      >
-                        <FontAwesomeIcon icon={faShieldAlt} className="text-xs sm:text-sm" />
-                        <span className="hidden sm:inline text-xs">Admin</span>
-                      </button>
-                  )}
-                  
-                  <button
-                      onClick={handleUserClick}
-                      className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 text-white flex items-center justify-center transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105"
-                      title="Mi cuenta"
-                  >
-                      <FontAwesomeIcon icon={faUser} className="text-xs sm:text-sm" />
+              )}
+              {userRole === 3 && (
+                  <button onClick={() => navigate('/admin/apartments')} className="px-4 py-2 rounded-lg bg-tertiary-container text-white text-label-md hover:bg-tertiary-600 transition-all duration-300 flex items-center gap-2 shadow-ambient-sm">
+                    <span className="material-symbols-outlined text-lg">shield</span>
+                    <span>Admin</span>
                   </button>
-                  </>
               )}
-            </div>
-
-            {/* Mobile Menu Button */}
-            <div className="md:hidden flex items-center gap-1 sm:gap-2">
-              {user && (
-                <button
-                    onClick={handleUserClick}
-                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 text-white flex items-center justify-center"
-                >
-                    <FontAwesomeIcon icon={faUser} className="text-xs" />
-                </button>
-              )}
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-surface-100 hover:bg-surface-200 flex items-center justify-center transition-colors"
-              >
-                <FontAwesomeIcon icon={isMenuOpen ? faTimes : faBars} className="text-surface-700 text-sm" />
+              <button onClick={handleUserClick} className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center transition-all duration-300 hover:shadow-primary-glow hover:scale-105" title="Mi cuenta">
+                <span className="material-symbols-outlined text-sm">person</span>
               </button>
             </div>
-          </div>
-
-          {/* Mobile Menu */}
-          {isMenuOpen && (
-            <div className="md:hidden py-3 border-t border-surface-100">
-              {!user ? (
-                <button
-                    onClick={() => {
-                      goToJoin();
-                      setIsMenuOpen(false);
-                    }}
-                    className="w-full px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold flex items-center justify-center gap-2 transition-all duration-300"
-                >
-                    <FontAwesomeIcon icon={faSignInAlt} />
-                    <span>Iniciar Sesión</span>
-                </button>
-              ) : (
-                <div className="space-y-2">
-                  <button
-                    onClick={() => {
-                      navigate('/my-account');
-                      setIsMenuOpen(false);
-                    }}
-                    className="w-full px-4 py-2 rounded-lg bg-surface-100 hover:bg-surface-200 text-surface-700 text-sm font-medium flex items-center gap-2 transition-all duration-300"
-                  >
-                    <FontAwesomeIcon icon={faUser} />
-                    <span>Mi Cuenta</span>
-                  </button>
-                  {userRole === 2 && (
-                      <button
-                        onClick={() => {
-                          navigate('/dashboard');
-                          setIsMenuOpen(false);
-                        }}
-                        className="w-full px-4 py-2 rounded-lg bg-surface-100 hover:bg-surface-200 text-surface-700 text-sm font-medium flex items-center gap-2 transition-all duration-300"
-                      >
-                        <FontAwesomeIcon icon={faClipboardList} />
-                        <span>Panel de Gestión</span>
-                      </button>
-                  )}
-                  {userRole === 3 && (
-                      <button
-                        onClick={() => {
-                          navigate('/admin/apartments');
-                          setIsMenuOpen(false);
-                        }}
-                        className="w-full px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium flex items-center gap-2 transition-all duration-300"
-                      >
-                        <FontAwesomeIcon icon={faShieldAlt} />
-                        <span>Panel de Admin</span>
-                      </button>
-                  )}
-                </div>
-              )}
-            </div>
           )}
+          <div className="md:hidden">
+            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="w-9 h-9 rounded-lg bg-surface-container-high hover:bg-surface-container-highest flex items-center justify-center transition-colors">
+              <span className="material-symbols-outlined text-on-surface-variant text-sm">{isMenuOpen ? 'close' : 'menu'}</span>
+            </button>
+          </div>
         </div>
-      </nav>
+      </div>
+      {isMenuOpen && (
+        <div className="md:hidden border-t border-surface-container bg-surface/70 backdrop-blur-md">
+          <div className="flex flex-col gap-2 px-8 py-4">
+            {navLinks.map((link) => (
+              <button key={link.label} onClick={() => { navigate(link.path); setIsMenuOpen(false); }} className="w-full text-left font-body text-body-md text-on-surface-variant hover:text-primary py-2">
+                {link.label}
+              </button>
+            ))}
+            {!user ? (
+              <button onClick={() => { goToJoin(); setIsMenuOpen(false); }} className="w-full py-3 rounded-lg bg-primary text-on-primary font-label text-label-md mt-2">
+                Sign In
+              </button>
+            ) : (
+              <>
+                <button onClick={() => { navigate('/my-account'); setIsMenuOpen(false); }} className="w-full text-left font-body text-body-md py-2 text-on-surface-variant">
+                  Mi Cuenta
+                </button>
+                {userRole === 2 && (
+                  <button onClick={() => { navigate('/dashboard'); setIsMenuOpen(false); }} className="w-full text-left font-body text-body-md py-2 text-on-surface-variant">
+                    Panel de Gestión
+                  </button>
+                )}
+                {userRole === 3 && (
+                  <button onClick={() => { navigate('/admin/apartments'); setIsMenuOpen(false); }} className="w-full text-left font-body text-body-md py-2 text-on-surface-variant">
+                    Panel de Admin
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </nav>
   );
 }
 
 export default Navbar;
-
