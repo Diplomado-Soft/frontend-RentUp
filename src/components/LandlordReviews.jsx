@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faStar, faHome, faChartBar, faExclamationTriangle, faThumbsUp, faThumbsDown, faFlag, faUser } from "@fortawesome/free-solid-svg-icons";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:9000";
 
@@ -22,22 +20,11 @@ function LandlordReviews() {
     try {
       setLoading(true);
       setError(null);
-
-      if (!userData.token) {
-        setError("Debes iniciar sesión");
-        setLoading(false);
-        return;
-      }
-
+      if (!userData.token) { setError("Debes iniciar sesión"); setLoading(false); return; }
       const response = await fetch(`${API_URL}/reviews/landlord/my-reviews`, {
-        headers: {
-          Authorization: `Bearer ${userData.token}`
-        }
+        headers: { Authorization: `Bearer ${userData.token}` }
       });
-
       const data = await response.json();
-      console.log('Landlord reviews response:', data);
-
       if (response.ok) {
         setReviews(data.reviews || []);
         setStats(data.stats);
@@ -48,67 +35,51 @@ function LandlordReviews() {
     } catch (err) {
       console.error("Error fetching reviews:", err);
       setError("Error de conexión");
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const renderStars = (rating) => {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
       stars.push(
-        <FontAwesomeIcon
-          key={i}
-          icon={faStar}
-          className={`text-sm ${i <= rating ? "text-amber-400" : "text-slate-300"}`}
-        />
+        <span key={i} className={`material-symbols-outlined text-sm ${i <= rating ? 'text-amber-400' : 'text-outline'}`}>
+          {i <= rating ? 'star' : 'star_border'}
+        </span>
       );
     }
     return stars;
   };
 
   const getSentimentBadge = (sentiment) => {
-    const styles = {
-      positive: 'bg-green-100 text-green-700',
-      negative: 'bg-red-100 text-red-700',
-      neutral: 'bg-gray-100 text-gray-700'
+    const config = {
+      positive: { label: 'Positivo', icon: 'thumb_up', cls: 'bg-tertiary/10 text-tertiary' },
+      negative: { label: 'Negativo', icon: 'thumb_down', cls: 'bg-error-container/30 text-error' },
+      neutral: { label: 'Neutral', icon: 'star', cls: 'bg-surface-container-high text-outline' }
     };
-    const icons = {
-      positive: faThumbsUp,
-      negative: faThumbsDown,
-      neutral: faStar
-    };
-    const labels = {
-      positive: 'Positivo',
-      negative: 'Negativo',
-      neutral: 'Neutral'
-    };
+    const c = config[sentiment] || config.neutral;
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${styles[sentiment] || styles.neutral}`}>
-        <FontAwesomeIcon icon={icons[sentiment] || icons.neutral} className="text-xs" />
-        {labels[sentiment] || 'Sin analizar'}
+      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-label-md font-medium ${c.cls}`}>
+        <span className="material-symbols-outlined text-xs">{c.icon}</span>
+        {c.label}
       </span>
     );
   };
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('es-CO', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    return new Date(dateStr).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
   const filteredReviews = selectedProperty === 'all' 
-    ? reviews 
-    : reviews.filter(r => r.property_id === parseInt(selectedProperty));
+    ? reviews : reviews.filter(r => r.property_id === parseInt(selectedProperty));
+
+  const getInitials = (name) => (name || 'A').charAt(0).toUpperCase();
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mb-4"></div>
-        <p className="text-surface-500">Cargando reseñas...</p>
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mb-4"></div>
+        <p className="text-body-md text-on-surface-variant">Cargando reseñas...</p>
       </div>
     );
   }
@@ -116,10 +87,10 @@ function LandlordReviews() {
   if (error) {
     return (
       <div className="text-center py-12">
-        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <FontAwesomeIcon icon={faExclamationTriangle} className="text-red-600 text-2xl" />
+        <div className="w-14 h-14 rounded-full bg-error-container/30 flex items-center justify-center mx-auto mb-4">
+          <span className="material-symbols-outlined text-2xl text-error">warning</span>
         </div>
-        <p className="text-red-600 font-medium">{error}</p>
+        <p className="text-body-md font-medium text-error">{error}</p>
       </div>
     );
   }
@@ -127,157 +98,153 @@ function LandlordReviews() {
   const averageRating = stats?.average_rating ? parseFloat(stats.average_rating).toFixed(1) : '0.0';
 
   return (
-    <div className="space-y-6">
-      <div className="bg-gradient-to-br from-primary-50 to-white p-6 rounded-2xl border border-primary-100">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="p-3 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl shadow-lg">
-            <FontAwesomeIcon icon={faStar} className="text-white text-xl" />
-          </div>
-          <div>
-            <h3 className="text-xl sm:text-2xl font-bold text-surface-800">Reseñas de Mis Propiedades</h3>
-            <p className="text-sm text-surface-500">Opiniones de inquilinos sobre tus apartamentos</p>
-          </div>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 bg-primary-gradient rounded-xl flex items-center justify-center shadow-md">
+          <span className="material-symbols-outlined text-on-primary text-lg">star</span>
         </div>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-xl shadow-sm text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <span className="text-3xl font-bold text-primary-600">{averageRating}</span>
-              <FontAwesomeIcon icon={faStar} className="text-amber-400 text-xl" />
-            </div>
-            <p className="text-xs text-surface-500">Promedio</p>
-          </div>
-          <div className="bg-white p-4 rounded-xl shadow-sm text-center">
-            <p className="text-3xl font-bold text-primary-600">{stats?.total_reviews || 0}</p>
-            <p className="text-xs text-surface-500">Total reseñas</p>
-          </div>
-          <div className="bg-white p-4 rounded-xl shadow-sm text-center">
-            <p className="text-3xl font-bold text-green-600">{stats?.total_properties || 0}</p>
-            <p className="text-xs text-surface-500">Propiedades</p>
-          </div>
-          <div className="bg-white p-4 rounded-xl shadow-sm text-center">
-            <p className="text-3xl font-bold text-red-600">{stats?.flagged_reviews || 0}</p>
-            <p className="text-xs text-surface-500">Marcadas</p>
-          </div>
+        <div>
+          <h2 className="font-headline text-headline-md text-on-surface">Reseñas de Mis Propiedades</h2>
+          <p className="text-body-md text-on-surface-variant">Opiniones de inquilinos sobre tus apartamentos</p>
         </div>
       </div>
 
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-surface-container-low rounded-xl p-4 text-center">
+          <div className="flex items-center justify-center gap-1 mb-1">
+            <span className="font-headline text-headline-lg font-bold text-primary">{averageRating}</span>
+            <span className="material-symbols-outlined text-amber-400 text-xl">star</span>
+          </div>
+          <p className="text-label-md uppercase tracking-wider text-outline">Promedio</p>
+        </div>
+        <div className="bg-surface-container-low rounded-xl p-4 text-center">
+          <p className="font-headline text-headline-lg font-bold text-primary">{stats?.total_reviews || 0}</p>
+          <p className="text-label-md uppercase tracking-wider text-outline">Total reseñas</p>
+        </div>
+        <div className="bg-surface-container-low rounded-xl p-4 text-center">
+          <p className="font-headline text-headline-lg font-bold text-tertiary">{stats?.total_properties || 0}</p>
+          <p className="text-label-md uppercase tracking-wider text-outline">Propiedades</p>
+        </div>
+        <div className="bg-surface-container-low rounded-xl p-4 text-center">
+          <p className="font-headline text-headline-lg font-bold text-error">{stats?.flagged_reviews || 0}</p>
+          <p className="text-label-md uppercase tracking-wider text-outline">Marcadas</p>
+        </div>
+      </div>
+
+      {/* Reviews by Property */}
       {reviewsByProperty.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h4 className="text-lg font-bold text-surface-700 mb-4 flex items-center gap-2">
-            <FontAwesomeIcon icon={faChartBar} className="text-primary-500" />
+        <div>
+          <h3 className="font-headline text-headline-sm text-on-surface mb-3 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary text-lg">bar_chart</span>
             Reseñas por Propiedad
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {reviewsByProperty.map(prop => (
-              <div 
-                key={prop.property_id}
+              <button key={prop.property_id}
                 onClick={() => setSelectedProperty(selectedProperty === prop.property_id.toString() ? 'all' : prop.property_id.toString())}
-                className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                className={`text-left p-4 rounded-xl transition-all ${
                   selectedProperty === prop.property_id.toString()
-                    ? 'border-primary-500 bg-primary-50'
-                    : 'border-surface-200 hover:border-primary-300 hover:bg-surface-50'
+                    ? 'bg-primary/10 ring-2 ring-primary'
+                    : 'bg-surface-container-low hover:bg-surface-container-high'
                 }`}
               >
-                <h5 className="font-medium text-surface-800 truncate">
-                  {prop.property_barrio || 'Sin barrio'} - {prop.direccion_apt}
-                </h5>
+                <p className="font-headline text-headline-sm text-on-surface truncate">
+                  {prop.property_barrio || 'Sin barrio'}
+                </p>
+                <p className="text-label-md text-outline truncate mt-0.5">{prop.direccion_apt}</p>
                 <div className="flex items-center justify-between mt-2">
                   <div className="flex items-center gap-1">
-                    <span className="font-bold text-primary-600">{prop.average_rating ? parseFloat(prop.average_rating).toFixed(1) : '0.0'}</span>
-                    <FontAwesomeIcon icon={faStar} className="text-amber-400 text-sm" />
+                    <span className="font-headline text-headline-md font-bold text-primary">
+                      {prop.average_rating ? parseFloat(prop.average_rating).toFixed(1) : '0.0'}
+                    </span>
+                    <span className="material-symbols-outlined text-amber-400 text-sm">star</span>
                   </div>
-                  <span className="text-sm text-surface-500">{prop.review_count} reseñas</span>
+                  <span className="text-label-md text-outline">{prop.review_count} reseñas</span>
                 </div>
                 {prop.flagged_count > 0 && (
-                  <div className="mt-2 flex items-center gap-1 text-red-600 text-xs">
-                    <FontAwesomeIcon icon={faFlag} />
+                  <div className="mt-1 flex items-center gap-1 text-error text-label-md">
+                    <span className="material-symbols-outlined text-xs">flag</span>
                     {prop.flagged_count} marcadas
                   </div>
                 )}
-              </div>
+              </button>
             ))}
           </div>
         </div>
       )}
 
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h4 className="text-lg font-bold text-surface-700 flex items-center gap-2">
-            <FontAwesomeIcon icon={faUser} className="text-primary-500" />
+      {/* Reviews List */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-headline text-headline-sm text-on-surface flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary text-lg">reviews</span>
             Reseñas Recientes
-            {selectedProperty !== 'all' && (
-              <span className="text-sm font-normal text-surface-500">
-                - Filtrado por propiedad
-                <button 
-                  onClick={() => setSelectedProperty('all')}
-                  className="ml-2 text-primary-600 hover:underline"
-                >
-                  (Ver todas)
-                </button>
-              </span>
-            )}
-          </h4>
+          </h3>
+          {selectedProperty !== 'all' && (
+            <button onClick={() => setSelectedProperty('all')}
+              className="text-label-md text-primary hover:underline flex items-center gap-1">
+              <span className="material-symbols-outlined text-xs">close</span>
+              Ver todas
+            </button>
+          )}
         </div>
 
         {filteredReviews.length === 0 ? (
-          <div className="text-center py-12">
-            <FontAwesomeIcon icon={faStar} className="text-surface-300 text-5xl mb-4" />
-            <p className="text-surface-500">No hay reseñas {selectedProperty !== 'all' ? 'para esta propiedad' : 'todavía'}</p>
+          <div className="bg-surface-container-low rounded-xl p-12 text-center">
+            <span className="material-symbols-outlined text-5xl text-outline mb-4">star</span>
+            <p className="text-body-md text-on-surface-variant">
+              No hay reseñas {selectedProperty !== 'all' ? 'para esta propiedad' : 'todavía'}
+            </p>
           </div>
         ) : (
-          <div className="space-y-4 max-h-[500px] overflow-y-auto">
+          <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
             {filteredReviews.map(review => (
-              <div 
-                key={review.review_id} 
-                className={`p-4 rounded-xl border ${
-                  review.moderation_flag 
-                    ? 'border-red-200 bg-red-50' 
-                    : 'border-surface-200 bg-surface-50'
+              <div key={review.review_id}
+                className={`bg-surface-container-low rounded-xl p-4 ${
+                  review.moderation_flag ? 'ring-1 ring-error/30' : ''
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                        <span className="text-primary-700 font-medium">
-                          {review.reviewer_name?.charAt(0) || 'A'}
-                        </span>
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <span className="text-label-md font-bold text-primary">{getInitials(review.reviewer_name)}</span>
                       </div>
                       <div>
-                        <p className="font-medium text-surface-800">
+                        <p className="text-body-md font-semibold text-on-surface">
                           {review.reviewer_name} {review.reviewer_lastname || ''}
                         </p>
-                        <p className="text-xs text-surface-500">
-                          {review.property_barrio || 'Sin barrio'} - {review.direccion_apt}
+                        <p className="text-label-md text-outline">
+                          {review.property_barrio || 'Sin barrio'}
                         </p>
                       </div>
                     </div>
-                    
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="flex">{renderStars(review.rating)}</div>
+
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <div className="flex gap-0.5">{renderStars(review.rating)}</div>
                       {getSentimentBadge(review.sentiment)}
                       {review.moderation_flag && (
-                        <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium flex items-center gap-1">
-                          <FontAwesomeIcon icon={faFlag} className="text-xs" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-label-md font-medium bg-error-container/30 text-error">
+                          <span className="material-symbols-outlined text-xs">flag</span>
                           Requiere revisión
                         </span>
                       )}
                     </div>
 
                     {review.comment && (
-                      <p className="text-surface-600 text-sm mt-2">{review.comment}</p>
+                      <p className="text-body-md text-on-surface-variant mt-1">{review.comment}</p>
                     )}
 
                     {review.flag_reason && (
-                      <p className="text-red-600 text-xs mt-2 flex items-center gap-1">
-                        <FontAwesomeIcon icon={faExclamationTriangle} />
+                      <p className="text-label-md text-error mt-1 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-xs">warning</span>
                         {review.flag_reason}
                       </p>
                     )}
                   </div>
-                  
-                  <span className="text-xs text-surface-400 whitespace-nowrap">
+                  <span className="text-label-md text-outline whitespace-nowrap flex-shrink-0">
                     {formatDate(review.created_at)}
                   </span>
                 </div>

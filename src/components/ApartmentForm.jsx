@@ -1,10 +1,15 @@
 import React, { useState, useContext } from 'react';
 import { UserContext } from '../contexts/UserContext';
 import { submitApartment } from '../apis/apartmentformController';
-import { FaTrash, FaEye, FaSave, FaMapMarkerAlt, FaHome, FaMapPin, FaInfoCircle, FaImages, FaPlus, FaHourglassHalf } from 'react-icons/fa';
 import MapModal from './MapModal';
 
-function ApartmentForm({ onApartmentAdded }) {
+const amenitiesList = [
+  'Wifi Alta Vel.', 'Lavandería', 'Cocina Equipada', 'Aire Acond.',
+  'Seguridad 24/7', 'Gimnasio', 'Mascotas', 'Balcón'
+];
+
+function ApartmentForm({ onApartmentAdded, onSuccess }) {
+  const handleSuccess = onApartmentAdded || onSuccess;
 const { user } = useContext(UserContext);
 
 const [barrio, setBarrio] = useState('');
@@ -17,10 +22,10 @@ const [message, setMessage] = useState('');
 const [imageFiles, setImageFiles] = useState([]);
 const [showMap, setShowMap] = useState(false);
 const [price, setPrice] = useState('');
-const [bedrooms, setBedrooms] = useState('');
-const [bathrooms, setBathrooms] = useState('');
+const [bedrooms, setBedrooms] = useState(1);
+const [bathrooms, setBathrooms] = useState(1);
 const [area_m2, setAreaM2] = useState('');
-const [amenities, setAmenities] = useState('');
+const [amenities, setAmenities] = useState([]);
 
 const handleFileChange = (e) => {
     if (e.target.files) setImageFiles(prev => [...prev, ...Array.from(e.target.files)]);
@@ -34,6 +39,12 @@ const handleViewImage = (file) => {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
+const toggleAmenity = (amenity) => {
+    setAmenities(prev =>
+        prev.includes(amenity) ? prev.filter(a => a !== amenity) : [...prev, amenity]
+    );
+};
+
 const handleSubmit = async () => {
     if (imageFiles.length === 0) return setMessage('Por favor, cargue al menos una imagen');
     if (!price || parseFloat(price) <= 0) return setMessage('El precio es requerido y debe ser mayor a 0');
@@ -45,15 +56,14 @@ const handleSubmit = async () => {
     formData.append('longitud', longitud);
     formData.append('addInfo', addInfo);
     formData.append('price', parseFloat(price));
-    formData.append('bedrooms', bedrooms || '');
-    formData.append('bathrooms', bathrooms || '');
+    formData.append('bedrooms', bedrooms.toString());
+    formData.append('bathrooms', bathrooms.toString());
     formData.append('area_m2', area_m2 || '');
-    formData.append('amenities', amenities || '');
+    formData.append('amenities', amenities.join(', '));
     formData.append('user_email', user.email);
     imageFiles.forEach(file => formData.append('images', file));
 
     try {
-    // ✅ Llamar submitApartment como función, no como método de clase
     const successMessage = await submitApartment(formData);
     setMessage(successMessage);
     setBarrio('');
@@ -64,11 +74,11 @@ const handleSubmit = async () => {
     setCharCount(0);
     setImageFiles([]);
     setPrice('');
-    setBedrooms('');
-    setBathrooms('');
+    setBedrooms(1);
+    setBathrooms(1);
     setAreaM2('');
-    setAmenities('');
-    if (onApartmentAdded) onApartmentAdded();
+    setAmenities([]);
+    if (handleSuccess) handleSuccess();
     } catch (error) {
     setMessage(error.message);
     }
@@ -83,357 +93,220 @@ const handleAddInfoChange = (e) => {
 const handleSelectLocation = async ({ lat, lng }) => {
     setLatitud(lat);
     setLongitud(lng);
-    
-    // Geocodificación inversa para obtener la dirección automáticamente
     try {
         const response = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
-            {
-                headers: {
-                    'Accept-Language': 'es'
-                }
-            }
+            { headers: { 'Accept-Language': 'es' } }
         );
         const data = await response.json();
-        
         if (data && data.address) {
-            // Extraer el barrio (neighbourhood, suburb, o locality)
-            const neighbourhood = data.address.neighbourhood || 
-                                data.address.suburb || 
-                                data.address.village ||
-                                data.address.town ||
-                                data.address.city_district || 
-                                '';
-            
-            // Construir la dirección completa con más detalles
             const addressParts = [];
-            
-            // Tipo de vía (avenue, street, lane, etc.)
-            if (data.address.road_type) {
-                addressParts.push(data.address.road_type);
-            }
-            
-            // Calle y número
             if (data.address.road) {
-                if (data.address.house_number) {
-                    addressParts.push(`${data.address.road} #${data.address.house_number}`);
-                } else {
-                    addressParts.push(data.address.road);
-                }
-            } else if (data.address.pedestrian) {
-                // Algunas áreas peatonales
-                addressParts.push(data.address.pedestrian);
-            } else if (data.address.highway) {
-                // Autopistas o carreteras
-                addressParts.push(data.address.highway);
+                addressParts.push(data.address.house_number ? `${data.address.road} #${data.address.house_number}` : data.address.road);
             }
-            
-            // Información adicional de la calle
-            if (data.address.street) {
-                addressParts.push(data.address.street);
+            if (data.address.neighbourhood || data.address.suburb) {
+                addressParts.push(data.address.neighbourhood || data.address.suburb);
             }
-            
-            // Nombre del edificio o lugar
-            if (data.address.building) {
-                addressParts.push(`Edificio ${data.address.building}`);
+            if (data.address.city || data.address.town) {
+                addressParts.push(data.address.city || data.address.town);
             }
-            
-            // Barrio/Vecindario
-            if (data.address.neighbourhood) {
-                addressParts.push(data.address.neighbourhood);
-            } else if (data.address.suburb) {
-                addressParts.push(data.address.suburb);
-            } else if (data.address.quarter) {
-                addressParts.push(data.address.quarter);
-            }
-            
-            // Municipio o localidad
-            if (data.address.municipality) {
-                addressParts.push(data.address.municipality);
-            }
-            
-            // Ciudad
-            if (data.address.city) {
-                addressParts.push(data.address.city);
-            } else if (data.address.town) {
-                addressParts.push(data.address.town);
-            } else if (data.address.village) {
-                addressParts.push(data.address.village);
-            } else if (data.address.hamlet) {
-                addressParts.push(data.address.hamlet);
-            }
-            
-            // Condado o distrito
-            if (data.address.county) {
-                addressParts.push(data.address.county);
-            }
-            
-            // Departamento/Estado/Región
-            if (data.address.state) {
-                addressParts.push(data.address.state);
-            } else if (data.address.region) {
-                addressParts.push(data.address.region);
-            }
-            
-            // País
-            if (data.address.country) {
-                addressParts.push(data.address.country);
-            }
-            
-            // Código postal si está disponible
-            if (data.address.postcode) {
-                addressParts.push(`CP ${data.address.postcode}`);
-            }
-            
             const fullAddress = addressParts.length > 0 ? addressParts.join(', ') : data.display_name;
-            
-            // Actualizar solo el campo de dirección, no el barrio
             if (fullAddress) setDireccion(fullAddress);
         }
     } catch (error) {
         console.error('Error al obtener la dirección:', error);
-        // No mostramos error al usuario, simplemente no se completa automáticamente
     }
 };
 
-return (
-    <div className="max-w-4xl mx-auto p-8 bg-gradient-to-br from-white to-blue-50 rounded-2xl shadow-2xl space-y-8 border border-blue-100">
-    <div className="flex items-center gap-3 pb-4 border-b-2 border-blue-200">
-        <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
-        <FaHome className="text-white text-2xl" />
-        </div>
-        <div>
-        <h2 className="text-3xl font-bold text-gray-800">Añadir Apartamento</h2>
-        <p className="text-sm text-gray-600">Complete la información para publicar su propiedad</p>
-
+const Counter = ({ label, value, onChange, min = 0 }) => (
+    <div className="flex items-center justify-between bg-surface-container-low rounded-lg px-4 py-3">
+        <span className="text-body-md text-on-surface">{label}</span>
+        <div className="flex items-center gap-3">
+            <button type="button" onClick={() => onChange(Math.max(min, value - 1))} className="w-8 h-8 rounded-lg bg-surface-container-high text-on-surface flex items-center justify-center hover:bg-surface-container-highest transition font-medium text-lg">-</button>
+            <span className="font-headline text-headline-md text-on-surface w-6 text-center">{value}</span>
+            <button type="button" onClick={() => onChange(value + 1)} className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center hover:bg-primary/20 transition font-medium text-lg">+</button>
         </div>
     </div>
+);
+
+const inputClass = "w-full px-4 py-3 rounded-lg bg-surface-container-low text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 transition text-body-md placeholder:text-outline";
+
+return (
+    <div className="p-6 max-w-3xl mx-auto space-y-6">
+    <div className="flex items-center gap-3 mb-2">
+        <div className="w-10 h-10 bg-primary-gradient rounded-xl flex items-center justify-center shadow-md">
+            <span className="material-symbols-outlined text-on-primary text-lg">add_business</span>
+        </div>
+        <div>
+            <h2 className="font-headline text-headline-md text-on-surface">Publicar Nueva Propiedad</h2>
+            <p className="text-body-md text-on-surface-variant">Completa los detalles para listar tu inmueble.</p>
+        </div>
+    </div>
+
     {message && (
-        <div className={`p-4 rounded-xl border-l-4 ${
-        message.includes('éxito') || message.includes('exitosamente') 
-            ? 'bg-green-50 border-green-500 text-green-700' 
-            : 'bg-red-50 border-red-500 text-red-700'
+        <div className={`p-4 rounded-xl flex items-start gap-3 ${
+            message.includes('éxito') || message.includes('exitosamente')
+                ? 'bg-tertiary/10 text-tertiary'
+                : 'bg-error-container/30 text-error'
         }`}>
-        <p className="font-medium">{message}</p>
-        {message.includes('éxito') && (
-            <p className="text-sm mt-1 text-green-600">
-                <FaHourglassHalf className="inline mr-1" />El apartamento quedó pendiente de aprobación por un administrador.
-            </p>
-        )}
+            <span className="material-symbols-outlined text-lg flex-shrink-0">
+                {message.includes('éxito') || message.includes('exitosamente') ? 'check_circle' : 'error'}
+            </span>
+            <div>
+                <p className="font-medium text-body-md">{message}</p>
+                {message.includes('éxito') && (
+                    <p className="text-sm mt-1 opacity-80">El apartamento quedó pendiente de aprobación por un administrador.</p>
+                )}
+            </div>
         </div>
     )}
 
-    <div className="bg-white p-6 rounded-xl shadow-md space-y-4 border border-gray-200">
-        <div className="flex items-center gap-2 mb-4">
-        <FaMapPin className="text-blue-600 text-xl" />
-        <h3 className="text-lg font-semibold text-gray-800">Ubicación</h3>
+    {/* Información Básica */}
+    <div className="bg-surface-container-low rounded-xl p-5 space-y-4">
+        <div className="flex items-center gap-2 mb-1">
+            <span className="material-symbols-outlined text-primary text-lg">info</span>
+            <h3 className="font-headline text-headline-sm text-on-surface">Información Básica</h3>
+        </div>
+        <div>
+            <label className="text-label-md uppercase tracking-wider text-outline mb-2 block">Dirección</label>
+            <input type="text" placeholder="Ej: Calle 72 # 10-34" value={direccion} onChange={(e) => setDireccion(e.target.value)} className={inputClass} />
+        </div>
+        <div>
+            <label className="text-label-md uppercase tracking-wider text-outline mb-2 block">Barrio / Sector</label>
+            <input type="text" placeholder="Ej: Chapinero" value={barrio} onChange={(e) => setBarrio(e.target.value)} className={inputClass} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Barrio</label>
-            <input
-
-            type="text"
-            placeholder="Ej: Chapinero"
-            value={barrio}
-            onChange={(e) => setBarrio(e.target.value)}
-            className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-            />
-        </div>
-        <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Dirección</label>
-            <input
-            type="text"
-            placeholder="Ej: Calle 72 # 10-34"
-            value={direccion}
-            onChange={(e) => setDireccion(e.target.value)}
-            className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-            />
-        </div>
-        </div>
-
-        <div className="mt-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Coordenadas</label>
-        <div className="flex gap-3 items-end">
-        <div className="flex-1">
-            <label className="block text-xs text-gray-600 mb-1">Latitud</label>
-            <input
-            type="text"
-            placeholder="0.000000"
-            value={latitud}
-            readOnly
-            className="border border-gray-300 rounded-lg p-3 w-full bg-gray-50 text-gray-700"
-            />
-        </div>
-        <div className="flex-1">
-            <label className="block text-xs text-gray-600 mb-1">Longitud</label>
-            <input
-
-            type="text"
-            placeholder="0.000000"
-            value={longitud}
-            readOnly
-            className="border border-gray-300 rounded-lg p-3 w-full bg-gray-50 text-gray-700"
-            />
-        </div>
-        <button
-            type="button"
-            onClick={() => setShowMap(true)}
-            className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition shadow-md font-medium"
-
-        >
-            <FaMapMarkerAlt /> Seleccionar en mapa
-        </button>
-        </div>
+            <div>
+                <label className="text-label-md uppercase tracking-wider text-outline mb-2 block">Precio Mensual (COP)</label>
+                <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">$</span>
+                    <input type="number" placeholder="0" value={price} onChange={(e) => setPrice(e.target.value)} min="0" className={`${inputClass} pl-8`} />
+                </div>
+            </div>
+            <div>
+                <label className="text-label-md uppercase tracking-wider text-outline mb-2 block">Área (m²)</label>
+                <input type="number" placeholder="Ej: 50" value={area_m2} onChange={(e) => setAreaM2(e.target.value)} min="0" className={inputClass} />
+            </div>
         </div>
     </div>
 
-    <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
-        <div className="flex items-center gap-2 mb-4">
-        <FaInfoCircle className="text-blue-600 text-xl" />
-        <h3 className="text-lg font-semibold text-gray-800">Información Adicional</h3>
+    {/* Detalles */}
+    <div className="bg-surface-container-low rounded-xl p-5 space-y-4">
+        <div className="flex items-center gap-2 mb-1">
+            <span className="material-symbols-outlined text-primary text-lg">list_alt</span>
+            <h3 className="font-headline text-headline-sm text-on-surface">Detalles</h3>
         </div>
-        <textarea
-        placeholder="Describa características adicionales del apartamento: número de habitaciones, baños, servicios incluidos, normas, etc."
-        value={addInfo}
-        onChange={handleAddInfoChange}
-        maxLength="500"
-        rows="6"
-        className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none"
-        />
-        <div className="flex justify-between items-center mt-2">
-        <span className="text-xs text-gray-500">Añada detalles relevantes para los arrendatarios</span>
-        <span className={`text-sm font-medium ${
-            charCount > 450 ? 'text-red-600' : 'text-gray-600'
-        }`}>{charCount}/500</span>
-        </div>
+        <Counter label="Habitaciones" value={bedrooms} onChange={setBedrooms} min={0} />
+        <Counter label="Baños" value={bathrooms} onChange={setBathrooms} min={0} />
     </div>
 
-    <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
-        <div className="flex items-center gap-2 mb-4">
-        <FaHome className="text-blue-600 text-xl" />
-        <h3 className="text-lg font-semibold text-gray-800">Detalles de la Propiedad</h3>
+    {/* Galería de Imágenes */}
+    <div className="bg-surface-container-low rounded-xl p-5 space-y-4">
+        <div className="flex items-center gap-2 mb-1">
+            <span className="material-symbols-outlined text-primary text-lg">image</span>
+            <h3 className="font-headline text-headline-sm text-on-surface">Galería de Imágenes</h3>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Precio Mensual (COP) *</label>
-            <input
-            type="number"
-            placeholder="Ej: 1500000"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            min="0"
-            step="10000"
-            className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-            />
-        </div>
-        <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Habitaciones</label>
-            <input
-            type="number"
-            placeholder="Ej: 2"
-            value={bedrooms}
-            onChange={(e) => setBedrooms(e.target.value)}
-            min="0"
-            className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-            />
-        </div>
-        <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Baños</label>
-            <input
-            type="number"
-            placeholder="Ej: 1"
-            value={bathrooms}
-            onChange={(e) => setBathrooms(e.target.value)}
-            min="0"
-            step="0.5"
-            className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-            />
-        </div>
-        <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Área (m²)</label>
-            <input
-            type="number"
-            placeholder="Ej: 50"
-            value={area_m2}
-            onChange={(e) => setAreaM2(e.target.value)}
-            min="0"
-            className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-            />
-        </div>
-        <div className="sm:col-span-2 lg:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Servicios/Comodidades</label>
-            <input
-            type="text"
-            placeholder="Ej: WiFi, Piscina, Ascensor, Parqueadero, Gym"
-            value={amenities}
-            onChange={(e) => setAmenities(e.target.value)}
-            className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-            />
-        </div>
-        </div>
-    </div>
-
-    <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200">
-        <div className="flex items-center gap-2 mb-4">
-        <FaImages className="text-blue-600 text-xl" />
-        <h3 className="text-lg font-semibold text-gray-800">Imágenes del Apartamento</h3>
-        </div>
-        <div className="border-2 border-dashed border-blue-300 rounded-xl p-6 bg-blue-50 hover:bg-blue-100 transition cursor-pointer relative">
-        <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleFileChange}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-
-        />
-        <div className="text-center">
-            <FaPlus className="text-blue-600 text-3xl mx-auto mb-2" />
-            <p className="text-gray-700 font-medium">Haga clic o arrastre imágenes aquí</p>
-            <p className="text-sm text-gray-500 mt-1">Formatos: JPG, PNG, WEBP</p>
-        </div>
+        <div className="border-2 border-dashed border-outline-variant rounded-xl p-8 bg-surface-container-lowest hover:bg-surface-container transition cursor-pointer relative text-center">
+            <input type="file" accept="image/*" multiple onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+            <span className="material-symbols-outlined text-4xl text-primary mb-3">cloud_upload</span>
+            <p className="text-body-md text-on-surface font-medium">Arrastra y suelta tus fotos aquí</p>
+            <p className="text-label-md text-outline mt-1">Suba imágenes en alta resolución. Formatos: JPG, PNG (Max. 10MB)</p>
         </div>
         {imageFiles.length > 0 && (
-        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {imageFiles.map((file, idx) => (
-            <div key={idx} className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition">
-                <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-gray-700">Imagen {idx + 1}</span>
-                <div className="flex gap-2">
-                    <button 
-                    onClick={() => handleViewImage(file)} 
-                    className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-sm"
-                    title="Ver imagen"
-                    >
-                    <FaEye className="text-sm" />
-                    </button>
-                    <button 
-                    onClick={() => removeImage(idx)} 
-                    className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition shadow-sm"
-                    title="Eliminar imagen"
-                    >
-                    <FaTrash className="text-sm" />
-                    </button>
-                </div>
-                </div>
-                <p className="text-xs text-gray-500 truncate">{file.name}</p>
-
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {imageFiles.map((file, idx) => (
+                    <div key={idx} className="bg-surface-container-lowest rounded-lg p-3 border border-surface-container-high">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-label-md font-medium text-on-surface">Img {idx + 1}</span>
+                            <div className="flex gap-1">
+                                <button onClick={() => handleViewImage(file)} className="w-7 h-7 rounded-md bg-primary/10 text-primary flex items-center justify-center hover:bg-primary/20 transition">
+                                    <span className="material-symbols-outlined text-xs">visibility</span>
+                                </button>
+                                <button onClick={() => removeImage(idx)} className="w-7 h-7 rounded-md bg-error/10 text-error flex items-center justify-center hover:bg-error/20 transition">
+                                    <span className="material-symbols-outlined text-xs">delete</span>
+                                </button>
+                            </div>
+                        </div>
+                        <p className="text-xs text-outline truncate">{file.name}</p>
+                    </div>
+                ))}
             </div>
-            ))}
-        </div>
         )}
         {imageFiles.length === 0 && (
-        <p className="text-sm text-gray-500 mt-2 text-center">No hay imágenes seleccionadas</p>
+            <p className="text-body-md text-on-surface-variant text-center">No hay imágenes seleccionadas</p>
         )}
     </div>
 
-    <button
-        onClick={handleSubmit}
-        className="w-full px-6 py-4 bg-gradient-to-r from-green-600 to-green-700 text-white font-bold text-lg rounded-xl hover:from-green-700 hover:to-green-800 transition shadow-xl hover:shadow-2xl transform hover:scale-[1.02] flex items-center justify-center gap-3"
+    {/* Comodidades */}
+    <div className="bg-surface-container-low rounded-xl p-5 space-y-4">
+        <div className="flex items-center gap-2 mb-1">
+            <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
+            <h3 className="font-headline text-headline-sm text-on-surface">Comodidades Incluidas</h3>
+        </div>
+        <div className="flex flex-wrap gap-2">
+            {amenitiesList.map(amenity => (
+                <button key={amenity} type="button" onClick={() => toggleAmenity(amenity)}
+                    className={`px-4 py-2 rounded-lg text-label-md font-medium transition-all flex items-center gap-1.5 ${
+                        amenities.includes(amenity)
+                            ? 'bg-primary text-on-primary shadow-md'
+                            : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest'
+                    }`}
+                >
+                    {amenities.includes(amenity) && <span className="material-symbols-outlined text-xs">check</span>}
+                    {amenity}
+                </button>
+            ))}
+        </div>
+    </div>
 
+    {/* Información Adicional */}
+    <div className="bg-surface-container-low rounded-xl p-5 space-y-4">
+        <div className="flex items-center gap-2 mb-1">
+            <span className="material-symbols-outlined text-primary text-lg">description</span>
+            <h3 className="font-headline text-headline-sm text-on-surface">Información Adicional</h3>
+        </div>
+        <textarea
+            placeholder="Describe características adicionales: normas, servicios incluidos, detalles del sector..."
+            value={addInfo}
+            onChange={handleAddInfoChange}
+            maxLength="500"
+            rows="5"
+            className={`${inputClass} resize-none h-28`}
+        />
+        <div className="flex justify-between items-center">
+            <span className="text-label-md text-outline">Añade detalles relevantes para los arrendatarios</span>
+            <span className={`text-label-md font-medium ${charCount > 450 ? 'text-error' : 'text-outline'}`}>{charCount}/500</span>
+        </div>
+    </div>
+
+    {/* Coordenadas + Mapa */}
+    <div className="bg-surface-container-low rounded-xl p-5 space-y-4">
+        <div className="flex items-center gap-2 mb-1">
+            <span className="material-symbols-outlined text-primary text-lg">map</span>
+            <h3 className="font-headline text-headline-sm text-on-surface">Ubicación en el Mapa</h3>
+        </div>
+        <div className="flex gap-3 items-end">
+            <div className="flex-1">
+                <label className="text-label-md uppercase tracking-wider text-outline mb-1 block">Latitud</label>
+                <input type="text" placeholder="0.000000" value={latitud} readOnly className={`${inputClass} bg-surface-container-high`} />
+            </div>
+            <div className="flex-1">
+                <label className="text-label-md uppercase tracking-wider text-outline mb-1 block">Longitud</label>
+                <input type="text" placeholder="0.000000" value={longitud} readOnly className={`${inputClass} bg-surface-container-high`} />
+            </div>
+            <button type="button" onClick={() => setShowMap(true)}
+                className="px-5 py-3 bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold rounded-lg shadow-md hover:shadow-lg active:scale-[0.98] transition-all flex items-center gap-2"
+            >
+                <span className="material-symbols-outlined text-sm">map</span> Seleccionar
+            </button>
+        </div>
+    </div>
+
+    {/* Submit */}
+    <button onClick={handleSubmit}
+        className="w-full px-6 py-4 bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold text-headline-md rounded-xl shadow-md hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-3"
     >
-        <FaSave className="text-xl" /> Publicar Apartamento
+        <span className="material-symbols-outlined text-lg">send</span> Publicar Propiedad
     </button>
 
     {showMap && (

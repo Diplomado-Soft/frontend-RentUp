@@ -1,26 +1,20 @@
-import React, {useContext, useState} from "react";
+import React, { useContext, useState } from "react";
 import { UserContext } from "../../contexts/UserContext";
-import {updateUserData, fetchUserData} from "../../apis/myAccountController";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faEnvelope, faPhone, faLock, faBuilding, faSave, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { updateUserData, fetchUserData } from "../../apis/myAccountController";
 
 function User() {
     const { user, login } = useContext(UserContext);
-    const { nombre, apellido, email, telefono, rol, token } = user;
-    const defaultRol = Number(rol) === 2 ? 'Arrendador' : 'Usuario';
+    const { nombre, apellido, email, token } = user;
+    const telefono = user?.telefono || user?.user_phonenumber || user?.phone || '';
     const [formData, setFormData] = useState({
         nombre: nombre || '',
         apellido: apellido || '',
         email: email || '',
         telefono: telefono || '',
-        rol: rol || defaultRol,
         password: ''
     });
     const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     }
     const createNewUserData = async (e) => {
         e.preventDefault();
@@ -28,8 +22,7 @@ function User() {
             alert("El usuario no ha iniciado sesión.");
             return;
         }
-        console.log(formData);
-        const updatedData = await updateUserData( token, formData);
+        const updatedData = await updateUserData(token, formData);
         if (updatedData) {
             const freshUserData = await fetchUserData(token);
             if (freshUserData) {
@@ -47,7 +40,6 @@ function User() {
                     apellido: freshUserData.user_lastname,
                     email: freshUserData.user_email,
                     telefono: freshUserData.user_phonenumber,
-                    rol: freshUserData.rol_id,
                     password: ''
                 });
                 alert("Datos actualizados correctamente.");
@@ -58,108 +50,64 @@ function User() {
             alert("Error al actualizar los datos.");
         }
     }
-    return(
-        <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
-            <div className="flex items-center justify-between mb-6">
+    const initials = (nombre?.charAt(0) || '') + (apellido?.charAt(0) || '');
+    return (
+        <div>
+            <div className="flex items-center gap-6 mb-8">
+                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/20">
+                    <span className="text-primary font-headline text-headline-md">{initials || 'U'}</span>
+                </div>
                 <div>
-                    <h3 className="text-xl sm:text-2xl font-bold text-surface-800">Mis datos</h3>
-                    <p className="text-sm text-surface-500">Actualiza tu información personal</p>
+                    <h2 className="font-headline text-headline-md text-on-surface">Información Personal</h2>
+                    <p className="text-body-md text-on-surface-variant">Actualiza tu foto y detalles de contacto.</p>
                 </div>
             </div>
 
-            <form onSubmit={createNewUserData} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Nombre */}
-                <div className="flex flex-col">
-                    <label htmlFor="nombre" className="text-sm font-semibold text-surface-700 mb-2 flex items-center gap-2">
-                        <FontAwesomeIcon icon={faUser} className="text-surface-500" />
-                        Nombre
-                    </label>
+            <form onSubmit={createNewUserData} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-1">
+                    <label htmlFor="nombre" className="text-label-md text-on-surface-variant uppercase tracking-wider">Nombre</label>
                     <input
-                        type="text"
-                        id="nombre"
-                        name="nombre"
-                        required
-                        value={formData.nombre}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 border border-surface-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-surface-700"
+                        type="text" id="nombre" name="nombre" required
+                        value={formData.nombre} onChange={handleChange}
+                        className="w-full px-4 py-3 rounded-lg bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-on-surface placeholder:text-outline text-body-md"
                     />
                 </div>
-
-                {/* Apellido */}
-                <div className="flex flex-col">
-                    <label htmlFor="apellido" className="text-sm font-semibold text-surface-700 mb-2 flex items-center gap-2">
-                        <FontAwesomeIcon icon={faUser} className="text-surface-500" />
-                        Apellido
-                    </label>
+                <div className="space-y-1">
+                    <label htmlFor="apellido" className="text-label-md text-on-surface-variant uppercase tracking-wider">Apellido</label>
                     <input
-                        type="text"
-                        id="apellido"
-                        name="apellido"
-                        required
-                        value={formData.apellido}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 border border-surface-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-surface-700"
+                        type="text" id="apellido" name="apellido" required
+                        value={formData.apellido} onChange={handleChange}
+                        className="w-full px-4 py-3 rounded-lg bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-on-surface placeholder:text-outline text-body-md"
                     />
                 </div>
-
-                {/* Email */}
-                <div className="flex flex-col md:col-span-2">
-                    <label htmlFor="email" className="text-sm font-semibold text-surface-700 mb-2 flex items-center gap-2">
-                        <FontAwesomeIcon icon={faEnvelope} className="text-surface-500" />
-                        Correo electrónico
-                    </label>
+                <div className="space-y-1">
+                    <label htmlFor="email" className="text-label-md text-on-surface-variant uppercase tracking-wider">Email</label>
                     <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        required
-                        value={formData.email}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 border border-surface-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-surface-700"
+                        type="email" id="email" name="email" required
+                        value={formData.email} onChange={handleChange}
+                        className="w-full px-4 py-3 rounded-lg bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-on-surface placeholder:text-outline text-body-md"
                     />
                 </div>
-
-                {/* Teléfono */}
-                <div className="flex flex-col">
-                    <label htmlFor="telefono" className="text-sm font-semibold text-surface-700 mb-2 flex items-center gap-2">
-                        <FontAwesomeIcon icon={faPhone} className="text-surface-500" />
-                        Teléfono
-                    </label>
+                <div className="space-y-1">
+                    <label htmlFor="telefono" className="text-label-md text-on-surface-variant uppercase tracking-wider">Teléfono</label>
                     <input
-                        type="phone"
-                        id="telefono"
-                        name="telefono"
-                        required
-                        value={formData.telefono}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 border border-surface-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-surface-700"
+                        type="phone" id="telefono" name="telefono" required
+                        value={formData.telefono} onChange={handleChange}
+                        className="w-full px-4 py-3 rounded-lg bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-on-surface placeholder:text-outline text-body-md"
                     />
                 </div>
-
-                {/* Contraseña */}
-                <div className="flex flex-col">
-                    <label htmlFor="password" className="text-sm font-semibold text-surface-700 mb-2 flex items-center gap-2">
-                        <FontAwesomeIcon icon={faLock} className="text-surface-500" />
-                        Contraseña
-                    </label>
+                <div className="space-y-1 md:col-span-2">
+                    <label htmlFor="password" className="text-label-md text-on-surface-variant uppercase tracking-wider">Contraseña</label>
                     <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleChange}
+                        type="password" id="password" name="password"
+                        value={formData.password} onChange={handleChange}
                         placeholder="Deja en blanco para mantener la actual"
-                        className="w-full px-4 py-3 border border-surface-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-surface-700"
+                        className="w-full px-4 py-3 rounded-lg bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-on-surface placeholder:text-outline text-body-md"
                     />
                 </div>
-
-                {/* Botón */}
-                <div className="md:col-span-2 flex justify-end mt-4">
-                    <button
-                        type="submit"
-                        className="px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center gap-2"
-                    >
-                        <FontAwesomeIcon icon={faSave} />
+                <div className="md:col-span-2 flex justify-end mt-2">
+                    <button type="submit" className="px-6 py-3 bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold rounded-lg shadow-md hover:shadow-lg active:scale-[0.98] transition-all flex items-center gap-2">
+                        <span className="material-symbols-outlined text-sm">save</span>
                         Guardar cambios
                     </button>
                 </div>

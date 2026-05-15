@@ -16,6 +16,8 @@ import GitHubCallback from './pages/GitHubCallback';
 import AdminDashboard from './components/AdminDashboard';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
+import Map from './components/Map';
+import ApartmentList from './components/ApartmentList';
 import './App.css';
 
 function AppContent() {
@@ -93,6 +95,15 @@ function AppContent() {
         />
         <Route path='/forgot-password' element={<ForgotPassword />} />
         <Route path='/reset-password' element={<ResetPassword />} />
+        <Route path='/map' element={<Map />} />
+        <Route path='/listings' element={
+          <div className="pt-20 min-h-screen bg-background">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              <h1 className="font-headline text-headline-lg text-on-surface mb-8">Todas las Propiedades</h1>
+              <ApartmentList />
+            </div>
+          </div>
+        } />
       </Routes>
     </>
   );
