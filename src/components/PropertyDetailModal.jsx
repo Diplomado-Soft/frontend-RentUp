@@ -191,19 +191,31 @@ function PropertyDetailModal({ apartment, onClose }) {
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-on-surface-variant">
-                    <span className="material-symbols-outlined text-[20px]">phone</span>
-                    <span className="font-body text-body-md">{apartment.whatsapp || apartment.user_phonenumber || "No disponible"}</span>
-                  </div>
-
+                  {user ? (
+                    <div className="flex items-center gap-2 text-on-surface-variant">
+                      <span className="material-symbols-outlined text-[20px]">phone</span>
+                      <span className="font-body text-body-md">
+                        {apartment.whatsapp || apartment.user_phonenumber || "No disponible"}
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
                 <div className="mt-6 space-y-3">
-                  {apartment.whatsapp || apartment.user_phonenumber ? (
-                    <a href={`https://wa.me/${apartment.whatsapp || apartment.user_phonenumber}?text=${encodeURIComponent(`Hola, estoy interesado en el inmueble "${apartment.barrio}" en RentUp.`)}`} target="_blank" rel="noopener noreferrer" className="w-full py-3 bg-tertiary text-on-tertiary rounded-lg font-headline text-[16px] flex items-center justify-center gap-2 active:scale-95 transition-transform">
-                      <span className="material-symbols-outlined">chat</span>
-                      WhatsApp
-                    </a>
-                  ) : null}
+                  {user ? (
+                    apartment.whatsapp || apartment.user_phonenumber ? (
+                      <a href={`https://wa.me/${apartment.whatsapp || apartment.user_phonenumber}?text=${encodeURIComponent(`Hola, estoy interesado en el inmueble *"${apartment.barrio}"* ubicado en *${apartment.direccion_apt}* puclicado en RentUp. Me gustaría más información para proceder con el arriendo.`)}`} target="_blank" rel="noopener noreferrer" className="w-full py-3 bg-tertiary text-on-tertiary rounded-lg font-headline text-[16px] flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                        <span className="material-symbols-outlined">chat</span>
+                        WhatsApp
+                      </a>
+                    ) : null
+                  ) : (
+                    <button
+                      onClick={() => navigate('/login')}
+                      className="w-full py-3 bg-primary text-on-primary rounded-lg font-headline text-[16px] flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform"
+                    >
+                      Arrendar
+                    </button>
+                  )}
                   <button onClick={() => {
                     localStorage.setItem("mapCenter", JSON.stringify([parseFloat(apartment.latitud_apt) || 1.156667, parseFloat(apartment.longitud_apt) || -76.651944]));
                     localStorage.setItem("selectedAptId", apartment.id_apt);
@@ -225,16 +237,34 @@ function PropertyDetailModal({ apartment, onClose }) {
               <p className="font-headline text-[18px] text-primary">{formatPrice(apartment.precio_apt)}</p>
               <p className="text-[12px] text-on-surface-variant">Por mes</p>
             </div>
-            {apartment.whatsapp || apartment.user_phonenumber ? (
-              <a href={`https://wa.me/${apartment.whatsapp || apartment.user_phonenumber}?text=${encodeURIComponent(`Hola, estoy interesado en "${apartment.barrio}" de RentUp.`)}`} target="_blank" rel="noopener noreferrer" className="bg-primary text-on-primary px-6 py-3 rounded-lg font-headline text-[16px] shadow-lg active:scale-95 transition-all flex items-center gap-2">
-                <span className="material-symbols-outlined">chat</span>
-                Contactar
-              </a>
-            ) : null}
+            {user ? (
+              apartment.whatsapp || apartment.user_phonenumber ? (
+                <a
+                  href={`https://wa.me/${apartment.whatsapp || apartment.user_phonenumber}?text=${encodeURIComponent(`Hola, estoy interesado en el inmueble *"${apartment.barrio}"* ubicado en *${apartment.direccion_apt}* publicado en RentUp. Me gustaría más información para proceder con el arriendo.`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-primary text-on-primary px-6 py-3 rounded-lg font-headline text-[16px] shadow-lg active:scale-95 transition-all flex items-center gap-2"
+                >
+                  <span className="material-symbols-outlined">chat</span>
+                  Contactar
+                </a>
+              ) : null
+            ) : (
+                    <button
+                      onClick={() => {
+                        localStorage.setItem('pendingPropertyId', apartment.id_apt);
+                        localStorage.setItem('pendingPropertyTitle', apartment.titulo_apt || apartment.barrio || 'Apartamento');
+                        navigate('/login');
+                      }}
+                      className="bg-primary text-on-primary px-6 py-3 rounded-lg font-headline text-[16px] shadow-lg active:scale-95 transition-all flex items-center gap-2"
+                    >
+                Arrendar
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Desktop Floating Action */}
+        {/* Desktop Floating Action 
         <div className="hidden md:block fixed bottom-6 right-6 z-50">
           {apartment.whatsapp || apartment.user_phonenumber ? (
             <a href={`https://wa.me/${apartment.whatsapp || apartment.user_phonenumber}?text=${encodeURIComponent(`Hola, estoy interesado en "${apartment.barrio}" de RentUp.`)}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-full font-headline shadow-2xl hover:scale-105 active:scale-95 transition-all">
@@ -242,7 +272,7 @@ function PropertyDetailModal({ apartment, onClose }) {
               Contactar
             </a>
           ) : null}
-        </div>
+        </div>*/}
       </div>
     </div>
   );
