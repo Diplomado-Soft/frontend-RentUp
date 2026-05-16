@@ -2,6 +2,8 @@ import React, { useState, useContext } from 'react';
 import { UserContext } from '../contexts/UserContext';
 import { submitApartment } from '../apis/apartmentformController';
 import MapModal from './MapModal';
+import KycUploadPanel from './KycUploadPanel';
+import KycUploadSection from './KycUploadSection';
 
 const amenitiesList = [
   'Wifi Alta Vel.', 'Lavandería', 'Cocina Equipada', 'Aire Acond.',
@@ -26,6 +28,8 @@ const [bedrooms, setBedrooms] = useState(1);
 const [bathrooms, setBathrooms] = useState(1);
 const [area_m2, setAreaM2] = useState('');
 const [amenities, setAmenities] = useState([]);
+const [kycFiles, setKycFiles] = useState({ id_document: null, property_certificate: null });
+const [createdApartmentId, setCreatedApartmentId] = useState(null);
 
 const handleFileChange = (e) => {
     if (e.target.files) setImageFiles(prev => [...prev, ...Array.from(e.target.files)]);
@@ -46,6 +50,12 @@ const toggleAmenity = (amenity) => {
 };
 
 const handleSubmit = async () => {
+    // 🛡️ VALIDACIÓN ESTRICTA KYC ANTIFRAUDE
+    if (!kycFiles.id_document || !kycFiles.property_certificate) {
+        alert("❌ Error: Para publicar un inmueble en RentUp es obligatorio subir tu Documento de Identidad y el Certificado de Tradición y Libertad. Esto asegura la veracidad de la propiedad.");
+        return;
+    }
+
     if (imageFiles.length === 0) return setMessage('Por favor, cargue al menos una imagen');
     if (!price || parseFloat(price) <= 0) return setMessage('El precio es requerido y debe ser mayor a 0');
 
@@ -62,10 +72,25 @@ const handleSubmit = async () => {
     formData.append('amenities', amenities.join(', '));
     formData.append('user_email', user.email);
     imageFiles.forEach(file => formData.append('images', file));
+    if (kycFiles.id_document) formData.append('id_document', kycFiles.id_document);
+    if (kycFiles.property_certificate) formData.append('property_certificate', kycFiles.property_certificate);
+
+    console.log('📤 FormData enviado:', {
+      barrio: formData.get('barrio'),
+      direccion: formData.get('direccion'),
+      price: formData.get('price'),
+      imagesCount: imageFiles.length,
+      id_document: kycFiles.id_document?.name || 'none',
+      property_certificate: kycFiles.property_certificate?.name || 'none'
+    });
 
     try {
-    const successMessage = await submitApartment(formData);
-    setMessage(successMessage);
+        const response = await submitApartment(formData);
+    const aptId = response?.data?.apartmentId;
+    if (aptId) {
+      setCreatedApartmentId(aptId);
+    }
+    setMessage(typeof response === 'string' ? response : (response?.message || 'Apartamento añadido exitosamente'));
     setBarrio('');
     setDireccion('');
     setLatitud('');
@@ -302,6 +327,8 @@ return (
         </div>
     </div>
 
+    <KycUploadSection kycFiles={kycFiles} setKycFiles={setKycFiles} />
+
     {/* Submit */}
     <button onClick={handleSubmit}
         className="w-full px-6 py-4 bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold text-headline-md rounded-xl shadow-md hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-3"
@@ -315,6 +342,12 @@ return (
         onSelectLocation={handleSelectLocation}
         initialCoords={latitud && longitud ? { lat: parseFloat(latitud), lng: parseFloat(longitud) } : null}
         />
+    )}
+
+    {createdApartmentId && (
+      <div className="mt-6 border-t border-gray-200 pt-6">
+        <KycUploadPanel apartmentId={createdApartmentId} />
+      </div>
     )}
     </div>
 );

@@ -22,9 +22,9 @@ const submitApartment = async (formData) => {
             `/apartments/addApartment`, 
             formData
         );
-        
+
         if (response.status === 201 || response.status === 200) {
-            return 'Apartamento añadido exitosamente';
+            return response.data;
         }
         throw new Error('Error inesperado del servidor');
     } catch (error) {
@@ -33,6 +33,7 @@ const submitApartment = async (formData) => {
             throw new Error('No autorizado. Por favor, inicia sesión nuevamente.');
         }
         if (error.response?.status === 400) {
+            console.error('🔍 DEBUG 400 - response data:', error.response.data);
             throw new Error(error.response.data?.error || 'Datos inválidos. Verifica que el precio sea válido.');
         }
         throw new Error('Hubo un problema al añadir el apartamento');
