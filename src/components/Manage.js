@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import useManageController from "../apis/manageController";
 import MapModal from './MapModal';
 import Toast from './Toast';
+import KycUploadSection from './KycUploadSection';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -18,6 +19,8 @@ const {
     handleDelete,
     handleUpdate,
     handleCancelEdit,
+    kycFiles,
+    setKycFiles,
     toast,
     closeToast,
 } = useManageController();
@@ -255,8 +258,28 @@ return (
                         )}
                     </div>
 
+                    {/* Existing documents badge */}
+                    {(apt.id_document_url || apt.property_certificate_url) && (
+                      <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-4 py-2 mb-4">
+                        <span className="text-green-700 font-medium text-sm flex items-center gap-1.5">
+                          ✅ <span>Documentos cargados previamente</span>
+                        </span>
+                        {apt.kyc_status === 'approved' && (
+                          <span className="ml-auto px-2 py-0.5 rounded-full bg-green-100 text-green-800 text-xs font-semibold">Aprobado</span>
+                        )}
+                        {apt.kyc_status === 'rejected' && (
+                          <span className="ml-auto px-2 py-0.5 rounded-full bg-red-100 text-red-800 text-xs font-semibold">Rechazado</span>
+                        )}
+                        {(!apt.kyc_status || apt.kyc_status === 'pending') && (
+                          <span className="ml-auto px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 text-xs font-semibold">En revisión</span>
+                        )}
+                      </div>
+                    )}
+                    
+                    <KycUploadSection kycFiles={kycFiles} setKycFiles={setKycFiles} />
+
                     <div className="flex gap-3 pt-4 border-t border-surface-container-high">
-                        <button onClick={() => { handleUpdate(apt.id_apt, newImageFiles); setNewImageFiles([]); }} className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold rounded-lg shadow-md hover:shadow-lg active:scale-[0.98] transition-all">
+                        <button onClick={() => { handleUpdate(apt.id_apt, newImageFiles); setNewImageFiles([]); setKycFiles({ id_document: null, property_certificate: null }); }} className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold rounded-lg shadow-md hover:shadow-lg active:scale-[0.98] transition-all">
                             <span className="material-symbols-outlined text-sm">save</span> Guardar Cambios
                         </button>
                         <button onClick={handleCancelEdit} className="flex items-center gap-2 px-6 py-3 bg-surface-container-high text-on-surface font-semibold rounded-lg hover:bg-surface-container-highest transition-all">

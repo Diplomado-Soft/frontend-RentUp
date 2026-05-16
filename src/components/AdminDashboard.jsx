@@ -5,7 +5,7 @@ import {
   FaImage, FaEdit, FaBuilding, FaSearch,
   FaStar, FaChartBar, FaUsers, FaHome,
   FaFileAlt, FaDollarSign, FaChevronLeft, FaChevronRight,
-  FaRobot, FaShieldAlt, FaInfoCircle, FaUserTimes,
+  FaRobot, FaShieldAlt, FaInfoCircle, FaUserTimes, FaIdCard,
   FaEnvelope, FaPhone, FaFrown, FaChartLine, FaBrain
 } from 'react-icons/fa';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -14,6 +14,7 @@ import adminApartmentController from '../apis/adminApartmentController';
 import axiosInstance from '../contexts/axiosInstance';
 import Toast from './Toast';
 import ImageModal from './ImageModal';
+import AdminVerificationPanel from './AdminVerificationPanel';
 import './AdminDashboard.css';
 import { initSocket } from '../utils/socket';
 
@@ -72,6 +73,7 @@ function AdminDashboard() {
 
   const tabs = [
     { id: 'apartments', label: 'Apartamentos', icon: FaBuilding },
+    { id: 'verification', label: 'Verificación', icon: FaShieldAlt },
     { id: 'reviews', label: 'Reseñas', icon: FaStar },
     { id: 'users', label: 'Usuarios', icon: FaUsers },
     { id: 'stats', label: 'Estadísticas', icon: FaChartBar },
@@ -597,6 +599,11 @@ function AdminDashboard() {
               </>
             )}
           </>
+        )}
+
+        {/* === VERIFICATION TAB === */}
+        {activeTab === 'verification' && (
+          <AdminVerificationPanel />
         )}
 
         {/* === REVIEWS TAB === */}
@@ -1152,6 +1159,47 @@ function AdminDashboard() {
                       <p className="text-outline text-sm col-span-full text-center py-4">Sin imágenes</p>
                     );
                   })()}
+                </div>
+              </div>
+              {/* 🛡️ Documentos de Verificación KYC */}
+              <div className="admin-detail-section">
+                <h3><FaShieldAlt /> Verificación de Propiedad (KYC)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Documento de Identidad</p>
+                    {selectedApartmentDetail.id_document_url ? (
+                      <a href={selectedApartmentDetail.id_document_url} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 hover:bg-blue-100 transition text-sm font-medium">
+                        <FaIdCard /> Ver Cédula
+                      </a>
+                    ) : (
+                      <span className="text-sm text-yellow-600 font-medium">⚠️ El arrendador no ha subido su documento de identidad</span>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Certificado de Tradición</p>
+                    {selectedApartmentDetail.property_certificate_url ? (
+                      <a href={selectedApartmentDetail.property_certificate_url} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 hover:bg-blue-100 transition text-sm font-medium">
+                        <FaFileAlt /> Ver Certificado
+                      </a>
+                    ) : (
+                      <span className="text-sm text-yellow-600 font-medium">⚠️ El arrendador no ha subido el certificado de tradición</span>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="text-xs text-gray-500">Estado KYC:</span>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                    selectedApartmentDetail.kyc_status === 'approved' ? 'bg-green-100 text-green-800' :
+                    selectedApartmentDetail.kyc_status === 'rejected' ? 'bg-red-100 text-red-800' :
+                    !selectedApartmentDetail.kyc_status ? 'bg-gray-100 text-gray-500' :
+                    'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {selectedApartmentDetail.kyc_status === 'approved' ? 'Aprobado' :
+                     selectedApartmentDetail.kyc_status === 'rejected' ? 'Rechazado' :
+                     !selectedApartmentDetail.kyc_status ? 'Sin solicitud' : 'Pendiente de Revisión'}
+                  </span>
                 </div>
               </div>
             </div>

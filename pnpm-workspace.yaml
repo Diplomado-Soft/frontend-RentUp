@@ -4,3 +4,8 @@
 #  core-js-pure: set this to true or false
 #  protobufjs: set this to true or false
 packages: []
+allowBuilds:
+  '@firebase/util': false
+  core-js: false
+  core-js-pure: false
+  protobufjs: false
