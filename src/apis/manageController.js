@@ -15,6 +15,7 @@ const useManageController = () => {
         info_add_apt: "",
         images: []
     });
+    const [kycFiles, setKycFiles] = useState({ id_document: null, property_certificate: null });
     const [toast, setToast] = useState(null);
 
     const showToast = (message, type = 'success') => {
@@ -116,6 +117,22 @@ const useManageController = () => {
             formData.append("new_images", file);
         });
 
+        if (kycFiles.id_document) {
+            formData.append("id_document", kycFiles.id_document);
+        }
+        if (kycFiles.property_certificate) {
+            formData.append("property_certificate", kycFiles.property_certificate);
+        }
+
+        console.log('📤 FormData enviado (update):', {
+          id_apt,
+          direccion_apt: editFormData.direccion_apt,
+          barrio: editFormData.barrio,
+          newImagesCount: newImageFiles.length,
+          id_document: kycFiles.id_document?.name || 'none',
+          property_certificate: kycFiles.property_certificate?.name || 'none'
+        });
+
         // ✅ Usar axiosInstance que incluye automáticamente el token
         axiosInstance.put(`/apartments/update/${id_apt}`, formData, {
             headers: { 
@@ -150,6 +167,8 @@ const useManageController = () => {
         handleDelete,
         handleUpdate,
         handleCancelEdit,
+        kycFiles,
+        setKycFiles,
         toast,
         closeToast,
     };
