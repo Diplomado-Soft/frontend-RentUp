@@ -3,10 +3,33 @@
 @tailwind utilities;
 
 @layer base {
-  html, body {
+  html {
     @apply m-0 font-sans antialiased bg-background text-on-surface;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(90, 90, 100, 0.25) transparent;
+  }
+
+  html::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  html::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  html::-webkit-scrollbar-thumb {
+    background: rgba(90, 90, 100, 0.25);
+    border-radius: 3px;
+  }
+
+  html::-webkit-scrollbar-thumb:hover {
+    background: rgba(90, 90, 100, 0.4);
+  }
+
+  body {
+    @apply m-0 font-sans antialiased bg-background text-on-surface;
   }
 
   code {
