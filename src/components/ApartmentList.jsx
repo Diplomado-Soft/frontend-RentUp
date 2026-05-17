@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useContext } from "react";
 import PropertyDetailModal from "./PropertyDetailModal";
 import PropertyCard from "./PropertyCard";
 import { FaHeart } from "react-icons/fa";
+import { UserContext } from "../contexts/UserContext";
 
-function ApartmentList({ searchTerm = "", filters = {} }) {
+function ApartmentList({ searchTerm = "", filters = {}, goToJoin }) {
+  const { user } = useContext(UserContext);
   const [apartmentList, setApartmentList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("");
@@ -109,6 +111,10 @@ function ApartmentList({ searchTerm = "", filters = {} }) {
   };
 
   const toggleFavorite = (aptId) => {
+    if (!user) {
+      goToJoin && goToJoin();
+      return;
+    }
     setFavorites(prev => ({ ...prev, [aptId]: !prev[aptId] }));
   };
 
@@ -192,7 +198,7 @@ function ApartmentList({ searchTerm = "", filters = {} }) {
       )}
 
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-x-4 gap-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-3 gap-y-6">
           {Array.from({ length: 8 }).map((_, i) => (
             <SkeletonCard key={i} />
           ))}
@@ -218,7 +224,7 @@ function ApartmentList({ searchTerm = "", filters = {} }) {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-x-4 gap-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-3 gap-y-6">
           {paginatedList.map((apartment) => (
             <PropertyCard key={apartment.id_apt} apt={apartment} onViewMore={handleCardClick} isFavorite={!!favorites[apartment.id_apt]} onToggleFavorite={toggleFavorite} />
           ))}

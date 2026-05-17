@@ -16,9 +16,13 @@ const goToLogin = () => {
     onClose();
 };
 
+const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) onClose();
+};
+
 return (
-    <div className="fixed inset-0 flex items-center justify-center bg-surface-900/60 backdrop-blur-md z-50 p-4 animate-fade-in">
-    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 relative transform animate-scale-in border border-surface-100 overflow-hidden">
+    <div onClick={handleOverlayClick} className="fixed inset-0 flex items-center justify-center bg-surface-900/60 backdrop-blur-md z-50 p-4 animate-fade-in">
+    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 relative border border-surface-100 overflow-hidden">
         
         {/* Background decoration */}
         <div className="absolute top-0 left-0 w-32 h-32 bg-primary-100 rounded-full -translate-x-16 -translate-y-16 opacity-50"></div>
@@ -27,7 +31,7 @@ return (
         {/* Botón de cerrar */}
         <button
         onClick={onClose}
-        className="absolute top-4 right-4 text-surface-400 hover:text-surface-600 hover:rotate-90 transition-all duration-300 p-2 rounded-full hover:bg-surface-100"
+        className="absolute top-4 right-4 z-20 text-surface-400 hover:text-surface-600 hover:rotate-90 transition-all duration-300 p-2 rounded-full hover:bg-surface-100 cursor-pointer"
         aria-label="Cerrar"
         >
         <FontAwesomeIcon icon={faTimes} size="lg" />
@@ -68,7 +72,7 @@ return (
                 className="w-full py-4 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1 flex items-center justify-center gap-3 group"
                 >
                 <FontAwesomeIcon icon={faUserPlus} className="group-hover:scale-110 transition-transform" />
-                <span>Crear cuenta nueva</span>
+                <span>Registrarse</span>
                 </button>
             </div>
 
