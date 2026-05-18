@@ -8,6 +8,20 @@ const formatPrice = (price) => {
   return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val);
 };
 
+const iconForAmenity = (str) => {
+  const map = {
+    wifi: 'wifi', parqueadero: 'directions_car', gimnasio: 'fitness_center',
+    piscina: 'pool', lavandería: 'local_laundry_service', 'aire acondicionado': 'ac_unit',
+    tv: 'tv', cocina: 'kitchen', seguridad: 'security', balcón: 'balcony',
+    terraza: 'patio', ascensor: 'elevator', portería: 'door_front',
+    'zonas verdes': 'park', administración: 'receipt_long'
+  };
+  for (const [key, icon] of Object.entries(map)) {
+    if (str.toLowerCase().includes(key)) return icon;
+  }
+  return ['local_laundry_service', 'fitness_center', 'pool', 'security', 'wifi', 'kitchen', 'tv', 'ac_unit'][Math.abs(str.length) % 8];
+};
+
 const getImages = (apt) => {
   const imgs = apt.images;
   if (!imgs) return [];
@@ -42,84 +56,108 @@ function PropertyCard({ apt, onViewMore, isFavorite, onToggleFavorite }) {
   }, [apt.id_apt]);
 
   return (
-    <div onClick={() => { onViewMore && onViewMore(apt); }} className="group bg-surface-container-lowest rounded-xl overflow-hidden transition-all duration-300 w-[275px] h-[390px] flex flex-col cursor-pointer relative border border-outline/20 hover:shadow-lg hover:shadow-black/10">
-      <div className="relative h-40 shrink-0 overflow-hidden">
+    <div
+      onClick={() => { onViewMore && onViewMore(apt); }}
+      className="rcard overflow-hidden cursor-pointer group transition-transform hover:-translate-y-0.5"
+    >
+      <div className="relative">
         {allImages.length > 0 && !imgErrors[0] ? (
           <img
-            className="w-full h-full object-cover"
+            className="w-full object-cover"
+            style={{ aspectRatio: '16/9' }}
             alt="Apartamento En Arriendo"
             src={allImages[0]}
             onError={() => setImgErrors(prev => ({ ...prev, [0]: true }))}
           />
         ) : (
-          <div className="w-full h-full bg-surface-container-high flex items-center justify-center">
+          <div className="w-full bg-surface-container-high flex items-center justify-center" style={{ aspectRatio: '16/9' }}>
             <span className="material-symbols-outlined text-4xl text-outline">image</span>
           </div>
         )}
         {onToggleFavorite && (
           <button
             onClick={(e) => { e.stopPropagation(); onToggleFavorite(apt.id_apt); }}
-            className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-all shadow-md z-10 cursor-pointer"
+            className="absolute top-3 right-3 w-9 h-9 rounded-full bg-paper-card/90 hover:bg-paper-card flex items-center justify-center text-ink shadow-sm"
           >
             <FaHeart
-              className={`text-[10px] transition-colors ${
-                isFavorite ? 'text-red-500' : 'text-surface-600'
+              className={`text-sm transition-colors ${
+                isFavorite ? 'text-red-500' : 'text-ink-muted/60'
               }`}
             />
           </button>
         )}
       </div>
-      <div className="p-3 flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1">
-          <span className="font-label text-xs text-on-surface-variant/70 mb-1.5">Publicado por {ownerName}</span>
-          <p className="text-on-surface/85 font-headline text-2xl font-extrabold mb-2">
-            {formatPrice(apt.precio_apt)}
-            <span className="text-xs font-normal text-on-surface-variant/60">/mes</span>
-          </p>
-          <p className="font-headline text-sm font-semibold text-on-surface-variant mb-1">Apartamento En Arriendo</p>
-          <div className="flex items-center gap-1 text-on-surface-variant mb-2 mt-1">
-            <span className="material-symbols-outlined text-xs">location_on</span>
-            <span className="font-label text-xs font-bold">{location}</span>
-          </div>
-          {reviewsLoaded && !review && (
-            <div className="mb-2 -mt-0.5 h-[42px] flex items-start">
-              <p className="text-[10px] text-on-surface-variant/40 leading-tight mt-0.5">Sin reseñas</p>
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="text-xs text-ink-muted flex items-center gap-1">
+              <span className="material-symbols-outlined text-[10px]">location_on</span>
+              {location}
             </div>
-          )}
-          {review && (
-            <div className="mb-2 -mt-0.5">
-              <div className="inline-flex items-center gap-[1px]">
-                {[1,2,3,4,5].map(i => (
-                  <span key={i} className={`material-symbols-outlined text-[10px] ${i <= review.rating ? 'text-amber-400' : 'text-on-surface-variant/20'}`}>
-                    {i <= review.rating ? 'star' : 'star_border'}
-                  </span>
-                ))}
-              </div>
-              <p className="text-xs leading-tight mt-1">
-                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] rounded bg-[#2E5A88] text-white font-bold text-[9px] px-1 mr-1">{review.rating}</span>
-                <span className="font-semibold text-on-surface-variant/90 mr-1">{ratingLabels[review.rating]}</span>
-                <span className="text-on-surface-variant/60">({totalReviews} {totalReviews === 1 ? 'reseña' : 'reseñas'})</span>
-              </p>
-            </div>
-          )}
-        </div>
-        <div className="flex items-center justify-between py-1.5 border-t border-surface-container-high pt-1.5">
-          <div className="flex items-center gap-1">
-            <span className="material-symbols-outlined text-xs text-[#2E5A88]">bed</span>
-            <span className="font-label text-[10px]">{apt.habitaciones || '?'} Hab</span>
+            <div className="font-display text-xl mt-0.5 truncate">Apartamento En Arriendo</div>
           </div>
-          <div className="flex items-center gap-1">
-            <span className="material-symbols-outlined text-xs text-[#2E5A88]">shower</span>
-            <span className="font-label text-[10px]">{apt.banos || '?'} Baño{(apt.banos || 0) !== 1 ? 's' : ''}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="material-symbols-outlined text-xs text-[#2E5A88]">square_foot</span>
-            <span className="font-label text-[10px]">{apt.metros_apt || '?'} m²</span>
-          </div>
-          <div onClick={(e) => { e.stopPropagation(); onViewMore && onViewMore(apt); }} className="cursor-pointer w-5 h-5 flex items-center justify-center rounded-full bg-[#2E5A88]/10 hover:bg-[#2E5A88]/20 transition-colors">
-            <span className="material-symbols-outlined text-[10px] text-[#2E5A88]">chevron_right</span>
+          <div className="text-xs text-ink-muted flex items-center gap-1 flex-shrink-0 mt-1">
+            {review && (
+              <>
+                <span className="material-symbols-outlined text-[10px] text-ember">star</span>
+                {review.rating}
+              </>
+            )}
           </div>
         </div>
+        <div className="mt-3 pt-3 border-t border-line">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="font-display text-xl text-ink">{formatPrice(apt.precio_apt)}</span>
+              <span className="text-xs text-ink-muted ml-1 font-sans">/mes</span>
+            </div>
+            <button
+              onClick={(e) => { e.stopPropagation(); onViewMore && onViewMore(apt); }}
+              className="text-xs text-brand-500 font-semibold flex items-center gap-1 hover:underline"
+            >
+              Ver <span className="material-symbols-outlined text-[10px]">chevron_right</span>
+            </button>
+          </div>
+        </div>
+        <div className="mt-3 flex items-center gap-3 text-xs text-ink-muted">
+          <span className="flex items-center gap-1">
+            <span className="material-symbols-outlined text-[12px]">bed</span>
+            {apt.habitaciones || '?'}
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="material-symbols-outlined text-[12px]">bathtub</span>
+            {apt.banos || '?'}
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="material-symbols-outlined text-[12px]">square_foot</span>
+            {apt.metros_apt || '?'}m²
+          </span>
+        </div>
+
+        {/* Amenities */}
+        {(() => {
+          const list = apt.comodidades
+            ? apt.comodidades.split(',').map(s => s.trim()).filter(Boolean)
+            : [];
+          if (list.length === 0) return null;
+          const shown = list.slice(0, 4);
+          const extra = list.length - 4;
+          return (
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {shown.map((a, i) => (
+                <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-paper-sunk/60 text-ink-muted">
+                  <span className="material-symbols-outlined text-[10px]">{iconForAmenity(a)}</span>
+                  {a}
+                </span>
+              ))}
+              {extra > 0 && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-paper-sunk/60 text-ink-muted">
+                  +{extra}
+                </span>
+              )}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faBuilding, faArrowRight, faArrowLeft, faCheckCircle, faHome } from '@fortawesome/free-solid-svg-icons';
 
 function RoleSelection() {
   const [selectedRole, setSelectedRole] = useState(null);
@@ -13,101 +11,153 @@ function RoleSelection() {
     }
   };
 
-  const handleGoBack = () => {
-    navigate('/');
-  };
-
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary-container/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
-      </div>
+    <div className="min-h-screen screen-enter flex items-center justify-center p-4 md:p-8 bg-paper-sunk/50 relative overflow-hidden">
+      {/* Gridbg backdrop */}
+      <div className="absolute inset-0 gridbg opacity-40 pointer-events-none" />
 
-      <button onClick={handleGoBack} className="fixed top-6 left-6 w-12 h-12 rounded-full cursor-pointer text-on-surface bg-surface-container-lowest/70 backdrop-blur-md z-50 hover:bg-surface-container-low hover:rotate-90 hover:scale-110 transition-all duration-300 flex items-center justify-center border border-surface-container-high shadow-xl">
-        <FontAwesomeIcon icon={faArrowLeft} className="text-xl" />
+      {/* Volver al inicio — solo este */}
+      <button
+        onClick={() => navigate('/')}
+        className="absolute top-6 left-6 text-sm text-ink-muted hover:text-ink flex items-center gap-1.5 z-10"
+      >
+        <span className="material-symbols-outlined text-sm">arrow_back_ios</span> Volver al inicio
       </button>
 
-      <div className="bg-surface-container-lowest rounded-3xl shadow-2xl w-full max-w-4xl p-8 md:p-12 relative z-10 animate-scale-in">
-        <div className="text-center mb-10">
-          <div className="w-16 h-16 bg-primary-gradient rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <FontAwesomeIcon icon={faHome} className="text-white text-2xl" />
-          </div>
-          <h1 className="text-headline-lg text-on-surface mb-3">¿Qué tipo de cuenta necesitas?</h1>
-          <p className="text-on-surface-variant text-body-md">Selecciona tu rol para continuar con el registro</p>
-        </div>
+      {/* Logo mobile */}
+      <div className="absolute top-6 right-6 z-10 hidden md:block">
+        <span className="font-display italic-serif text-xl text-ink">RentUP</span>
+      </div>
 
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          <div className={`relative p-6 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${
-            selectedRole === 'usuario' 
-              ? 'border-primary bg-primary-50 shadow-xl transform scale-[1.02]' 
-              : 'border-surface-container-high hover:border-outline hover:shadow-lg'
-          }`} onClick={() => setSelectedRole('usuario')}>
-            {selectedRole === 'usuario' && (
-              <div className="absolute top-4 right-4 w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                <FontAwesomeIcon icon={faCheckCircle} className="text-white text-sm" />
-              </div>
-            )}
-            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-colors ${
-              selectedRole === 'usuario' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant'
-            }`}>
-              <FontAwesomeIcon icon={faUser} className="text-2xl" />
+      {/* Card container — same rcard style as AuthPage */}
+      <div
+        className="rcard bg-paper-card w-full max-w-[1080px] overflow-hidden relative flex items-center justify-center"
+        style={{
+          '--radius-card': '28px',
+          '--card-shadow': '0 30px 80px -30px rgba(14,26,43,0.35), 0 0 0 1px rgba(14,26,43,0.05)',
+          '--card-border': '1px solid transparent',
+          minHeight: '720px'
+        }}
+      >
+        <div className="w-full max-w-2xl px-8 md:px-16">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="w-14 h-14 bg-brand-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <span className="material-symbols-outlined text-paper text-2xl">how_to_reg</span>
             </div>
-            <h2 className="text-xl font-bold text-on-surface mb-2">Usuario</h2>
-            <p className="text-on-surface-variant text-sm mb-4">Busco un lugar para vivir cerca de mi universidad</p>
-            <ul className="space-y-2 text-sm text-on-surface-variant">
-              <li className="flex items-center gap-2"><FontAwesomeIcon icon={faCheckCircle} className="text-primary text-xs" /><span>Buscar apartamentos</span></li>
-              <li className="flex items-center gap-2"><FontAwesomeIcon icon={faCheckCircle} className="text-primary text-xs" /><span>Contactar arrendadores</span></li>
-              <li className="flex items-center gap-2"><FontAwesomeIcon icon={faCheckCircle} className="text-primary text-xs" /><span>Dejar reseñas</span></li>
-              <li className="flex items-center gap-2"><FontAwesomeIcon icon={faCheckCircle} className="text-primary text-xs" /><span>Gestionar reservas</span></li>
-            </ul>
+            <h1 className="font-display text-[28px] font-bold text-ink mb-2">¿Qué tipo de cuenta necesitas?</h1>
+            <p className="text-ink-muted text-sm">Selecciona tu rol para continuar con el registro</p>
           </div>
 
-          <div className={`relative p-6 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${
-            selectedRole === 'arrendador' 
-              ? 'border-primary bg-primary-50 shadow-xl transform scale-[1.02]' 
-              : 'border-surface-container-high hover:border-outline hover:shadow-lg'
-          }`} onClick={() => setSelectedRole('arrendador')}>
-            {selectedRole === 'arrendador' && (
-              <div className="absolute top-4 right-4 w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                <FontAwesomeIcon icon={faCheckCircle} className="text-white text-sm" />
+          {/* Role cards */}
+          <div className="grid md:grid-cols-2 gap-5 mb-8">
+            {/* Usuario */}
+            <div
+              className={`relative p-6 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${
+                selectedRole === 'usuario'
+                  ? 'border-brand-500 bg-brand-50/50 shadow-lg'
+                  : 'border-line bg-paper-card hover:border-ink-muted hover:shadow-md'
+              }`}
+              onClick={() => setSelectedRole('usuario')}
+            >
+              {selectedRole === 'usuario' && (
+                <div className="absolute top-4 right-4 w-7 h-7 bg-brand-500 rounded-full flex items-center justify-center">
+                  <span className="material-symbols-outlined text-paper text-sm">check</span>
+                </div>
+              )}
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-colors ${
+                selectedRole === 'usuario' ? 'bg-brand-500 text-paper' : 'bg-line/30 text-ink-muted'
+              }`}>
+                <span className="material-symbols-outlined text-2xl">person</span>
               </div>
-            )}
-            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-colors ${
-              selectedRole === 'arrendador' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant'
-            }`}>
-              <FontAwesomeIcon icon={faBuilding} className="text-2xl" />
+              <h2 className="text-lg font-bold text-ink mb-2">Usuario</h2>
+              <p className="text-ink-muted text-sm mb-4">Busco un lugar para vivir cerca de mi universidad</p>
+              <ul className="space-y-2 text-sm text-ink-muted">
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-brand-500 text-sm">check_circle</span>
+                  <span>Buscar apartamentos</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-brand-500 text-sm">check_circle</span>
+                  <span>Contactar arrendadores</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-brand-500 text-sm">check_circle</span>
+                  <span>Dejar reseñas</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-brand-500 text-sm">check_circle</span>
+                  <span>Gestionar reservas</span>
+                </li>
+              </ul>
             </div>
-            <h2 className="text-xl font-bold text-on-surface mb-2">Arrendador</h2>
-            <p className="text-on-surface-variant text-sm mb-4">Quiero alquilar mis propiedades a estudiantes</p>
-            <ul className="space-y-2 text-sm text-on-surface-variant">
-              <li className="flex items-center gap-2"><FontAwesomeIcon icon={faCheckCircle} className="text-primary text-xs" /><span>Publicar apartamentos</span></li>
-              <li className="flex items-center gap-2"><FontAwesomeIcon icon={faCheckCircle} className="text-primary text-xs" /><span>Gestionar reservas</span></li>
-              <li className="flex items-center gap-2"><FontAwesomeIcon icon={faCheckCircle} className="text-primary text-xs" /><span>Recibir pagos</span></li>
-              <li className="flex items-center gap-2"><FontAwesomeIcon icon={faCheckCircle} className="text-primary text-xs" /><span>Ver estadísticas</span></li>
-            </ul>
+
+            {/* Arrendador */}
+            <div
+              className={`relative p-6 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${
+                selectedRole === 'arrendador'
+                  ? 'border-brand-500 bg-brand-50/50 shadow-lg'
+                  : 'border-line bg-paper-card hover:border-ink-muted hover:shadow-md'
+              }`}
+              onClick={() => setSelectedRole('arrendador')}
+            >
+              {selectedRole === 'arrendador' && (
+                <div className="absolute top-4 right-4 w-7 h-7 bg-brand-500 rounded-full flex items-center justify-center">
+                  <span className="material-symbols-outlined text-paper text-sm">check</span>
+                </div>
+              )}
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 transition-colors ${
+                selectedRole === 'arrendador' ? 'bg-brand-500 text-paper' : 'bg-line/30 text-ink-muted'
+              }`}>
+                <span className="material-symbols-outlined text-2xl">business</span>
+              </div>
+              <h2 className="text-lg font-bold text-ink mb-2">Arrendador</h2>
+              <p className="text-ink-muted text-sm mb-4">Quiero alquilar mis propiedades a estudiantes</p>
+              <ul className="space-y-2 text-sm text-ink-muted">
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-brand-500 text-sm">check_circle</span>
+                  <span>Publicar apartamentos</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-brand-500 text-sm">check_circle</span>
+                  <span>Gestionar reservas</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-brand-500 text-sm">check_circle</span>
+                  <span>Recibir pagos</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-brand-500 text-sm">check_circle</span>
+                  <span>Ver estadísticas</span>
+                </li>
+              </ul>
+            </div>
           </div>
-        </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
-          <button className="px-6 py-3 btn-secondary flex items-center gap-2" onClick={handleGoBack}>
-            <FontAwesomeIcon icon={faArrowLeft} />
-            <span>Volver al inicio</span>
-          </button>
-          <button className={`px-8 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center gap-3 ${
-            selectedRole ? 'bg-primary-gradient text-white shadow-lg hover:shadow-primary-glow-lg hover:-translate-y-1' : 'bg-surface-container-high text-on-surface-variant cursor-not-allowed'
-          }`} onClick={handleContinue} disabled={!selectedRole}>
-            <span>Continuar</span>
-            <FontAwesomeIcon icon={faArrowRight} />
-          </button>
-        </div>
+          {/* Continue button */}
+          <div className="flex justify-center">
+            <button
+              className={`px-10 py-3 rounded-full font-semibold flex items-center gap-2 transition-all duration-300 ${
+                selectedRole
+                  ? 'bg-brand-500 text-paper shadow-md hover:shadow-lg hover:bg-brand-400 cursor-pointer'
+                  : 'bg-line/30 text-ink-muted cursor-not-allowed'
+              }`}
+              onClick={handleContinue}
+              disabled={!selectedRole}
+            >
+              <span>Continuar</span>
+              <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            </button>
+          </div>
 
-        <p className="text-center text-on-surface-variant mt-6">
-          ¿Ya tienes cuenta?{" "}
-          <span onClick={() => navigate('/login')} className="text-primary font-semibold cursor-pointer hover:text-primary-600 hover:underline">
-            Inicia sesión
-          </span>
-        </p>
+          {/* Login link */}
+          <p className="text-center text-ink-muted mt-6 text-sm">
+            ¿Ya tienes cuenta?{' '}
+            <span onClick={() => navigate('/login')} className="text-brand-500 font-semibold cursor-pointer hover:text-brand-400 hover:underline">
+              Inicia sesión
+            </span>
+          </p>
+        </div>
       </div>
     </div>
   );

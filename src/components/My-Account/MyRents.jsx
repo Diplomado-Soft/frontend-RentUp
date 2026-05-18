@@ -165,7 +165,7 @@ function MyRents() {
 
                   {selectedRent?.agreement_id === rent.agreement_id && (
                     <div className="mt-4 pt-4 border-t border-surface-container-high">
-                      <ReviewSection propertyId={selectedRent.property_id} isOwner={false} />
+                      <ReviewSection propertyId={selectedRent.id_apt} isOwner={false} />
                     </div>
                   )}
                 </div>
