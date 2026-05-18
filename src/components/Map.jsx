@@ -1,13 +1,9 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { MapContainer, Marker, TileLayer, Popup, useMap, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faRoute, faMapMarkerAlt, faCar, faWalking, faBed, faBath } from '@fortawesome/free-solid-svg-icons';
-import { FaMapMarkerAlt, FaCar, FaWalking, FaImages, FaBed, FaBath, FaWhatsapp } from 'react-icons/fa';
-
-// Estilos personalizados para el popup
+import PropertyDetailModal from "./PropertyDetailModal";
 import './Map.css';
 
 // Actualiza la vista del mapa cuando cambian las coordenadas
@@ -76,6 +72,18 @@ function Map() {
         localStorage.removeItem("selectedAptId");
         return stored ? Number(stored) : null;
     });
+    const [showDetailModal, setShowDetailModal] = useState(false);
+    const [detailProperty, setDetailProperty] = useState(null);
+
+    const openDetailModal = (apt) => {
+        setDetailProperty(apt);
+        setShowDetailModal(true);
+    };
+
+    const closeDetailModal = () => {
+        setShowDetailModal(false);
+        setDetailProperty(null);
+    };
 
     const UNIPUTUMAYO_COORDINATES = [1.156667, -76.651944];
 
@@ -204,7 +212,7 @@ const handleApartmentClick = async (apt) => {
 };
 
 return (
-<div className="pt-20 w-full h-screen">
+<div className="w-full h-screen">
     <MapContainer
     center={center}
     zoom={17}
@@ -252,9 +260,9 @@ return (
         }}
         >
         <Popup className="!z-50 custom-popup">
-            <div className="w-80 p-0">
-              {/* Imagen principal */}
-              <div className="relative h-40 overflow-hidden rounded-t-lg">
+            <div className="w-80 p-4 bg-paper-card">
+              {/* 1. Imagen con bordes redondeados */}
+              <div className="relative h-56 rounded-xl overflow-hidden mb-4">
                 <img 
                     src={primaryImage} 
                     alt="Apartamento"
@@ -264,118 +272,128 @@ return (
                     }}
                 />
                 {imageUrls.length > 1 && (
-                    <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                        <FaImages className="text-xs" />
+                    <div className="absolute bottom-2 right-2 bg-ink/70 text-paper text-xs px-2.5 py-1 rounded-full flex items-center gap-1 backdrop-blur-sm">
+                        <span className="material-symbols-outlined text-[10px]">photo_library</span>
                         {imageUrls.length}
                     </div>
                 )}
               </div>
 
-              {/* Header con precio */}
-              <div style={{background: 'linear-gradient(135deg, #6A6BEF 0%, #7B7CF0 100%)'}} className="text-white p-4">
-                <div className="flex justify-between items-start">
-                    <div>
-                        <h3 className="font-bold text-lg mb-1">
-                            <FaMapMarkerAlt className="inline mr-1" /> 
-                            {apt.barrio || apt.barrio_apartamento}
-                        </h3>
-                        <p className="text-sm opacity-90">{apt.direccion_apt || apt.direccion_apartamento}</p>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-xl font-bold">{formatPrice(apt.precio_apt || apt.price)}</p>
-                        <p className="text-xs opacity-80">/mes</p>
+              {/* Fila: Título (izq) + Precio (der) */}
+                <div className="flex items-start justify-between gap-3">
+                    <h3 className="font-semibold text-sm text-ink leading-tight">
+                        Apartamento {apt.barrio || apt.barrio_apartamento}
+                    </h3>
+                    <div className="text-right flex-shrink-0">
+                        <div className="font-bold text-lg text-ink leading-none">{formatPrice(apt.precio_apt || apt.price)}</div>
+                        <div className="text-[10px] text-ink-muted mt-0.5">/ mes</div>
                     </div>
                 </div>
-              </div>
-              
-              {/* Contenido */}
-              <div className="p-4 bg-white">
-                {/* Características */}
-                <div className="flex gap-4 mb-3 text-sm text-gray-600">
+
+                {/* Ubicación */}
+                <div className="flex items-center gap-1 mt-1 text-xs text-ink-muted">
+                    <span className="material-symbols-outlined text-[10px] text-ink-muted">location_on</span>
+                    {apt.direccion_apt || apt.direccion_apartamento}
+                </div>
+
+                {/* 2. Píldoras de características */}
+                <div className="flex flex-wrap gap-1.5 mt-3">
                     {(apt.habitaciones || apt.bedrooms) && (
-                        <div className="flex items-center gap-1">
-                            <FaBed className="text-gray-400" />
-                            <span>{apt.habitaciones || apt.bedrooms} hab</span>
-                        </div>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-paper-sunk text-xs text-ink">
+                            <span className="material-symbols-outlined text-[10px]">bed</span>
+                            {apt.habitaciones || apt.bedrooms} hab
+                        </span>
                     )}
                     {(apt.banos || apt.bathrooms) && (
-                        <div className="flex items-center gap-1">
-                            <FaBath className="text-gray-400" />
-                            <span>{apt.banos || apt.bathrooms} baños</span>
-                        </div>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-paper-sunk text-xs text-ink">
+                            <span className="material-symbols-outlined text-[10px]">bathtub</span>
+                            {apt.banos || apt.bathrooms} baño{apt.banos != 1 ? 's' : ''}
+                        </span>
+                    )}
+                    {(apt.metros_apt || apt.area_m2) && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-paper-sunk text-xs text-ink">
+                            <span className="material-symbols-outlined text-[10px]">square_foot</span>
+                            {apt.metros_apt || apt.area_m2} m²
+                        </span>
                     )}
                 </div>
 
-                {/* Info adicional */}
+                {/* Descripción adicional */}
                 {(apt.info_add_apt || apt.info_adicional_apartamento) && (
-                    <div className="mb-4">
-                        <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded">
-                            {apt.info_add_apt || apt.info_adicional_apartamento}
-                        </p>
-                    </div>
-                )}
-
-                {/* WhatsApp */}
-                {apt.whatsapp && (
-                    <a
-                        href={`https://wa.me/${apt.whatsapp}?text=${encodeURIComponent(`Hola, estoy interesado en el inmueble "${apt.barrio || apt.barrio_apartamento}" publicado en RentUP.`)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block w-full mb-3 px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white text-center rounded-lg font-semibold transition-all"
-                    >
-                        <FaWhatsapp className="inline mr-2" /> Contactar por WhatsApp
-                    </a>
-                )}
-
-                {selectedApartment?.id_apartamento === (apt.id_apt || apt.id_apartamento) && distance && (
-                  <div className="mb-4 bg-blue-50 border-l-4 border-blue-500 p-3 rounded">
-                    <p className="text-sm font-bold text-blue-900 mb-2">
-                        <FaMapMarkerAlt className="inline mr-1" /> Distancia desde Uniputumayo:
+                    <p className="text-xs text-ink-muted leading-relaxed mt-3">
+                        {apt.info_add_apt || apt.info_adicional_apartamento}
                     </p>
-                    <div className="flex gap-4 text-sm">
-                      <div className="flex items-center gap-2">
-                        <FaCar className="text-lg" />
-                        <div>
-                          <p className="text-gray-600">Distancia</p>
-                          <p className="font-bold text-blue-700">{distance.km} km</p>
-                        </div>
+                )}
+
+                {/* 3. Caja de distancia */}
+                {selectedApartment?.id_apartamento === (apt.id_apt || apt.id_apartamento) && distance && (
+                  <div className="mt-3 p-3 rounded-xl bg-paper-sunk">
+                    <div className="text-xs font-medium text-ink">Distancia desde Uniputumayo:</div>
+                    <div className="flex gap-5 mt-2 text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[12px] text-ink-muted">directions_car</span>
+                        <span className="text-ink-muted">Distancia</span>
+                        <span className="text-ink font-medium">{distance.km} km</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <div>
-                          <p className="text-gray-600">Tiempo</p>
-                          <p className="font-bold text-blue-700">{distance.min} min</p>
-                        </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[12px] text-ink-muted">schedule</span>
+                        <span className="text-ink-muted">Tiempo</span>
+                        <span className="text-ink font-medium">{distance.min} min</span>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Botón */}
-                <button 
-                  onClick={() => handleApartmentClick({
-                    ...apt,
-                    id_apartamento: apt.id_apt || apt.id_apartamento,
-                    barrio_apartamento: apt.barrio || apt.barrio_apartamento,
-                    direccion_apartamento: apt.direccion_apt || apt.direccion_apartamento,
-                    info_adicional_apartamento: apt.info_add_apt || apt.info_adicional_apartamento,
-                    latitud_apartamento: apt.latitud_apt || apt.latitud_apartamento,
-                    longitud_apartamento: apt.longitud_apt || apt.longitud_apartamento
-                  })}
-                  style={{
-                    backgroundColor: selectedApartment?.id_apartamento === (apt.id_apt || apt.id_apartamento) ? '#E53E3E' : '#6A6BEF',
-                  }}
-                  className={`w-full px-4 py-2 rounded-lg font-semibold transition-all duration-200 text-white hover:opacity-90`}
-                >
-                  {selectedApartment?.id_apartamento === (apt.id_apt || apt.id_apartamento) ? (
-                    <><FontAwesomeIcon icon={faTimes} className="mr-1" /> Ocultar ruta</>
-                  ) : (
-                    <><FontAwesomeIcon icon={faRoute} className="mr-1" /> Ver ruta desde Uniputumayo</>
-                  )}
-                </button>
-              </div>
+                {/* 4. Botones + Ver detalles */}
+                <div className="flex items-center justify-between mt-4">
+                    <div className="flex items-center gap-2">
+                        {apt.whatsapp ? (
+                            <a
+                                href={`https://wa.me/${apt.whatsapp}?text=${encodeURIComponent(`Hola, estoy interesado en el inmueble "${apt.barrio || apt.barrio_apartamento}" publicado en RentUP.`)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-colors flex-shrink-0"
+                                style={{ backgroundColor: '#25D366', color: '#ffffff' }}
+                                title="Contactar por WhatsApp"
+                            >
+                            <svg viewBox="0 0 24 24" className="w-[16px] h-[16px]" fill="currentColor">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                            </svg>
+                        </a>
+                    ) : (
+                        <div className="flex-1" />
+                    )}
+                    </div>
+                    <button
+                        onClick={() => handleApartmentClick({
+                            ...apt,
+                            id_apartamento: apt.id_apt || apt.id_apartamento,
+                            barrio_apartamento: apt.barrio || apt.barrio_apartamento,
+                            direccion_apartamento: apt.direccion_apt || apt.direccion_apartamento,
+                            info_adicional_apartamento: apt.info_add_apt || apt.info_adicional_apartamento,
+                            latitud_apartamento: apt.latitud_apt || apt.latitud_apartamento,
+                            longitud_apartamento: apt.longitud_apt || apt.longitud_apartamento
+                        })}
+                        className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium border transition-colors flex-shrink-0 ${
+                            selectedApartment?.id_apartamento === (apt.id_apt || apt.id_apartamento)
+                                ? 'border-line text-ink-muted bg-paper-card hover:bg-paper-sunk'
+                                : 'border-line text-ink-muted bg-paper-card hover:bg-paper-sunk'
+                        }`}
+                        title={selectedApartment?.id_apartamento === (apt.id_apt || apt.id_apartamento) ? 'Ocultar ruta' : 'Ver ruta'}
+                    >
+                        <span className={`material-symbols-outlined text-sm ${selectedApartment?.id_apartamento === (apt.id_apt || apt.id_apartamento) ? 'text-ember' : ''}`}>
+                            {selectedApartment?.id_apartamento === (apt.id_apt || apt.id_apartamento) ? 'visibility_off' : 'route'}
+                        </span>
+                        {selectedApartment?.id_apartamento === (apt.id_apt || apt.id_apartamento) ? 'Ocultar ruta' : 'Ver ruta'}
+                    </button>
+                    <button
+                        onClick={() => openDetailModal(apt)}
+                        className="text-[11px] text-brand-500 hover:text-brand-400 font-medium transition-colors flex-shrink-0 ml-auto"
+                        title="Ver más detalles"
+                    >
+                        Ver más
+                    </button>
+                </div>
             </div>
         </Popup>
         </Marker>
@@ -392,6 +410,13 @@ return (
         />
     )}
     </MapContainer>
+
+    {showDetailModal && detailProperty && (
+        <PropertyDetailModal
+            apartment={detailProperty}
+            onClose={closeDetailModal}
+        />
+    )}
 </div>
 );
 }

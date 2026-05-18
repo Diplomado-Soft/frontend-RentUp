@@ -1,7 +1,6 @@
 import React, { useState, useContext, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import SucessModal from '../components/SuccessModal';
-import '../styles/log.css';
 import { signupUser } from '../apis/signupController';
 import { UserContext } from "../contexts/UserContext";
 import { firebaseGoogleSignIn } from "../apis/firebaseAuthService";
@@ -25,6 +24,7 @@ function Signup() {
     const location = useLocation();
 
     useEffect(() => {
+        document.title = 'Registrarse | RentUp';
         if (location.state?.role) {
             setUserType(location.state.role);
         }
@@ -174,63 +174,61 @@ function Signup() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col md:flex-row bg-background font-body text-on-background">
-            {/* Exit Button */}
+        <div className="min-h-screen flex flex-col md:flex-row w-full bg-surface">
+            {/* Volver al inicio */}
             <button 
                 onClick={goToHome} 
-                className="fixed top-6 left-6 w-12 h-12 rounded-full cursor-pointer text-white bg-white/10 backdrop-blur-md z-50 hover:bg-white/20 hover:rotate-90 hover:scale-110 transition-all duration-300 flex items-center justify-center border border-white/20 shadow-xl"
+                className="fixed top-6 right-6 w-10 h-10 rounded-full cursor-pointer text-white bg-brand-navy/70 backdrop-blur-md z-50 hover:bg-brand-navy hover:scale-110 transition-all duration-300 flex items-center justify-center border border-white/20 shadow-xl"
                 aria-label="Volver al inicio"
             >
-                <span className="material-symbols-outlined text-xl font-bold">close</span>
+                <span className="material-symbols-outlined text-xl font-bold">arrow_back</span>
             </button>
 
-            {/* Left Side - Purple Brand Section */}
-            <section className="relative w-full md:w-5/12 bg-gradient-to-br from-primary via-primary-container to-primary-700 p-12 flex flex-col justify-between overflow-hidden min-h-[400px] md:min-h-screen">
-                <div className="absolute inset-0 z-0 opacity-30">
+            {/* Left Side - Brand Section */}
+            <section className="hidden md:flex relative w-1/2 flex-col justify-center items-center p-8 overflow-hidden bg-brand-navy">
+                <div className="absolute inset-0 z-0 opacity-40">
                     <img 
-                        alt="Concepto visual de vivienda estudiantil"
+                        alt="Ilustración de RentUp"
                         className="w-full h-full object-cover mix-blend-overlay"
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjgpT-d03BeREqhXcb2A2rPo2vuekIFarFQslGnUoojP1_z2jXmzRwCl3p4EseK4mzsj61eaQwrBKbVVHYun7CCfwrT5pDipDkcCgc6c7U9vA__KPIe4VvQ0CdDH9iX1d2WeEzzXKmdz63-Zc9smnd-qy20Fm3Ftj5ctAH41JPinwVCXCuz9izDq2p9UklbbMnUPStslH_M6V3k-A9pFoW0D6u18xQUESkvLRfADb7lpipn3cnAQXmjOQUpnPEOk8omoSMVVCiQpU-"
+                        src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
                     />
                 </div>
-                <div className="z-10">
-                    <h1 className="font-headline text-headline-md text-on-primary flex items-center gap-2">
-                        <span className="material-symbols-outlined text-lg">home</span>
-                        RentUp
-                    </h1>
+                <div className="absolute bottom-10 right-10 w-48 h-48 bg-white/5 rounded-full blur-2xl opacity-30" />
+                <div className="absolute top-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-xl opacity-20" />
+                <div className="relative z-10 max-w-md text-center text-white">
+                    <h1 className="font-headline text-headline-lg mb-4 leading-tight">Bienvenido a RentUp</h1>
+                    <p className="text-body-md text-white/80 px-8">Encuentra el hogar perfecto para tu etapa universitaria. Conectamos estudiantes con las mejores opciones de vivienda.</p>
                 </div>
-                <div className="z-10 space-y-6 mb-10">
-                    <h2 className="font-headline text-headline-lg text-on-primary leading-tight max-w-sm">
-                        Bienvenido a RentUp
-                    </h2>
-                    <p className="text-body-md text-primary-fixed/90 max-w-xs">
-                        Encuentra el hogar perfecto para tu etapa universitaria. Un espacio diseñado para tu éxito académico.
-                    </p>
-                </div>
-                <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-white/10 rounded-full blur-3xl z-0 pointer-events-none"></div>
-                <div className="absolute top-1/4 -right-12 w-48 h-48 bg-white/20 rounded-full blur-2xl z-0 pointer-events-none"></div>
             </section>
 
-            {/* Right Side - Form Container */}
-            <section className="w-full md:w-7/12 bg-surface-container-lowest flex items-center justify-center p-6 md:p-16 lg:p-24 overflow-y-auto">
-                <div className="w-full max-w-lg space-y-8">
-                    {/* Tab Selector */}
-                    <div className="flex items-center border-b border-outline-variant pb-4">
-                        <button className="relative pb-4 text-primary font-bold border-b-2 border-primary font-headline text-headline-sm transition-all duration-200">
-                            Registrarse
-                        </button>
-                        <button 
-                            onClick={() => navigate('/login')}
-                            className="relative pb-4 text-outline font-body text-body-md hover:text-on-surface-variant transition-all duration-200 ml-8"
-                        >
-                            Iniciar Sesión
-                        </button>
+            {/* Right Side - Clean Form */}
+            <section className="flex-1 flex flex-col justify-center items-center p-4 bg-surface-container-lowest min-h-screen overflow-y-auto" style={{scrollbarGutter: 'stable'}}>
+                <div className="w-full max-w-md">
+                    {/* Mobile branding */}
+                    <div className="md:hidden mb-6 text-center">
+                        <span className="font-headline text-headline-md text-brand-navy font-bold">RentUp</span>
                     </div>
 
-                    <form className="space-y-6" onSubmit={handleSubmit}>
+                    <div className="bg-surface-container-lowest p-6">
+                        {/* Tab Selector — fixed order: Iniciar Sesión | Registrarse */}
+                        <div className="flex border-b border-surface-variant mb-8">
+                            <button 
+                                onClick={() => navigate('/login')}
+                                className="flex-1 pb-4 text-center border-b-2 border-transparent text-on-surface-variant hover:text-brand-navy transition-colors text-label-md uppercase tracking-wider"
+                            >
+                                Iniciar Sesión
+                            </button>
+                            <button className="flex-1 pb-4 text-center border-b-2 border-brand-navy text-brand-navy font-bold text-label-md uppercase tracking-wider">
+                                Registrarse
+                            </button>
+                        </div>
+
+                        <h2 className="font-headline text-headline-md mb-6 text-on-surface">Crear cuenta</h2>
+
+                        <form className="space-y-2" onSubmit={handleSubmit}>
                         {/* Role Selection Chips */}
-                        <div className="space-y-2">
-                            <label className="font-label text-label-md text-on-surface-variant uppercase tracking-wider">¿Cómo te unes a nosotros?</label>
+                        <div className="space-y-1">
+                            <label className="font-label text-label-xs text-on-surface-variant uppercase tracking-wider">¿Cómo te unes a nosotros?</label>
                             <div className="flex gap-2">
                                 <label className="cursor-pointer group flex-1">
                                     <input 
@@ -241,7 +239,7 @@ function Signup() {
                                         value="usuario"
                                         onChange={() => handleRoleChange('usuario')}
                                     />
-                                    <div className="flex items-center justify-center gap-1.5 px-6 py-2.5 rounded-xl border border-outline-variant peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:border-primary-container transition-all group-hover:bg-surface-container-high">
+                                    <div className="flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-lg border border-outline-variant peer-checked:bg-brand-navy peer-checked:text-white peer-checked:border-brand-navy transition-all group-hover:bg-surface-container-high">
                                         <span className="material-symbols-outlined text-sm">person</span>
                                         <span className="font-label text-label-md">Usuario</span>
                                     </div>
@@ -255,7 +253,7 @@ function Signup() {
                                         value="arrendador"
                                         onChange={() => handleRoleChange('arrendador')}
                                     />
-                                    <div className="flex items-center justify-center gap-1.5 px-6 py-2.5 rounded-xl border border-outline-variant peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:border-primary-container transition-all group-hover:bg-surface-container-high">
+                                    <div className="flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-lg border border-outline-variant peer-checked:bg-brand-navy peer-checked:text-white peer-checked:border-brand-navy transition-all group-hover:bg-surface-container-high">
                                         <span className="material-symbols-outlined text-sm">badge</span>
                                         <span className="font-label text-label-md">Arrendador</span>
                                     </div>
@@ -264,112 +262,112 @@ function Signup() {
                         </div>
 
                         {/* Name Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <label className="font-label text-label-md text-on-surface-variant" htmlFor="nombre">Nombre</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                                <label className="font-label text-label-xs text-on-surface-variant uppercase tracking-wider" htmlFor="nombre">Nombre</label>
                                 <input 
                                     id="nombre"
                                     type="text" 
                                     value={nombre} 
                                     onChange={(e) => setNombre(e.target.value)} 
                                     placeholder="Ej. Juan"
-                                    className="w-full bg-surface-container-low border-none rounded-lg p-4 focus:ring-2 focus:ring-primary transition-shadow placeholder:text-outline/50 text-body-md text-on-surface"
+                                    className="w-full bg-surface-container-low rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-brand-navy/30 transition-all text-body-md text-on-surface placeholder:text-outline/50"
                                 />
                             </div>
-                            <div className="space-y-1.5">
-                                <label className="font-label text-label-md text-on-surface-variant" htmlFor="apellido">Apellido</label>
+                            <div className="space-y-1">
+                                <label className="font-label text-label-xs text-on-surface-variant uppercase tracking-wider" htmlFor="apellido">Apellido</label>
                                 <input 
                                     id="apellido"
                                     type="text" 
                                     value={apellido} 
                                     onChange={(e) => setApellido(e.target.value)} 
                                     placeholder="Ej. Pérez"
-                                    className="w-full bg-surface-container-low border-none rounded-lg p-4 focus:ring-2 focus:ring-primary transition-shadow placeholder:text-outline/50 text-body-md text-on-surface"
+                                    className="w-full bg-surface-container-low rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-brand-navy/30 transition-all text-body-md text-on-surface placeholder:text-outline/50"
                                 />
                             </div>
                         </div>
 
                         {/* Email */}
-                        <div className="space-y-1.5">
-                            <label className="font-label text-label-md text-on-surface-variant" htmlFor="email">Email</label>
+                        <div className="space-y-1">
+                            <label className="font-label text-label-xs text-on-surface-variant uppercase tracking-wider" htmlFor="email">Email</label>
                             <div className="relative">
-                                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-sm">mail</span>
+                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">mail</span>
                                 <input 
                                     id="email"
                                     type="email" 
                                     value={email} 
                                     onChange={(e) => setEmail(e.target.value)} 
                                     placeholder="nombre@universidad.edu"
-                                    className="w-full pl-11 bg-surface-container-low border-none rounded-lg p-4 focus:ring-2 focus:ring-primary transition-shadow placeholder:text-outline/50 text-body-md text-on-surface"
+                                    className="w-full pl-9 bg-surface-container-low rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-brand-navy/30 transition-all text-body-md text-on-surface placeholder:text-outline/50"
                                 />
                             </div>
                         </div>
 
                         {/* Phone */}
-                        <div className="space-y-1.5">
-                            <label className="font-label text-label-md text-on-surface-variant" htmlFor="telefono">Teléfono</label>
+                        <div className="space-y-1">
+                            <label className="font-label text-label-xs text-on-surface-variant uppercase tracking-wider" htmlFor="telefono">Teléfono</label>
                             <div className="relative">
-                                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-sm">phone</span>
+                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">phone</span>
                                 <input 
                                     id="telefono"
                                     type="tel" 
                                     value={telefono} 
                                     onChange={(e) => setTelefono(e.target.value)} 
                                     placeholder="+57 300 123 4567"
-                                    className="w-full pl-11 bg-surface-container-low border-none rounded-lg p-4 focus:ring-2 focus:ring-primary transition-shadow placeholder:text-outline/50 text-body-md text-on-surface"
+                                    className="w-full pl-9 bg-surface-container-low rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-brand-navy/30 transition-all text-body-md text-on-surface placeholder:text-outline/50"
                                 />
                             </div>
                         </div>
 
                         {/* Password Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <label className="font-label text-label-md text-on-surface-variant" htmlFor="password">Contraseña</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                                <label className="font-label text-label-xs text-on-surface-variant uppercase tracking-wider" htmlFor="password">Contraseña</label>
                                 <div className="relative">
-                                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-sm">lock</span>
+                                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">lock</span>
                                     <input 
                                         id="password"
                                         type="password" 
                                         value={password} 
                                         onChange={(e) => setPassword(e.target.value)} 
                                         placeholder="••••••••"
-                                        className="w-full pl-11 bg-surface-container-low border-none rounded-lg p-4 focus:ring-2 focus:ring-primary transition-shadow placeholder:text-outline/50 text-body-md text-on-surface"
+                                        className="w-full pl-9 bg-surface-container-low rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-brand-navy/30 transition-all text-body-md text-on-surface placeholder:text-outline/50"
                                     />
                                 </div>
                             </div>
-                            <div className="space-y-1.5">
-                                <label className="font-label text-label-md text-on-surface-variant" htmlFor="confirm-password">Confirmar Contraseña</label>
+                            <div className="space-y-1">
+                                <label className="font-label text-label-xs text-on-surface-variant uppercase tracking-wider" htmlFor="confirm-password">Confirmar Contraseña</label>
                                 <div className="relative">
-                                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-sm">lock</span>
+                                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">lock</span>
                                     <input 
                                         id="confirm-password"
                                         type="password" 
                                         value={confirmPassword} 
                                         onChange={(e) => setConfirmPassword(e.target.value)} 
                                         placeholder="••••••••"
-                                        className="w-full pl-11 bg-surface-container-low border-none rounded-lg p-4 focus:ring-2 focus:ring-primary transition-shadow placeholder:text-outline/50 text-body-md text-on-surface"
+                                        className="w-full pl-9 bg-surface-container-low rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-brand-navy/30 transition-all text-body-md text-on-surface placeholder:text-outline/50"
                                     />
                                 </div>
                             </div>
                         </div>
 
                         {error && (
-                            <div className="bg-error-container/50 rounded-lg p-4 flex items-center gap-3">
+                            <div className="bg-error-container/50 rounded-lg p-2.5 flex items-center gap-2">
                                 <span className="material-symbols-outlined text-error text-lg">warning</span>
                                 <p className="text-error font-medium text-sm">{mensaje}</p>
                             </div>
                         )}
 
                         {/* Submit */}
-                        <div className="pt-2 space-y-4">
+                        <div className="pt-1 space-y-2">
                             <button 
                                 type="submit"
-                                className="w-full bg-primary-gradient text-on-primary font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-primary/20 active:scale-95 transition-all duration-150 ease-in-out"
+                                className="w-full bg-brand-navy text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-brand-navy/90 active:scale-[0.98] transition-all text-label-md uppercase tracking-wider"
                             >
                                 Crear Cuenta
                             </button>
 
-                            <div className="flex items-center gap-4 py-2">
+                            <div className="flex items-center gap-3 py-1">
                                 <div className="h-px bg-outline-variant flex-1"></div>
                                 <span className="font-label text-label-md text-outline">o regístrate con</span>
                                 <div className="h-px bg-outline-variant flex-1"></div>
@@ -378,7 +376,7 @@ function Signup() {
                             <button
                                 type="button"
                                 onClick={handleGoogleSignIn}
-                                className="w-full flex items-center justify-center gap-3 bg-surface-container border border-outline-variant text-on-surface font-body text-body-md py-4 px-6 rounded-xl hover:bg-surface-container-high transition-colors"
+                                className="w-full flex items-center justify-center gap-3 bg-surface-container border border-outline-variant text-on-surface font-body text-body-md py-2.5 px-6 rounded-lg hover:bg-surface-container-high transition-colors"
                             >
                                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -390,13 +388,14 @@ function Signup() {
                             </button>
                         </div>
 
-                        <p className="text-center text-label-md text-outline px-4 pt-2">
+                        <p className="text-center text-label-md text-outline pt-1">
                             Al registrarte, aceptas nuestros{" "}
-                            <span className="text-primary font-bold hover:underline cursor-pointer">Términos de Servicio</span>{" "}
-                            y <span className="text-primary font-bold hover:underline cursor-pointer">Política de Privacidad</span>.
+                            <span className="text-brand-navy font-bold hover:underline cursor-pointer">Términos de Servicio</span>{" "}
+                            y <span className="text-brand-navy font-bold hover:underline cursor-pointer">Política de Privacidad</span>.
                         </p>
                     </form>
                 </div>
+            </div>
             </section>
 
             {showSucess && <SucessModal message={'Registro Exitoso.'} goToLogin={handleSuccessClose} />}
@@ -408,7 +407,7 @@ function Signup() {
                     onClick={(e) => e.stopPropagation()}
                 >
                     <div className="bg-surface-container-lowest w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-surface-container-high">
-                        <div className="bg-primary-gradient px-6 py-5">
+                        <div className="bg-brand-navy px-6 py-5">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-white/20 rounded-lg">
                                     <span className="material-symbols-outlined text-white text-lg">phone</span>
@@ -422,8 +421,8 @@ function Signup() {
                         
                         <div className="p-6 space-y-4">
                             <div className="text-center mb-4">
-                                <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                                    <span className="material-symbols-outlined text-primary text-2xl">phone</span>
+                                <div className="w-16 h-16 bg-brand-navy/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <span className="material-symbols-outlined text-brand-navy text-2xl">phone</span>
                                 </div>
                                 <p className="text-on-surface-variant text-sm">
                                     Para poder contactarte con arrendadores y recibir notificaciones, 
@@ -438,7 +437,7 @@ function Signup() {
                                     value={telefono} 
                                     onChange={(e) => setTelefono(e.target.value)} 
                                     placeholder="300 123 4567"
-                                    className="w-full bg-surface-container-low border-none rounded-lg p-4 focus:ring-2 focus:ring-primary transition-shadow placeholder:text-outline/50 text-body-md text-on-surface"
+                                    className="w-full bg-surface-container-low border-none rounded-lg p-4 focus:ring-2 focus:ring-brand-navy transition-shadow placeholder:text-outline/50 text-body-md text-on-surface"
                                 />
                             </div>
 
@@ -449,7 +448,7 @@ function Signup() {
                                     value={whatsapp} 
                                     onChange={(e) => setWhatsapp(e.target.value)} 
                                     placeholder="300 123 4567"
-                                    className="w-full bg-surface-container-low border-none rounded-lg p-4 focus:ring-2 focus:ring-primary transition-shadow placeholder:text-outline/50 text-body-md text-on-surface"
+                                    className="w-full bg-surface-container-low border-none rounded-lg p-4 focus:ring-2 focus:ring-brand-navy transition-shadow placeholder:text-outline/50 text-body-md text-on-surface"
                                 />
                                 <p className="text-on-surface-variant text-xs">Si es diferente al teléfono principal</p>
                             </div>
@@ -462,7 +461,7 @@ function Signup() {
                             )}
 
                             <button 
-                                className="w-full py-3 bg-primary-gradient hover:bg-primary-gradient-hover text-white font-bold rounded-xl shadow-lg hover:shadow-primary-glow transition-all duration-300 flex items-center justify-center gap-2"
+                                className="w-full py-3 bg-brand-navy hover:bg-brand-navy/90 text-white font-bold rounded-xl shadow-lg transition-all duration-300 flex items-center justify-center gap-2"
                                 onClick={handlePhoneSubmit}
                             >
                                 <span className="material-symbols-outlined">check_circle</span>

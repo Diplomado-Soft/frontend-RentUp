@@ -6,7 +6,7 @@ import { UserContext } from "../contexts/UserContext";
 
 function ApartmentList({ searchTerm = "", filters = {}, goToJoin }) {
   const { user } = useContext(UserContext);
-  const [apartmentList, setApartmentList] = useState([]);
+  const [allApartments, setAllApartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("");
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
@@ -30,61 +30,41 @@ function ApartmentList({ searchTerm = "", filters = {}, goToJoin }) {
 
   useEffect(() => {
     const openModalId = localStorage.getItem("openPropertyModal");
-    if (openModalId && apartmentList.length > 0) {
-      const property = apartmentList.find(apt => apt.id_apt === parseInt(openModalId));
+    if (openModalId && allApartments.length > 0) {
+      const property = allApartments.find(apt => apt.id_apt === parseInt(openModalId));
       if (property) {
         setSelectedProperty(property);
         setShowDetailModal(true);
         localStorage.removeItem("openPropertyModal");
       }
     }
-  }, [apartmentList]);
+  }, [allApartments]);
 
-  const fetchApartments = async () => {
+  // Fetch única — trae todo una sola vez
+  const fetchAll = async () => {
     try {
       setLoading(true);
-
-      const hasFilters = filters.nearUniversity || filters.priceMin || filters.priceMax || filters.rooms || searchTerm;
-      let url;
-      const params = new URLSearchParams();
-
-      if (hasFilters) {
-        if (filters.nearUniversity) params.append("nearUniversity", "true");
-        if (filters.priceMin) params.append("priceMin", filters.priceMin);
-        if (filters.priceMax) params.append("priceMax", filters.priceMax);
-        if (filters.rooms) params.append("bedrooms", filters.rooms);
-        if (searchTerm) params.append("search", searchTerm);
-        url = `${process.env.REACT_APP_API_URL || 'http://localhost:9000'}/apartments/getFiltered?${params}`;
-      } else {
-        url = `${process.env.REACT_APP_API_URL || 'http://localhost:9000'}/apartments/getapts`;
-      }
-
-      const response = await fetch(url);
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:9000'}/apartments/getapts`);
       const data = await response.json();
-
-      if (!Array.isArray(data)) {
-        throw new Error('La API no devolvió un array');
-      }
-
-      const processedApartments = data.map(apt => ({
+      if (!Array.isArray(data)) throw new Error('La API no devolvió un array');
+      const processed = data.map(apt => ({
         ...apt,
         images: typeof apt.images === 'string'
           ? apt.images.split(',')
           : (Array.isArray(apt.images) ? apt.images : [])
       }));
-
-      setApartmentList(processedApartments);
+      setAllApartments(processed);
     } catch (error) {
       console.error('Error obteniendo apartamentos:', error);
-      setApartmentList([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchApartments();
-  }, [filters.nearUniversity, filters.priceMin, filters.priceMax, filters.rooms, searchTerm]);
+    document.title = 'Arriendos | RentUp';
+    fetchAll();
+  }, []);
 
   const formatPrice = (price) => {
     const value = Number(price);
@@ -119,22 +99,87 @@ function ApartmentList({ searchTerm = "", filters = {}, goToJoin }) {
   };
 
   const sortedAndFiltered = useMemo(() => {
-    let list = [...apartmentList];
+    let list = [...allApartments];
+
+    // Filtro local por ubicación (barrio o dirección)
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      list = list.filter(apt =>
+        (apt.barrio && apt.barrio.toLowerCase().includes(term)) ||
+        (apt.direccion_apt && apt.direccion_apt.toLowerCase().includes(term))
+      );
+    }
+
+    // Helper para obtener precio numérico
+    const getPrice = (apt) => {
+      const raw = apt.precio_apt ?? apt.price;
+      if (raw == null) return NaN;
+      // Si ya es número, usarlo directamente
+      if (typeof raw === 'number') return raw;
+      // Primero probar Number() directo (lo mismo que usa PropertyCard para mostrar)
+      const direct = Number(raw);
+      if (!isNaN(direct)) return direct;
+      // Si falló, limpiar todo excepto dígitos (formato colombiano con puntos)
+      const cleaned = String(raw).replace(/[^0-9]/g, '');
+      return parseInt(cleaned, 10) || 0;
+    };
+
+    // Filtro por precio
+    if (filters.priceMin) {
+      const min = Number(filters.priceMin);
+      if (!isNaN(min)) list = list.filter(apt => getPrice(apt) >= min);
+    }
+    if (filters.priceMax) {
+      const max = Number(filters.priceMax);
+      if (!isNaN(max)) list = list.filter(apt => getPrice(apt) <= max);
+    }
+
+    // Filtro por habitaciones
+    if (filters.bedrooms && filters.bedrooms.length > 0) {
+      list = list.filter(apt => {
+        const h = Number(apt.habitaciones);
+        return filters.bedrooms.some(val => {
+          if (val === '4+') return h >= 4;
+          return h === Number(val);
+        });
+      });
+    }
+
+    // Filtro por baños
+    if (filters.bathrooms && filters.bathrooms.length > 0) {
+      list = list.filter(apt => {
+        const b = Number(apt.banos);
+        return filters.bathrooms.some(val => {
+          if (val === '3+') return b >= 3;
+          return b === Number(val);
+        });
+      });
+    }
+
+    // Filtro por comodidades
+    if (filters.amenities && filters.amenities.length > 0) {
+      list = list.filter(apt => {
+        const comodidades = typeof apt.comodidades === 'string'
+          ? apt.comodidades.toLowerCase()
+          : '';
+        return filters.amenities.every(a => comodidades.includes(a.toLowerCase()));
+      });
+    }
 
     if (showFavoritesOnly) {
       list = list.filter(apt => favorites[apt.id_apt]);
     }
 
     if (sortBy === "price-asc") {
-      list.sort((a, b) => (a.precio_apt || 0) - (b.precio_apt || 0));
+      list.sort((a, b) => (getPrice(a) || 0) - (getPrice(b) || 0));
     } else if (sortBy === "price-desc") {
-      list.sort((a, b) => (b.precio_apt || 0) - (a.precio_apt || 0));
+      list.sort((a, b) => (getPrice(b) || 0) - (getPrice(a) || 0));
     } else if (sortBy === "distance") {
       list.sort((a, b) => (a.distance_km || 999) - (b.distance_km || 999));
     }
 
     return list;
-  }, [apartmentList, sortBy, showFavoritesOnly, favorites]);
+  }, [allApartments, sortBy, showFavoritesOnly, favorites, searchTerm, filters]);
 
   const totalPages = Math.ceil(sortedAndFiltered.length / ITEMS_PER_PAGE);
   const paginatedList = sortedAndFiltered.slice(0, currentPage * ITEMS_PER_PAGE);
@@ -157,45 +202,7 @@ function ApartmentList({ searchTerm = "", filters = {}, goToJoin }) {
 
 
   return (
-    <div className="h-full">
-      {/* Toolbar */}
-      {!loading && apartmentList.length > 0 && (
-        <div className="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-surface-100">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-              disabled={!hasFavorites}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                showFavoritesOnly
-                  ? 'bg-red-50 text-red-600 border border-red-200'
-                  : 'text-surface-500 hover:text-surface-700 hover:bg-surface-50 border border-transparent'
-              } ${!hasFavorites ? 'opacity-40 cursor-not-allowed' : ''}`}
-            >
-              <FaHeart className={showFavoritesOnly ? 'text-red-500' : ''} />
-              Favoritos
-              {hasFavorites && (
-                <span className="text-[10px] ml-0.5">({Object.keys(favorites).length})</span>
-              )}
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-surface-400">
-              {sortedAndFiltered.length} resultado{sortedAndFiltered.length !== 1 ? 's' : ''}
-            </span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="text-xs border border-surface-200 rounded-lg px-2.5 py-1.5 text-surface-600 bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 cursor-pointer"
-            >
-              <option value="">Destacados</option>
-              <option value="price-asc">Precio: menor a mayor</option>
-              <option value="price-desc">Precio: mayor a menor</option>
-              <option value="distance">Más cercanos</option>
-            </select>
-          </div>
-        </div>
-      )}
+    <div className="w-full">
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-3 gap-y-6">
@@ -203,32 +210,34 @@ function ApartmentList({ searchTerm = "", filters = {}, goToJoin }) {
             <SkeletonCard key={i} />
           ))}
         </div>
-      ) : sortedAndFiltered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <div className="w-20 h-20 bg-surface-container-high rounded-full flex items-center justify-center">
-            <span className="material-symbols-rounded text-[32px] text-surface-300">home</span>
-          </div>
-          <p className="text-surface-500 font-medium">
-            {showFavoritesOnly
-              ? "No tienes favoritos guardados"
-              : searchTerm
-                ? "No se encontraron propiedades"
-                : "No hay propiedades disponibles"}
-          </p>
-          <p className="text-sm text-surface-400">
-            {showFavoritesOnly
-              ? "Guarda propiedades con el corazón para verlas aquí"
-              : searchTerm
-                ? "Intenta con otro término de búsqueda"
-                : ""}
-          </p>
-        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-3 gap-y-6">
-          {paginatedList.map((apartment) => (
-            <PropertyCard key={apartment.id_apt} apt={apartment} onViewMore={handleCardClick} isFavorite={!!favorites[apartment.id_apt]} onToggleFavorite={toggleFavorite} />
-          ))}
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-3 gap-y-6">
+            {sortedAndFiltered.length === 0 ? (
+              <div className="col-span-full flex flex-col items-center justify-center py-16 gap-3">
+                <div className="w-14 h-14 bg-surface-container-high rounded-full flex items-center justify-center">
+                  <span className="material-symbols-rounded text-[28px] text-surface-300">search_off</span>
+                </div>
+                <p className="text-surface-500 font-medium text-sm">
+                  {showFavoritesOnly
+                    ? "No tienes favoritos guardados"
+                    : searchTerm
+                      ? `No se encontraron propiedades para "${searchTerm}"`
+                      : "No hay propiedades disponibles"}
+                </p>
+                <p className="text-xs text-surface-400">
+                  {showFavoritesOnly
+                    ? "Guarda propiedades con el corazón para verlas aquí"
+                    : searchTerm
+                      ? "Probá con otro término de búsqueda"
+                      : ""}
+                </p>
+              </div>
+            ) : (
+              paginatedList.map((apartment) => (
+                <PropertyCard key={apartment.id_apt} apt={apartment} onViewMore={handleCardClick} isFavorite={!!favorites[apartment.id_apt]} onToggleFavorite={toggleFavorite} />
+              ))
+            )}
+          </div>
       )}
 
       {!loading && hasMore && (

@@ -6,6 +6,18 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Prototype palette
+        ink:    { DEFAULT: '#0e1a2b', soft: '#1c2d44', muted: '#536379' },
+        paper:  { DEFAULT: '#faf8f3', card: '#ffffff', sunk: '#f1ede4' },
+        line:   { DEFAULT: '#e5dfd2', strong: '#cdc6b3' },
+        brand:  { 50:'#eef3f9', 100:'#d8e4f0', 200:'#b3c8e0', 300:'#7fa1c6', 400:'#5481b0', 500:'#2e5a88', 600:'#264c74', 700:'#1e3d5e', 800:'#162d47', 900:'#0e1d30' },
+        ember:  { DEFAULT:'#c4633a', soft:'#f1d9c8' },
+        moss:   { DEFAULT:'#4a6b4d', soft:'#dde5d8' },
+
+        // Existing colors
+        'brand-navy': '#2E5A88',
+        'brand-blue': '#3B8FC7',
+        'brand-light': '#4AADE8',
         primary: {
           DEFAULT: '#3f2acc',
           50: '#e3dfff',
@@ -157,6 +169,8 @@ module.exports = {
         headline: ['Manrope', 'sans-serif'],
         body: ['Inter', 'sans-serif'],
         label: ['Inter', 'sans-serif'],
+        display: ['"Instrument Serif"', 'ui-serif', 'Georgia', 'serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       fontSize: {
         'headline-xl': ['48px', { lineHeight: '1.1', fontWeight: '800', letterSpacing: '-0.02em' }],
@@ -180,6 +194,9 @@ module.exports = {
         full: '9999px',
       },
       boxShadow: {
+        'card-soft': '0 1px 0 rgba(14,26,43,0.04), 0 8px 24px -12px rgba(14,26,43,0.18)',
+        'card-flat': '0 0 0 1px rgba(14,26,43,0.08)',
+        'card-lift': '0 12px 40px -16px rgba(14,26,43,0.35)',
         'ambient-sm': '0 4px 12px rgba(25, 28, 30, 0.04)',
         'ambient-md': '0 8px 24px rgba(25, 28, 30, 0.05)',
         'ambient-lg': '0 12px 40px rgba(25, 28, 30, 0.06)',

@@ -25,7 +25,10 @@ function MyAccount() {
             { key: 'arriendos', label: 'Mis Arriendos', icon: 'domain', roles: [1] },
             { key: 'eliminar', label: 'Eliminar cuenta', icon: 'delete_forever', roles: [1, 2, 3], danger: true }
         ];
-        return allTabs.filter(tab => tab.roles.includes(userRole));
+        return allTabs.filter(tab =>
+            tab.roles.includes(userRole) &&
+            !(isRegularUser && (tab.key === 'facturacion' || tab.key === 'arriendos'))
+        );
     }, [userRole]);
 
     const [activeTab, setActiveTab] = useState(() => {
@@ -76,7 +79,7 @@ function MyAccount() {
     const initials = (userName.charAt(0) + userLastname.charAt(0)).toUpperCase() || 'U';
 
     return (
-        <div className="min-h-screen bg-surface pt-20">
+        <div className="min-h-screen bg-surface">
             <div className="max-w-7xl mx-auto px-4 py-8">
                 <div className="flex flex-col lg:flex-row gap-8">
                     {/* Sidebar */}

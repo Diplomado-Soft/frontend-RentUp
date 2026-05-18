@@ -378,7 +378,7 @@ function AdminDashboard() {
 
   if (!token) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] pt-24 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
         <div className="bg-white rounded-xl p-8 shadow-ambient-md max-w-md text-center">
           <FaShieldAlt className="text-5xl text-primary mx-auto mb-4" />
           <h2 className="text-headline-md mb-2">Acceso Restringido</h2>
@@ -390,8 +390,8 @@ function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pt-24">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+    <div className="min-h-screen bg-[#F8FAFC]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-8">
         {/* Header */}
         <div className="flex justify-between items-start flex-wrap gap-4 mb-6">
           <div>
