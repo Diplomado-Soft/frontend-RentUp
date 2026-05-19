@@ -106,6 +106,12 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
               >
                 Mis Arriendos
               </button>
+              <button
+                onClick={() => { window.scrollTo(0, 0); navigate('/mis-reportes'); }}
+                className="px-3 py-1.5 rounded-full text-sm text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors"
+              >
+                Mantenimiento
+              </button>
             </div>
           )}
           {/* Desktop: user actions */}
@@ -125,6 +131,12 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
                     <button onClick={() => { window.scrollTo(0, 0); navigate('/dashboard'); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors">
                       <span className="material-symbols-outlined text-sm">dashboard</span>
                       <span>Panel</span>
+                    </button>
+                )}
+                {userRole === 2 && (
+                    <button onClick={() => { window.scrollTo(0, 0); navigate('/mantenimiento-panel'); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors">
+                      <span className="material-symbols-outlined text-sm">build</span>
+                      <span>Mantenimiento</span>
                     </button>
                 )}
                 {userRole === 3 && (
@@ -225,11 +237,19 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
                     <button onClick={() => { window.scrollTo(0, 0); navigate('/mis-arriendos'); setIsMenuOpen(false); }} className="w-full text-left text-sm py-2 px-3 rounded-lg text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors">
                       Mis Arriendos
                     </button>
+                    <button onClick={() => { window.scrollTo(0, 0); navigate('/mis-reportes'); setIsMenuOpen(false); }} className="w-full text-left text-sm py-2 px-3 rounded-lg text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors">
+                      Mantenimiento
+                    </button>
                   </>
                 )}
                 {userRole === 2 && (
                   <button onClick={() => { window.scrollTo(0, 0); navigate('/dashboard'); setIsMenuOpen(false); }} className="w-full text-left text-sm py-2 px-3 rounded-lg text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors">
                     Panel de Gestión
+                  </button>
+                )}
+                {userRole === 2 && (
+                  <button onClick={() => { window.scrollTo(0, 0); navigate('/mantenimiento-panel'); setIsMenuOpen(false); }} className="w-full text-left text-sm py-2 px-3 rounded-lg text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors">
+                    Mantenimiento
                   </button>
                 )}
                 {userRole === 3 && (

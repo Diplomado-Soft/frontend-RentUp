@@ -19,6 +19,8 @@ import Map from './components/Map';
 import ApartmentList from './components/ApartmentList';
 import Billing from './components/My-Account/Billing';
 import MyRents from './components/My-Account/MyRents';
+import TenantMaintenance from './components/TenantMaintenance';
+import LandlordMaintenance from './components/LandlordMaintenance';
 import './App.css';
 
 function ListingsPage({ goToJoin, listingSearch, setListingSearch, listingFilters }) {
@@ -157,6 +159,8 @@ function AppContent() {
           <Route path='/listings' element={<ListingsPage goToJoin={toggleJoin} listingSearch={listingSearch} setListingSearch={setListingSearch} listingFilters={listingFilters} />} />
           <Route path='/facturacion' element={<ProtectedRoute><FacturacionPage /></ProtectedRoute>} />
           <Route path='/mis-arriendos' element={<ProtectedRoute><MyRentsPage /></ProtectedRoute>} />
+          <Route path='/mis-reportes' element={<ProtectedRoute requiredRole={1} fallbackPath="/"><TenantMaintenance /></ProtectedRoute>} />
+          <Route path='/mantenimiento-panel' element={<ProtectedRoute requiredRole={2} fallbackPath="/"><LandlordMaintenance /></ProtectedRoute>} />
         </Routes>
       </div>
     </>
