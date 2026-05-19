@@ -1,0 +1,74 @@
+.maintenance-list-container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 24px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+.maintenance-list-container h2 {
+    margin-bottom: 20px;
+    color: #333;
+}
+.maintenance-card {
+    border: 1px solid #eee;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+.maintenance-card-info { flex: 1; }
+.maintenance-card-info h4 { margin: 0 0 6px; color: #2c3e50; }
+.maintenance-card-info p { margin: 2px 0; color: #666; font-size: 14px; }
+.maintenance-card-info .property { font-weight: 600; color: #e67e22; }
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.badge-pending { background: #fef3cd; color: #856404; }
+.badge-in_progress { background: #cce5ff; color: #004085; }
+.badge-resolved { background: #d4edda; color: #155724; }
+.badge-rejected { background: #f8d7da; color: #721c24; }
+.priority-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+.priority-low { background: #e8f5e9; color: #2e7d32; }
+.priority-medium { background: #fff3e0; color: #e65100; }
+.priority-high { background: #fce4ec; color: #c62828; }
+.priority-urgent { background: #fce4ec; color: #b71c1c; font-weight: 800; }
+.maintenance-list-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+}
+.maintenance-image {
+    max-width: 120px;
+    max-height: 120px;
+    border-radius: 8px;
+    margin-left: 16px;
+    object-fit: cover;
+}
+.btn-status {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-right: 8px;
+}
+.btn-status.in-progress { background: #cce5ff; color: #004085; }
+.btn-status.resolved { background: #d4edda; color: #155724; }
+.btn-status.rejected { background: #f8d7da; color: #721c24; }
+.btn-status.delete { background: #fee2e2; color: #991b1b; }
+
