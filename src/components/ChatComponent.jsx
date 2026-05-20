@@ -1,28 +1,26 @@
-// src/components/ChatComponent.jsx
 import React, { useEffect, useState, useRef } from "react";
-import axios from "axios";
+import axiosInstance from "../contexts/axiosInstance";
 import { initSocket, getSocket } from "../utils/socket";
 import "../styles/ChatComponent.css";
 
 export default function ChatComponent({ emisor_id, receptor_id }) {
   const [mensajes, setMensajes] = useState([]);
   const [contenido, setContenido] = useState("");
+  const [socketReady, setSocketReady] = useState(false);
   const chatRef = useRef(null);
 
-  // Inicializa socket con el emisor_id (register)
   useEffect(() => {
     if (!emisor_id) return;
     initSocket(emisor_id);
+    setSocketReady(true);
   }, [emisor_id]);
 
-  // referenciar socket
-  const socket = getSocket();
+  const socket = socketReady ? getSocket() : null;
 
-  // Cargar mensajes de la conversación
   useEffect(() => {
     if (!emisor_id || !receptor_id) return;
-    axios
-      .get(`${process.env.REACT_APP_API_URL}/chat/${emisor_id}/${receptor_id}`)
+    axiosInstance
+      .get(`/api/chat/${emisor_id}/${receptor_id}`)
       .then((res) => setMensajes(res.data))
       .catch((err) => console.error("Error al cargar mensajes:", err));
   }, [emisor_id, receptor_id]);

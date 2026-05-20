@@ -3,6 +3,7 @@ import User from '../components/My-Account/User';
 import Billing from '../components/My-Account/Billing';
 import Record from '../components/My-Account/Record';
 import MyRents from '../components/My-Account/MyRents';
+import Messages from '../components/My-Account/Messages';
 import { UserContext } from "../contexts/UserContext";
 import { useLocation } from "react-router-dom";
 import axiosInstance from "../contexts/axiosInstance";
@@ -20,6 +21,7 @@ function MyAccount() {
     const tabs = useMemo(() => {
         const allTabs = [
             { key: 'datos', label: 'Mis Datos', icon: 'person', roles: [1, 2, 3] },
+            { key: 'mensajes', label: 'Mensajes', icon: 'chat', roles: [1, 2] },
             { key: 'facturacion', label: 'Facturación', icon: 'payments', roles: [1, 2] },
             { key: 'estadisticas', label: 'Estadísticas', icon: 'analytics', roles: [2] },
             { key: 'arriendos', label: 'Mis Arriendos', icon: 'domain', roles: [1] },
@@ -41,6 +43,8 @@ function MyAccount() {
         switch (activeTab) {
             case "datos":
                 return <User />
+            case "mensajes":
+                return <Messages />
             case "facturacion":
                 return <Billing />
             case "estadisticas":
