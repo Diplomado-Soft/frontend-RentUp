@@ -91,26 +91,15 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
 
         {/* Derecha: tenant links + acciones + hamburger */}
         <div className="flex items-center gap-3">
-          {/* Facturación y Mis Arriendos — solo inquilino */}
+          {/* Mi Espacio — solo inquilino */}
           {user && userRole === 1 && (
             <div className="hidden md:flex items-center gap-1">
               <button
-                onClick={() => { window.scrollTo(0, 0); navigate('/facturacion'); }}
-                className="px-3 py-1.5 rounded-full text-sm text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors"
+                onClick={() => { window.scrollTo(0, 0); navigate('/mi-espacio'); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors"
               >
-                Facturación
-              </button>
-              <button
-                onClick={() => { window.scrollTo(0, 0); navigate('/mis-arriendos'); }}
-                className="px-3 py-1.5 rounded-full text-sm text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors"
-              >
-                Mis Arriendos
-              </button>
-              <button
-                onClick={() => { window.scrollTo(0, 0); navigate('/mis-reportes'); }}
-                className="px-3 py-1.5 rounded-full text-sm text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors"
-              >
-                Mantenimiento
+                <span className="material-symbols-outlined text-sm">space_dashboard</span>
+                <span>Mi Espacio</span>
               </button>
             </div>
           )}
@@ -230,17 +219,9 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
                   Mi Cuenta
                 </button>
                 {userRole === 1 && (
-                  <>
-                    <button onClick={() => { window.scrollTo(0, 0); navigate('/facturacion'); setIsMenuOpen(false); }} className="w-full text-left text-sm py-2 px-3 rounded-lg text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors">
-                      Facturación
-                    </button>
-                    <button onClick={() => { window.scrollTo(0, 0); navigate('/mis-arriendos'); setIsMenuOpen(false); }} className="w-full text-left text-sm py-2 px-3 rounded-lg text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors">
-                      Mis Arriendos
-                    </button>
-                    <button onClick={() => { window.scrollTo(0, 0); navigate('/mis-reportes'); setIsMenuOpen(false); }} className="w-full text-left text-sm py-2 px-3 rounded-lg text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors">
-                      Mantenimiento
-                    </button>
-                  </>
+                  <button onClick={() => { window.scrollTo(0, 0); navigate('/mi-espacio'); setIsMenuOpen(false); }} className="w-full text-left text-sm py-2 px-3 rounded-lg text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors">
+                    Mi Espacio
+                  </button>
                 )}
                 {userRole === 2 && (
                   <button onClick={() => { window.scrollTo(0, 0); navigate('/dashboard'); setIsMenuOpen(false); }} className="w-full text-left text-sm py-2 px-3 rounded-lg text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors">

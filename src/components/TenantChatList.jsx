@@ -1,27 +1,24 @@
-// src/components/ChatList.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import ChatComponent from "./ChatComponent";
 import "../styles/ChatList.css";
 
-export default function ChatList({ arrendador_id }) {
+export default function TenantChatList({ tenant_id }) {
   const [conversaciones, setConversaciones] = useState([]);
   const [conversacionActiva, setConversacionActiva] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Cargar lista de conversaciones del arrendador
   useEffect(() => {
-    if (!arrendador_id) return;
-    
+    if (!tenant_id) return;
+
     const userData = JSON.parse(localStorage.getItem('user') || '{}');
     const token = userData?.token;
-    
+
     axios
-      .get(`${process.env.REACT_APP_API_URL || 'http://localhost:9000'}/api/chat/conversaciones/${arrendador_id}`, {
+      .get(`${process.env.REACT_APP_API_URL || 'http://localhost:9000'}/api/chat/conversaciones-inquilino/${tenant_id}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       })
       .then((res) => {
-        // Dedupe defensively by usuario_id in case backend returns duplicates
         const uniqueByUser = [];
         const seen = new Set();
         for (const conv of res.data || []) {
@@ -37,7 +34,7 @@ export default function ChatList({ arrendador_id }) {
         console.error("Error al cargar conversaciones:", err);
         setLoading(false);
       });
-  }, [arrendador_id]);
+  }, [tenant_id]);
 
   const abrirChat = (usuario) => {
     setConversacionActiva(usuario);
@@ -60,15 +57,15 @@ export default function ChatList({ arrendador_id }) {
       {!conversacionActiva ? (
         <div className="conversaciones-lista">
           <div className="chat-list-header">
-            <h2>💬 Mis Conversaciones</h2>
-            <p className="subtitle">Mensajes con tus inquilinos</p>
+            <h2>Mis Conversaciones</h2>
+            <p className="subtitle">Mensajes con tus arrendadores</p>
           </div>
 
           {conversaciones.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">📭</div>
               <h3>No tienes conversaciones</h3>
-              <p>Cuando los usuarios te contacten, aparecerán aquí</p>
+              <p>Cuando contactes a un arrendador, aparecerán aquí</p>
             </div>
           ) : (
             <div className="conversaciones-grid">
@@ -93,19 +90,19 @@ export default function ChatList({ arrendador_id }) {
                         {conv.usuario_nombre} {conv.usuario_apellido}
                       </h3>
                       <span className="timestamp">
-                        {new Date(conv.ultimo_mensaje_fecha).toLocaleDateString('es-ES', {
+                        {conv.ultimo_mensaje_fecha ? new Date(conv.ultimo_mensaje_fecha).toLocaleDateString('es-ES', {
                           day: '2-digit',
                           month: 'short'
-                        })}
+                        }) : ''}
                       </span>
                     </div>
                     <p className="ultimo-mensaje">
                       {conv.ultimo_mensaje?.substring(0, 50)}
                       {conv.ultimo_mensaje?.length > 50 ? '...' : ''}
                     </p>
-                    {conv.apartamento_direccion && (
+                    {conv.propiedades_asociadas && (
                       <span className="propiedad-tag">
-                        🏠 {conv.apartamento_direccion}
+                        🏠 {conv.propiedades_asociadas}
                       </span>
                     )}
                   </div>
@@ -134,9 +131,9 @@ export default function ChatList({ arrendador_id }) {
                 <h3>
                   {conversacionActiva.usuario_nombre} {conversacionActiva.usuario_apellido}
                 </h3>
-                  {conversacionActiva.apartamento_direccion && (
+                {conversacionActiva.propiedades_asociadas && (
                   <p className="chat-propiedad">
-                    Inquilino en: {conversacionActiva.apartamento_direccion}
+                    Propiedades: {conversacionActiva.propiedades_asociadas}
                   </p>
                 )}
               </div>
@@ -145,7 +142,7 @@ export default function ChatList({ arrendador_id }) {
 
           <div className="chat-wrapper">
             <ChatComponent
-              emisor_id={arrendador_id}
+              emisor_id={tenant_id}
               receptor_id={conversacionActiva.usuario_id}
             />
           </div>

@@ -1,12 +1,14 @@
-// src/components/My-Account/Messages.js
 import React, { useContext } from "react";
 import { UserContext } from "../../contexts/UserContext";
 import ChatList from "../ChatList";
+import TenantChatList from "../TenantChatList";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faComments } from '@fortawesome/free-solid-svg-icons';
 
 function Messages() {
   const { user } = useContext(UserContext);
+  const userRole = user?.rol || user?.rol_id || user?.rolId || null;
+  const isLandlord = userRole === 2;
 
   if (!user) {
     return (
@@ -26,12 +28,18 @@ function Messages() {
         </div>
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-surface-800">Mensajes</h2>
-          <p className="text-sm text-surface-500">Conversaciones con arrendadores</p>
+          <p className="text-sm text-surface-500">
+            {isLandlord ? "Conversaciones con tus inquilinos" : "Conversaciones con tus arrendadores"}
+          </p>
         </div>
       </div>
-      
+
       <div className="messages-container">
-        <ChatList arrendador_id={user.id} />
+        {isLandlord ? (
+          <ChatList arrendador_id={user.id} />
+        ) : (
+          <TenantChatList tenant_id={user.id} />
+        )}
       </div>
     </div>
   );
