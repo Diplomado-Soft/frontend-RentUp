@@ -3,6 +3,15 @@ import { UserContext } from "../contexts/UserContext";
 import axiosInstance from "../contexts/axiosInstance";
 import ChatComponent from "../components/ChatComponent";
 import { getMyReports } from "../apis/maintenanceController";
+import { getPaymentHistory, downloadReceipt } from "../apis/paymentController";
+import PaymentModal from "../components/Payment/PaymentModal";
+import { Elements } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+import { PayPalScriptProvider } from "@paypal/react-paypal-js";
+
+const STRIPE_PK = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = STRIPE_PK ? loadStripe(STRIPE_PK) : null;
+const PAYPAL_CLIENT_ID = process.env.REACT_APP_PAYPAL_CLIENT_ID;
 
 function TenantDashboard() {
   const { user } = useContext(UserContext);
@@ -11,8 +20,11 @@ function TenantDashboard() {
 
   const [contracts, setContracts] = useState([]);
   const [reports, setReports] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [loadingContracts, setLoadingContracts] = useState(true);
   const [loadingReports, setLoadingReports] = useState(true);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedPaymentContract, setSelectedPaymentContract] = useState(null);
 
   const userId = user?.id || user?.user_id;
 
@@ -40,9 +52,23 @@ function TenantDashboard() {
     }
   };
 
+  const fetchPayments = async () => {
+    try {
+      const res = await getPaymentHistory();
+      if (Array.isArray(res)) setPayments(res);
+    } catch (err) {
+      console.error("Error fetching payments:", err);
+    }
+  };
+
+  const getContractPayment = (agreementId) => {
+    return payments.find(p => p.agreement_id === agreementId && p.status === 'completed');
+  };
+
   useEffect(() => {
     fetchContracts();
     fetchReports();
+    fetchPayments();
   }, []);
 
   const activeContracts = contracts.filter((c) => c.status === "active");
@@ -472,9 +498,22 @@ function TenantDashboard() {
                                     </span>
                                   )}
                                 </div>
-                                <button className="flex items-center gap-1 text-label-md text-primary hover:underline transition-all">
-                                  <span className="material-symbols-outlined text-xs">download</span>
-                                  Recibo
+                                <button
+                                  onClick={() => {
+                                    const payment = getContractPayment(contract.agreement_id);
+                                    if (payment) {
+                                      downloadReceipt(payment.payment_id);
+                                    } else {
+                                      setSelectedPaymentContract(contract);
+                                      setShowPaymentModal(true);
+                                    }
+                                  }}
+                                  className="flex items-center gap-1 text-label-md text-primary hover:underline transition-all"
+                                >
+                                  <span className="material-symbols-outlined text-xs">
+                                    {getContractPayment(contract.agreement_id) ? 'download' : 'payments'}
+                                  </span>
+                                  {getContractPayment(contract.agreement_id) ? 'Recibo' : 'Pagar'}
                                 </button>
                               </div>
                             </div>
@@ -759,9 +798,22 @@ function TenantDashboard() {
                               <span className="material-symbols-outlined text-xs">download</span>
                               Contrato
                             </button>
-                            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-high text-ink text-label-md hover:bg-surface-container-highest transition-all">
-                              <span className="material-symbols-outlined text-xs">download</span>
-                              Recibo
+                            <button
+                              onClick={() => {
+                                const payment = getContractPayment(contract.agreement_id);
+                                if (payment) {
+                                  downloadReceipt(payment.payment_id);
+                                } else {
+                                  setSelectedPaymentContract(contract);
+                                  setShowPaymentModal(true);
+                                }
+                              }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-high text-ink text-label-md hover:bg-surface-container-highest transition-all"
+                            >
+                              <span className="material-symbols-outlined text-xs">
+                                {getContractPayment(contract.agreement_id) ? 'download' : 'payments'}
+                              </span>
+                              {getContractPayment(contract.agreement_id) ? 'Recibo' : 'Pagar'}
                             </button>
                           </div>
                         </div>
@@ -774,6 +826,27 @@ function TenantDashboard() {
           </div>
         </div>
       </div>
+      {showPaymentModal && selectedPaymentContract && (
+        stripePromise ? (
+          <Elements stripe={stripePromise}>
+            <PayPalScriptProvider options={{ clientId: PAYPAL_CLIENT_ID || '', currency: 'USD' }}>
+              <PaymentModal
+                contract={selectedPaymentContract}
+                onClose={() => { setShowPaymentModal(false); setSelectedPaymentContract(null); }}
+                onSuccess={() => { fetchPayments(); fetchContracts(); }}
+              />
+            </PayPalScriptProvider>
+          </Elements>
+        ) : (
+          <PayPalScriptProvider options={{ clientId: PAYPAL_CLIENT_ID || '', currency: 'USD' }}>
+            <PaymentModal
+              contract={selectedPaymentContract}
+              onClose={() => { setShowPaymentModal(false); setSelectedPaymentContract(null); }}
+              onSuccess={() => { fetchPayments(); fetchContracts(); }}
+            />
+          </PayPalScriptProvider>
+        )
+      )}
     </div>
   );
 }
