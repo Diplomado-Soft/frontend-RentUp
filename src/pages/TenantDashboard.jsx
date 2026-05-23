@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { UserContext } from "../contexts/UserContext";
 import axiosInstance from "../contexts/axiosInstance";
 import ChatComponent from "../components/ChatComponent";
-import { getMyReports } from "../apis/maintenanceController";
+import { getMyReports, createMaintenanceReport, getMyProperties } from "../apis/maintenanceController";
 import { getPaymentHistory, downloadReceipt } from "../apis/paymentController";
 import PaymentModal from "../components/Payment/PaymentModal";
 import { Elements } from "@stripe/react-stripe-js";
@@ -16,7 +16,6 @@ const PAYPAL_CLIENT_ID = process.env.REACT_APP_PAYPAL_CLIENT_ID;
 function TenantDashboard() {
   const { user } = useContext(UserContext);
   const [activeTab, setActiveTab] = useState("mis-arriendos");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const [contracts, setContracts] = useState([]);
   const [reports, setReports] = useState([]);
@@ -25,6 +24,12 @@ function TenantDashboard() {
   const [loadingReports, setLoadingReports] = useState(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPaymentContract, setSelectedPaymentContract] = useState(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportProperties, setReportProperties] = useState([]);
+  const [reportForm, setReportForm] = useState({ property_id: "", title: "", description: "", priority: "medium" });
+  const [reportImage, setReportImage] = useState(null);
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const userId = user?.id || user?.user_id;
 
@@ -154,49 +159,33 @@ function TenantDashboard() {
     {
       label: "Contratos Activos",
       value: activeContracts.length,
-      icon: "description",
-      color: "text-brand-500",
-      bg: "bg-brand-500/10",
+      type: "contracts",
     },
     {
       label: "Pagos Mensuales",
       value: formatPrice(totalMonthlyRent),
-      icon: "payments",
-      color: "text-moss",
-      bg: "bg-moss/10",
+      type: "payments",
     },
     {
       label: "Reportes Pendientes",
       value: pendingReports.length,
-      icon: "build",
-      color: activeContracts.length > 0 ? "text-ember" : "text-outline",
-      bg: "bg-ember/10",
+      type: "reports",
     },
     {
       label: daysToNearestEnd !== null && daysToNearestEnd > 0 ? "Días Restantes" : "Sin contrato activo",
       value: daysToNearestEnd !== null && daysToNearestEnd > 0 ? daysToNearestEnd : "-",
-      icon: "schedule",
-      color: daysToNearestEnd !== null && daysToNearestEnd <= 30 ? "text-error" : "text-tertiary",
-      bg: "bg-brand-100/20",
+      type: "days",
+      circleValue: daysToNearestEnd !== null && daysToNearestEnd > 0
+        ? Math.max(5, Math.min(100, Math.round((daysToNearestEnd / 365) * 100)))
+        : null,
     },
   ];
 
   return (
     <div className="min-h-screen bg-paper">
       <div className="flex">
-        <aside
-          className={`fixed left-0 top-20 h-[calc(100vh-5rem)] bg-paper-sunk border-r border-line transition-all duration-300 z-30 ${
-            sidebarCollapsed ? "w-16" : "w-60"
-          }`}
-        >
+        <aside className="fixed left-0 top-0 h-screen pt-14 w-60 bg-paper-sunk border-r border-line z-30">
           <div className="flex flex-col h-full p-3">
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="self-end p-1.5 rounded-lg text-ink-muted hover:text-ink-muted hover:bg-line/30 transition-all mb-4"
-            >
-              <span className="material-symbols-outlined text-sm">{sidebarCollapsed ? "menu_open" : "menu"}</span>
-            </button>
-
             <nav className="flex-1 space-y-1">
               {navItems.map((item) => (
                 <button
@@ -204,19 +193,17 @@ function TenantDashboard() {
                   onClick={() => setActiveTab(item.id)}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
                     activeTab === item.id
-                      ? "bg-brand-500 text-white shadow-md"
+                      ? "bg-brand-100 text-brand-700 font-semibold"
                       : "text-ink-muted hover:text-ink hover:bg-line/30"
                   }`}
-                  title={sidebarCollapsed ? item.label : undefined}
                 >
                   <span className="material-symbols-outlined text-lg flex-shrink-0">{item.icon}</span>
-                  {!sidebarCollapsed && <span className="text-label-md font-medium truncate">{item.label}</span>}
+                  <span className="text-label-md font-medium truncate">{item.label}</span>
                 </button>
               ))}
             </nav>
 
-            {!sidebarCollapsed && (
-              <div className="pt-3 mt-3 border-t border-line">
+            <div className="pt-3 mt-3 border-t border-line">
                 <div className="flex items-center gap-3 px-2">
                   <div className="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center text-white text-label-md font-bold flex-shrink-0">
                     {initials}
@@ -227,44 +214,24 @@ function TenantDashboard() {
                   </div>
                 </div>
               </div>
-            )}
           </div>
         </aside>
 
-        <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? "ml-16" : "ml-60"}`}>
-          <div className="max-w-6xl mx-auto px-6 py-6">
-            <div className="bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl p-6 mb-6 shadow-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="font-headline text-headline-lg text-white mb-1">
-                    Bienvenido a tu espacio, {firstName}
-                  </h1>
-                  <p className="text-white/80 text-body-md">
-                    Aquí puedes gestionar tus arriendos, pagos y más.
-                  </p>
-                </div>
-              </div>
+        <div className="flex-1 ml-60">
+          <div className="px-6 py-6">
+            <div className="mb-3">
+              <h1 className="font-display text-5xl md:text-7xl leading-none text-brand-500 mb-2">
+                Bienvenido a tu espacio, {firstName}
+              </h1>
+              <p className="text-body-md text-ink-soft">
+                Aquí puedes gestionar tus arriendos, pagos y más.
+              </p>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              {statCards.map((card, i) => (
-                <div key={i} className="bg-paper-sunkest rounded-xl p-4 shadow-ambient-sm">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-lg ${card.bg} flex items-center justify-center`}>
-                      <span className={`material-symbols-outlined text-lg ${card.color}`}>{card.icon}</span>
-                    </div>
-                    <div>
-                      <p className="text-label-md uppercase tracking-wider text-ink-muted">{card.label}</p>
-                      <p className={`font-headline text-headline-md font-bold ${card.color}`}>{card.value}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="bg-paper-sunkest rounded-xl shadow-ambient-sm">
+            <div className="flex gap-6">
+              <div className="flex-1 min-w-0">
               {activeTab === "mis-arriendos" && (
-                <div className="p-6 space-y-6">
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <h2 className="font-headline text-headline-md text-ink">Mis Arriendos Activos</h2>
@@ -298,64 +265,95 @@ function TenantDashboard() {
                       {activeContracts.map((rent) => {
                         const daysRemaining = getDaysRemaining(rent.end_date);
                         return (
-                          <div key={rent.agreement_id} className="bg-surface-container-low rounded-xl overflow-hidden">
-                            <div className="p-5">
-                              <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-3">
-                                <div className="w-full sm:w-36 h-24 bg-surface-container-high rounded-lg overflow-hidden flex-shrink-0">
-                                  {rent.images && rent.images.length > 0 && rent.images[0]?.url ? (
-                                    <img
-                                      src={rent.images[0].url}
-                                      alt="Vivienda"
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full flex items-center justify-center">
-                                      <span className="material-symbols-outlined text-3xl text-outline">image</span>
-                                    </div>
-                                  )}
+                          <div key={rent.agreement_id} className="bg-paper-card rounded-xl shadow-ambient-sm hover:shadow-ambient-md transition-shadow overflow-hidden">
+                            <div className="flex flex-col md:flex-row">
+                              <div className="flex-1 min-w-0 p-5 flex flex-col gap-3">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <h3 className="font-headline text-headline-md text-ink">
+                                      {rent.barrio_name || rent.barrio || "Sin barrio"}
+                                    </h3>
+                                    <p className="flex items-center gap-1.5 text-body-md text-ink-muted mt-0.5">
+                                      <span className="material-symbols-outlined text-[16px]">location_on</span>
+                                      {rent.direccion_apt || ""}
+                                    </p>
+                                  </div>
+                                  {getStatusBadge(rent.status)}
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-start justify-between gap-3">
-                                    <div className="min-w-0">
-                                      <h3 className="font-headline text-headline-md text-ink truncate">
-                                        {rent.barrio_name || rent.barrio || "Sin barrio"}
-                                      </h3>
-                                      <p className="text-body-md text-ink-muted truncate">{rent.direccion_apt || ""}</p>
-                                    </div>
-                                    {getStatusBadge(rent.status)}
+
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div className="bg-paper-sunk rounded-lg p-3">
+                                    <p className="flex items-center gap-1.5 text-label-sm text-ink-muted mb-1">
+                                      <span className="material-symbols-outlined text-[14px]">calendar_today</span>
+                                      Inicio
+                                    </p>
+                                    <p className="text-label-md font-medium text-ink">{formatDate(rent.start_date)}</p>
                                   </div>
-                                  <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-ink-muted">
-                                    <span className="flex items-center gap-1">
-                                      <span className="material-symbols-outlined text-xs">calendar_today</span>
-                                      Inicio: {formatDate(rent.start_date)}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                      <span className="material-symbols-outlined text-xs">event</span>
-                                      Fin: {formatDate(rent.end_date)}
-                                    </span>
-                                    {daysRemaining !== null && daysRemaining > 0 && (
-                                      <span
-                                        className={`flex items-center gap-1 ${
-                                          daysRemaining <= 30 ? "text-error" : "text-tertiary"
-                                        }`}
-                                      >
-                                        <span className="material-symbols-outlined text-xs">schedule</span>
-                                        {daysRemaining} días restantes
+                                  <div className="bg-paper-sunk rounded-lg p-3">
+                                    <p className="flex items-center gap-1.5 text-label-sm text-ink-muted mb-1">
+                                      <span className="material-symbols-outlined text-[14px]">event</span>
+                                      Fin
+                                    </p>
+                                    <p className="text-label-md font-medium text-ink">{formatDate(rent.end_date)}</p>
+                                  </div>
+                                </div>
+
+                                {daysRemaining !== null && daysRemaining > 0 && (
+                                  <div>
+                                    <div className="flex items-center justify-between mb-1.5">
+                                      <span className="text-label-sm text-ink-muted">Tiempo restante</span>
+                                      <span className={`text-label-sm font-medium ${
+                                        daysRemaining <= 30 ? 'text-error' : 'text-ink-muted'
+                                      }`}>
+                                        {daysRemaining} días
                                       </span>
-                                    )}
+                                    </div>
+                                    <div className="h-2 bg-line rounded-full overflow-hidden">
+                                      <div
+                                        className={`h-full rounded-full transition-all ${
+                                          daysRemaining <= 30
+                                            ? 'bg-error'
+                                            : daysRemaining <= 90
+                                              ? 'bg-ember'
+                                              : 'bg-tertiary'
+                                        }`}
+                                        style={{ width: `${Math.max(5, Math.min(100, (daysRemaining / 365) * 100))}%` }}
+                                      />
+                                    </div>
                                   </div>
-                                  <div className="mt-2">
-                                    <span className="font-bold text-headline-md text-primary">
+                                )}
+
+                                <div>
+                                  <p className="text-label-sm text-ink-muted mb-0.5">Valor del arriendo</p>
+                                  <div className="flex items-baseline gap-1.5">
+                                    <span className="material-symbols-outlined text-brand-500 text-lg">payments</span>
+                                    <span className="font-headline font-bold text-headline-md text-brand-500">
                                       {formatPrice(rent.monthly_rent)}
                                     </span>
                                     <span className="text-ink-muted text-sm"> /mes</span>
                                   </div>
-                                  {rent.landlord_name && (
-                                    <p className="text-sm text-ink-muted mt-1">
-                                      Arrendador: {rent.landlord_name} {rent.landlord_lastname || ""}
-                                    </p>
-                                  )}
                                 </div>
+
+                                {rent.landlord_name && (
+                                  <div className="flex items-center gap-1.5 text-sm text-ink-muted pt-1">
+                                    <span className="material-symbols-outlined text-[16px]">person</span>
+                                    <span>Arrendador: <strong className="text-ink">{rent.landlord_name} {rent.landlord_lastname || ""}</strong></span>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="w-full md:w-1/2 h-48 md:h-auto bg-paper-sunk overflow-hidden">
+                                {rent.images && rent.images.length > 0 && rent.images[0]?.url ? (
+                                  <img
+                                    src={rent.images[0].url}
+                                    alt="Vivienda"
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <span className="material-symbols-outlined text-3xl text-outline">image</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -363,21 +361,27 @@ function TenantDashboard() {
                       })}
 
                       {pastContracts.length > 0 && (
-                        <div>
-                          <h3 className="font-headline text-headline-md text-ink mb-3 flex items-center gap-2">
-                            <span className="w-2 h-2 bg-outline rounded-full"></span>
-                            Arriendos Anteriores
-                          </h3>
+                        <div className="pt-6 border-t border-line">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="h-px flex-1 bg-line"/>
+                            <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-ink-muted"></span>
+                              <h3 className="font-headline text-headline-sm text-ink-muted uppercase tracking-wider">
+                                Arriendos Anteriores
+                              </h3>
+                            </div>
+                            <div className="h-px flex-1 bg-line"/>
+                          </div>
                           <div className="space-y-3">
                             {pastContracts.map((rent) => (
                               <div
                                 key={rent.agreement_id}
-                                className="bg-surface-container-low rounded-xl p-4 opacity-70"
+                                className="bg-paper-card rounded-xl p-4 opacity-60 hover:opacity-100 transition-opacity"
                               >
                                 <div className="flex items-start justify-between gap-4">
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-3 mb-1">
-                                      <h4 className="font-semibold text-ink truncate">
+                                      <h4 className="font-headline font-semibold text-ink truncate">
                                         {rent.barrio_name || rent.barrio || "Sin barrio"}
                                       </h4>
                                       {getStatusBadge(rent.status)}
@@ -390,9 +394,9 @@ function TenantDashboard() {
                                     </div>
                                   </div>
                                   <div className="text-right flex-shrink-0">
-                                    <p className="font-semibold text-ink">{formatPrice(rent.monthly_rent)}</p>
-                                    <p className="text-xs text-ink-muted">/mes</p>
-                                  </div>
+                      <p className="font-headline font-semibold text-ink">{formatPrice(rent.monthly_rent)}</p>
+                      <p className="text-xs text-ink-muted">/mes</p>
+                      </div>
                                 </div>
                               </div>
                             ))}
@@ -405,7 +409,7 @@ function TenantDashboard() {
               )}
 
               {activeTab === "proximos-pagos" && (
-                <div className="p-6 space-y-6">
+                <div className="space-y-4">
                   <div>
                     <h2 className="font-headline text-headline-md text-ink mb-1">Próximos Pagos</h2>
                     <p className="text-body-md text-ink-muted">Resumen de tus pagos de arriendo</p>
@@ -464,7 +468,7 @@ function TenantDashboard() {
                                     <span className="material-symbols-outlined text-sm text-primary">domain</span>
                                   </div>
                                   <div className="min-w-0">
-                                    <p className="font-semibold text-ink truncate">
+                                    <p className="font-headline font-semibold text-ink truncate">
                                       {contract.barrio_name || contract.barrio || "Sin barrio"}
                                     </p>
                                     <p className="text-xs text-ink-muted mt-0.5 truncate">
@@ -481,7 +485,7 @@ function TenantDashboard() {
                                   </div>
                                 </div>
                                 <div className="text-right flex-shrink-0">
-                                  <p className="font-bold text-ink">{formatPrice(contract.monthly_rent)}</p>
+                                  <p className="font-headline font-bold text-ink">{formatPrice(contract.monthly_rent)}</p>
                                   <p className="text-xs text-ink-muted">/mes</p>
                                 </div>
                               </div>
@@ -555,7 +559,7 @@ function TenantDashboard() {
               )}
 
               {activeTab === "mis-reportes" && (
-                <div className="p-6 space-y-6">
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <h2 className="font-headline text-headline-md text-ink mb-1">Mis Reportes de Mantenimiento</h2>
@@ -565,7 +569,10 @@ function TenantDashboard() {
                       </p>
                     </div>
                     <button
-                      onClick={() => window.open("/mis-reportes", "_self")}
+                      onClick={() => {
+                        setShowReportModal(true);
+                        getMyProperties().then((res) => { if (res.success) setReportProperties(res.data || []); }).catch(() => {});
+                      }}
                       className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-label-md bg-brand-500 text-white hover:bg-brand-600 transition-all"
                     >
                       Nuevo Reporte
@@ -582,87 +589,89 @@ function TenantDashboard() {
                       <p className="text-ink-muted">No has realizado reportes de mantenimiento</p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {reports.map((r) => (
                         <div
                           key={r.id}
-                          className="bg-surface-container-low rounded-xl p-5 hover:bg-surface-container-high transition-colors"
+                          className="bg-surface-container-low rounded-xl overflow-hidden border border-line/50 hover:border-line transition-all"
                         >
-                          <div className="flex items-start gap-4">
-                            {r.image_url && (
+                          {r.image_url ? (
+                            <div className="relative aspect-video overflow-hidden">
                               <img
                                 src={r.image_url}
                                 alt="Reporte"
-                                className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
-                                onError={(e) => {
-                                  e.target.style.display = "none";
-                                }}
+                                className="w-full h-full object-cover"
+                                onError={(e) => { e.target.style.display = "none"; }}
                               />
+                            </div>
+                          ) : (
+                            <div className="aspect-video bg-paper-sunk flex items-center justify-center">
+                              <span className="material-symbols-outlined text-3xl text-outline">handyman</span>
+                            </div>
+                          )}
+                          <div className="p-4">
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <h4 className="font-headline font-semibold text-ink leading-tight truncate">{r.title}</h4>
+                            </div>
+                            <p className="text-label-md text-ink-muted mb-3 truncate">
+                              {r.direccion_apt} - {r.barrio}
+                            </p>
+                            {r.description && (
+                              <p className="text-body-sm text-ink-muted mb-3 line-clamp-2">{r.description}</p>
                             )}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                  <h4 className="font-semibold text-ink">{r.title}</h4>
-                                  <p className="text-sm text-ink-muted mt-0.5">
-                                    {r.direccion_apt} - {r.barrio}
-                                  </p>
-                                </div>
-                                <div className="flex items-center gap-2 flex-shrink-0">
-                                  <span
-                                    className={`text-label-md px-2 py-0.5 rounded-full ${
-                                      r.priority === "urgent"
+                            <div className="flex items-center gap-2 mb-3">
+                              <span
+                                className={`text-label-md px-2 py-0.5 rounded-full ${
+                                  r.priority === "urgent"
+                                    ? "bg-error/10 text-error"
+                                    : r.priority === "high"
+                                      ? "bg-warning/10 text-warning"
+                                      : r.priority === "medium"
+                                        ? "bg-secondary/10 text-secondary"
+                                        : "bg-surface-container-high text-outline"
+                                }`}
+                              >
+                                {r.priority === "urgent"
+                                  ? "Urgente"
+                                  : r.priority === "high"
+                                    ? "Alta"
+                                    : r.priority === "medium"
+                                      ? "Media"
+                                      : "Baja"}
+                              </span>
+                              <span
+                                className={`text-label-md px-2 py-0.5 rounded-full ${
+                                  r.status === "resolved"
+                                    ? "bg-tertiary/10 text-tertiary"
+                                    : r.status === "in_progress"
+                                      ? "bg-secondary/10 text-secondary"
+                                      : r.status === "rejected"
                                         ? "bg-error/10 text-error"
-                                        : r.priority === "high"
-                                          ? "bg-warning/10 text-warning"
-                                          : r.priority === "medium"
-                                            ? "bg-secondary/10 text-secondary"
-                                            : "bg-surface-container-high text-outline"
-                                    }`}
-                                  >
-                                    {r.priority === "urgent"
-                                      ? "Urgente"
-                                      : r.priority === "high"
-                                        ? "Alta"
-                                        : r.priority === "medium"
-                                          ? "Media"
-                                          : "Baja"}
-                                  </span>
-                                  <span
-                                    className={`text-label-md px-2 py-0.5 rounded-full ${
-                                      r.status === "resolved"
-                                        ? "bg-tertiary/10 text-tertiary"
-                                        : r.status === "in_progress"
-                                          ? "bg-secondary/10 text-secondary"
-                                          : r.status === "rejected"
-                                            ? "bg-error/10 text-error"
-                                            : "bg-warning/10 text-warning"
-                                    }`}
-                                  >
-                                    {r.status === "resolved"
-                                      ? "Resuelto"
-                                      : r.status === "in_progress"
-                                        ? "En Proceso"
-                                        : r.status === "rejected"
-                                          ? "Rechazado"
-                                          : "Pendiente"}
-                                  </span>
-                                </div>
-                              </div>
-                              {r.description && (
-                                <p className="text-sm text-ink-muted mt-2 line-clamp-2">{r.description}</p>
-                              )}
-                              <div className="flex items-center gap-3 mt-2 text-xs text-ink-muted">
-                                <span>
-                                  {new Date(r.created_at).toLocaleDateString("es-CO", {
-                                    day: "numeric",
-                                    month: "long",
-                                    year: "numeric",
-                                  })}
+                                        : "bg-warning/10 text-warning"
+                                }`}
+                              >
+                                {r.status === "resolved"
+                                  ? "Resuelto"
+                                  : r.status === "in_progress"
+                                    ? "En Proceso"
+                                    : r.status === "rejected"
+                                      ? "Rechazado"
+                                      : "Pendiente"}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-label-sm text-ink-muted">
+                              <span>
+                                {new Date(r.created_at).toLocaleDateString("es-CO", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                })}
+                              </span>
+                              {r.landlord_notes && (
+                                <span className="italic truncate ml-2" title={r.landlord_notes}>
+                                  Nota
                                 </span>
-                                {r.landlord_notes && (
-                                  <span className="italic">· Nota: {r.landlord_notes}</span>
-                                )}
-                              </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -673,7 +682,7 @@ function TenantDashboard() {
               )}
 
               {activeTab === "contacto" && (
-                <div className="p-6 space-y-6">
+                <div className="space-y-4">
                   <div>
                     <h2 className="font-headline text-headline-md text-ink mb-1">Contacto con tus Arrendadores</h2>
                     <p className="text-body-md text-ink-muted">Comunicación directa y en tiempo real</p>
@@ -716,7 +725,7 @@ function TenantDashboard() {
                               {(selectedLandlord.name || "").charAt(0).toUpperCase()}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-ink">
+                              <p className="font-headline font-semibold text-ink">
                                 {selectedLandlord.name} {selectedLandlord.lastname}
                               </p>
                               <p className="text-sm text-ink-muted">{selectedLandlord.email}</p>
@@ -743,7 +752,7 @@ function TenantDashboard() {
               )}
 
               {activeTab === "documentos" && (
-                <div className="p-6 space-y-6">
+                <div className="space-y-4">
                   <div>
                     <h2 className="font-headline text-headline-md text-ink mb-1">Documentos</h2>
                     <p className="text-body-md text-ink-muted">Contratos y recibos de arriendo</p>
@@ -772,7 +781,7 @@ function TenantDashboard() {
                                 <span className="material-symbols-outlined text-sm text-brand-500">description</span>
                               </div>
                               <div className="min-w-0">
-                                <p className="font-semibold text-ink">
+                                <p className="font-headline font-semibold text-ink">
                                   Contrato de Arriendo —{" "}
                                   {contract.barrio_name || contract.barrio || "Sin barrio"}
                                 </p>
@@ -789,7 +798,7 @@ function TenantDashboard() {
                               </div>
                             </div>
                             <div className="flex-shrink-0">
-                              <p className="font-semibold text-ink text-right">{formatPrice(contract.monthly_rent)}</p>
+                              <p className="font-headline font-semibold text-ink text-right">{formatPrice(contract.monthly_rent)}</p>
                               <p className="text-xs text-ink-muted text-right">/mes</p>
                             </div>
                           </div>
@@ -822,11 +831,186 @@ function TenantDashboard() {
                   )}
                 </div>
               )}
-            </div>
           </div>
+
+          {/* Stat cards — columna derecha */}
+          <aside className="hidden lg:flex flex-col gap-4 w-56 flex-shrink-0">
+            {statCards.map((card, i) => (
+              <div key={i} className="bg-paper-card rounded-xl p-4 border border-line/50">
+                {card.type === "days" ? (
+                  <div className="flex flex-col items-center">
+                    {(() => {
+                      const pct = card.circleValue;
+                      const r = 60;
+                      const cx = 80;
+                      const cy = 78;
+                      const angle = Math.PI * (1 - pct / 100);
+                      const endX = cx + r * Math.cos(angle);
+                      const endY = cy - r * Math.sin(angle);
+                      const largeArc = pct > 50 ? 1 : 0;
+                      return (
+                        <svg width="100%" viewBox="0 0 160 92" className="overflow-visible">
+                          <path d={`M ${cx - r},${cy} A ${r},${r} 0 0,1 ${cx + r},${cy}`} fill="none" stroke="currentColor" strokeWidth="10" className="text-line/30" strokeLinecap="round" />
+                          <path d={`M ${cx - r},${cy} A ${r},${r} 0 ${largeArc},1 ${endX},${endY}`} fill="none" stroke="currentColor" strokeWidth="10" className="text-brand-500" strokeLinecap="round" />
+                          <text x={cx} y={cy - 16} textAnchor="middle" fill="currentColor" className="text-ink font-headline font-bold" fontSize="28">{card.value}</text>
+                          <text x={cx} y={cy + 2} textAnchor="middle" fill="currentColor" className="text-ink-muted" fontSize="10" letterSpacing="0.2em">DÍAS</text>
+                        </svg>
+                      );
+                    })()}
+                    <p className="text-label-sm text-ink-muted text-center">{card.label}</p>
+                  </div>
+                ) : card.type === "contracts" ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <p className="font-headline text-headline-lg font-bold text-ink">{activeContracts.length}</p>
+                    <p className="text-label-sm text-ink-muted text-center">{card.label}</p>
+                  </div>
+                ) : card.type === "payments" ? (
+                  <div className="flex flex-col items-center">
+                    <div className="w-full border-2 border-dashed border-line/30 rounded-lg p-3 text-center">
+                      <p className="font-headline text-headline-lg font-bold text-ink leading-none">{formatPrice(totalMonthlyRent)}</p>
+                      <p className="text-label-sm text-ink-muted mt-1">
+                        {daysToNearestEnd !== null && daysToNearestEnd > 0
+                          ? `Próximo: ${new Date(Date.now() + daysToNearestEnd * 86400000).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}`
+                          : "Sin contratos activos"}
+                      </p>
+                    </div>
+                    <p className="text-label-sm text-ink-muted text-center mt-2">{card.label}</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <p className="font-headline text-headline-lg font-bold text-ink">{pendingReports.length}</p>
+                    <p className="text-label-sm text-ink-muted text-center">{card.label}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </aside>
         </div>
       </div>
-      {showPaymentModal && selectedPaymentContract && (
+    </div>
+  </div>
+  {showReportModal && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowReportModal(false)}>
+      <div className="bg-paper-card rounded-xl shadow-ambient-lg w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-5 border-b border-line">
+          <h2 className="font-headline text-headline-md text-ink">Nuevo Reporte de Mantenimiento</h2>
+          <button onClick={() => setShowReportModal(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-ink-muted hover:text-ink hover:bg-line/30 transition-all">
+            <span className="material-symbols-outlined text-lg">close</span>
+          </button>
+        </div>
+        <form className="p-5 space-y-4" onSubmit={async (e) => {
+          e.preventDefault();
+          if (!reportForm.property_id || !reportForm.title) return;
+          const formData = new FormData();
+          formData.append("property_id", reportForm.property_id);
+          formData.append("title", reportForm.title);
+          formData.append("description", reportForm.description);
+          formData.append("priority", reportForm.priority);
+          if (reportImage) formData.append("image", reportImage);
+          setReportSubmitting(true);
+          try {
+            const res = await createMaintenanceReport(formData);
+            if (res.success) {
+              setShowReportModal(false);
+              setReportForm({ property_id: "", title: "", description: "", priority: "medium" });
+              setReportImage(null);
+              fetchReports();
+            }
+          } catch (err) {
+            console.error("Error creating report:", err);
+          } finally {
+            setReportSubmitting(false);
+          }
+        }}>
+          <div>
+            <label className="text-label-md text-ink-muted uppercase tracking-wider mb-1.5 block">Propiedad</label>
+            <select name="property_id" value={reportForm.property_id} onChange={(e) => setReportForm((p) => ({ ...p, property_id: e.target.value }))} required
+              className={`w-full px-3 py-2.5 rounded-lg bg-paper-sunk border border-line text-body-md focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all ${reportForm.property_id ? "text-ink" : "text-ink-muted"}`}>
+              <option value="" className="text-ink-muted">{reportProperties.length === 0 ? "Cargando..." : "Seleccioná una propiedad"}</option>
+              {reportProperties.map((p) => (
+                <option key={p.id_apt} value={p.id_apt}>{p.direccion_apt} - {p.barrio}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-label-md text-ink-muted uppercase tracking-wider mb-1.5 block">Título</label>
+            <input name="title" value={reportForm.title} onChange={(e) => setReportForm((p) => ({ ...p, title: e.target.value }))} placeholder="Ej: Fuga de agua" required
+              className="w-full px-3 py-2.5 rounded-lg bg-paper-sunk border border-line text-ink text-body-md placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" />
+          </div>
+          <div>
+            <label className="text-label-md text-ink-muted uppercase tracking-wider mb-1.5 block">Descripción</label>
+            <textarea name="description" value={reportForm.description} onChange={(e) => setReportForm((p) => ({ ...p, description: e.target.value }))} rows={3} placeholder="Describí el problema..."
+              className="w-full px-3 py-2.5 rounded-lg bg-paper-sunk border border-line text-ink text-body-md placeholder:text-ink-muted focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all resize-vertical" />
+          </div>
+          <div>
+            <label className="text-label-md text-ink-muted uppercase tracking-wider mb-1.5 block">Prioridad</label>
+            <div className="flex gap-2">
+              {[
+                { value: "low", label: "Baja", cls: "bg-outline/15 text-outline border border-outline/30" },
+                { value: "medium", label: "Media", cls: "bg-secondary/15 text-secondary border border-secondary/30" },
+                { value: "high", label: "Alta", cls: "bg-warning/15 text-warning border border-warning/30" },
+                { value: "urgent", label: "Urgente", cls: "bg-error/15 text-error border border-error/30" },
+              ].map((opt) => (
+                <button key={opt.value} type="button" onClick={() => setReportForm((p) => ({ ...p, priority: opt.value }))}
+                  className={`flex-1 px-3 py-2 rounded-lg text-label-md font-semibold transition-all ${
+                    reportForm.priority === opt.value
+                      ? opt.cls
+                      : "bg-paper-sunk text-ink-muted hover:bg-line/30 border border-transparent"
+                  }`}>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-label-md text-ink-muted uppercase tracking-wider mb-1.5 block">Foto (opcional)</label>
+            <div
+              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={(e) => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files[0]) setReportImage(e.dataTransfer.files[0]); }}
+              className={`relative w-full rounded-lg border-2 border-dashed transition-all cursor-pointer ${
+                isDragging
+                  ? "border-brand-500 bg-brand-500/10"
+                  : reportImage
+                    ? "border-tertiary/30 bg-tertiary/5"
+                    : "border-line bg-paper-sunk hover:bg-line/20"
+              }`}
+            >
+              <input type="file" accept="image/*" onChange={(e) => { if (e.target.files[0]) setReportImage(e.target.files[0]); }} id="report-image"
+                className="absolute inset-0 opacity-0 w-full h-full cursor-pointer" />
+              {reportImage ? (
+                <div className="flex items-center justify-between p-3">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-sm text-tertiary">check_circle</span>
+                    <span className="text-body-md text-ink truncate max-w-[200px]">{reportImage.name}</span>
+                  </div>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setReportImage(null); document.getElementById("report-image").value = ""; }}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-ink-muted hover:text-error hover:bg-error/10 transition-all">
+                    <span className="material-symbols-outlined text-sm">close</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center py-5 px-3">
+                  <span className={`material-symbols-outlined text-2xl mb-1 ${isDragging ? "text-brand-500" : "text-outline"}`}>
+                    {isDragging ? "cloud_upload" : "add_photo_alternate"}
+                  </span>
+                  <p className={`text-body-md mb-0.5 ${isDragging ? "text-brand-500 font-medium" : "text-ink-muted"}`}>
+                    {isDragging ? "Soltá la imagen acá" : "Agregar imagen"}
+                  </p>
+                  <p className="text-label-sm text-ink-muted">o arrastrá y soltá</p>
+                </div>
+              )}
+            </div>
+          </div>
+          <button type="submit" disabled={reportSubmitting}
+            className="w-full py-3 rounded-lg bg-brand-500 text-white font-headline font-bold text-label-md hover:bg-brand-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+            {reportSubmitting ? "Enviando..." : "Enviar Reporte"}
+          </button>
+        </form>
+      </div>
+    </div>
+  )}
+  {showPaymentModal && selectedPaymentContract && (
         stripePromise ? (
           <Elements stripe={stripePromise}>
             <PayPalScriptProvider options={{ clientId: PAYPAL_CLIENT_ID || '', currency: 'USD' }}>
