@@ -97,77 +97,78 @@ function MyRents() {
             const daysRemaining = getDaysRemaining(rent.end_date);
             return (
               <div key={rent.agreement_id} className="bg-surface-container-low rounded-xl overflow-hidden">
-                <div className="p-6">
-                  <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-4">
-                    <div className="w-full sm:w-40 h-28 bg-surface-container-high rounded-lg overflow-hidden flex-shrink-0">
-                      {rent.images && rent.images.length > 0 && rent.images[0]?.url ? (
-                        <img src={rent.images[0].url} alt="Vivienda" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <span className="material-symbols-outlined text-3xl text-outline">image</span>
-                        </div>
+                <div className="flex flex-col md:flex-row">
+                  {/* Left side — info */}
+                  <div className="flex-1 p-6">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="font-headline text-headline-md text-on-surface">{rent.barrio || 'Sin barrio'}</h3>
+                        <p className="text-body-md text-on-surface-variant">{rent.direccion_apt || ''}</p>
+                      </div>
+                      {getStatusBadge(rent.status)}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-on-surface-variant">
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-xs">calendar_today</span>
+                        Inicio: {formatDate(rent.start_date)}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-xs">event</span>
+                        Fin: {formatDate(rent.end_date)}
+                      </span>
+                      {daysRemaining !== null && daysRemaining > 0 && (
+                        <span className={`flex items-center gap-1 ${daysRemaining <= 30 ? 'text-error' : 'text-tertiary'}`}>
+                          <span className="material-symbols-outlined text-xs">schedule</span>
+                          {daysRemaining} días restantes
+                        </span>
                       )}
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <h3 className="font-headline text-headline-md text-on-surface">{rent.barrio || 'Sin barrio'}</h3>
-                          <p className="text-body-md text-on-surface-variant">{rent.direccion_apt || ''}</p>
+                    <div className="mt-3">
+                      <span className="font-bold text-headline-md text-primary">{formatPrice(rent.monthly_rent)}</span>
+                      <span className="text-on-surface-variant text-sm"> /mes</span>
+                    </div>
+
+                    <div className="flex items-center gap-4 mt-4 pt-4 border-t border-surface-container-high">
+                      <div className="bg-surface-container-lowest rounded-lg p-3 flex-1">
+                        <p className="text-label-md text-on-surface-variant uppercase tracking-wider">Tu próximo pago</p>
+                        <p className="font-bold text-on-surface mt-1">{formatPrice(rent.monthly_rent)}</p>
+                        <p className="text-xs text-on-surface-variant">Vence el {formatDate(rent.end_date)}</p>
+                      </div>
+                      <div className="bg-surface-container-lowest rounded-lg p-3 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-tertiary">verified_user</span>
+                          <p className="font-bold text-on-surface">Seguro Activo</p>
                         </div>
-                        {getStatusBadge(rent.status)}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-on-surface-variant">
-                        <span className="flex items-center gap-1">
-                          <span className="material-symbols-outlined text-xs">calendar_today</span>
-                          Inicio: {formatDate(rent.start_date)}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span className="material-symbols-outlined text-xs">event</span>
-                          Fin: {formatDate(rent.end_date)}
-                        </span>
-                        {daysRemaining !== null && daysRemaining > 0 && (
-                          <span className={`flex items-center gap-1 ${daysRemaining <= 30 ? 'text-error' : 'text-tertiary'}`}>
-                            <span className="material-symbols-outlined text-xs">schedule</span>
-                            {daysRemaining} días restantes
-                          </span>
-                        )}
-                      </div>
-                      <div className="mt-3">
-                        <span className="font-bold text-headline-md text-primary">{formatPrice(rent.monthly_rent)}</span>
-                        <span className="text-on-surface-variant text-sm"> /mes</span>
+                        <p className="text-xs text-on-surface-variant mt-1">Protección total de garantía y daños menores.</p>
                       </div>
                     </div>
+
+                    <div className="mt-4">
+                      <button
+                        onClick={() => setSelectedRent(selectedRent?.agreement_id === rent.agreement_id ? null : rent)}
+                        className="text-label-md text-primary hover:underline transition-all"
+                      >
+                        {selectedRent?.agreement_id === rent.agreement_id ? 'Cerrar reseñas' : 'Dejar una reseña'}
+                      </button>
+                    </div>
+
+                    {selectedRent?.agreement_id === rent.agreement_id && (
+                      <div className="mt-4 pt-4 border-t border-surface-container-high">
+                        <ReviewSection propertyId={selectedRent.id_apt} isOwner={false} />
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex items-center gap-4 mt-4 pt-4 border-t border-surface-container-high">
-                    <div className="bg-surface-container-lowest rounded-lg p-3 flex-1">
-                      <p className="text-label-md text-on-surface-variant uppercase tracking-wider">Tu próximo pago</p>
-                      <p className="font-bold text-on-surface mt-1">{formatPrice(rent.monthly_rent)}</p>
-                      <p className="text-xs text-on-surface-variant">Vence el {formatDate(rent.end_date)}</p>
-                    </div>
-                    <div className="bg-surface-container-lowest rounded-lg p-3 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-tertiary">verified_user</span>
-                        <p className="font-bold text-on-surface">Seguro Activo</p>
+                  {/* Right side — image */}
+                  <div className="w-full md:w-1/2 h-48 md:h-auto bg-surface-container-high overflow-hidden">
+                    {rent.images && rent.images.length > 0 && rent.images[0]?.url ? (
+                      <img src={rent.images[0].url} alt="Vivienda" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <span className="material-symbols-outlined text-3xl text-outline">image</span>
                       </div>
-                      <p className="text-xs text-on-surface-variant mt-1">Protección total de garantía y daños menores.</p>
-                    </div>
+                    )}
                   </div>
-
-                  <div className="mt-4">
-                    <button
-                      onClick={() => setSelectedRent(selectedRent?.agreement_id === rent.agreement_id ? null : rent)}
-                      className="text-label-md text-primary hover:underline transition-all"
-                    >
-                      {selectedRent?.agreement_id === rent.agreement_id ? 'Cerrar reseñas' : 'Dejar una reseña'}
-                    </button>
-                  </div>
-
-                  {selectedRent?.agreement_id === rent.agreement_id && (
-                    <div className="mt-4 pt-4 border-t border-surface-container-high">
-                      <ReviewSection propertyId={selectedRent.id_apt} isOwner={false} />
-                    </div>
-                  )}
                 </div>
               </div>
             );
