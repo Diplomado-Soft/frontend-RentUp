@@ -147,6 +147,14 @@ function AppContent() {
             } 
           />
           <Route 
+            path='/admin/apartments' 
+            element={
+              <ProtectedRoute requiredRole={3} fallbackPath="/">
+                <AdminDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
             path='/mis-reportes' 
             element={
               <ProtectedRoute requiredRole={1} fallbackPath="/"><TenantMaintenance /></ProtectedRoute>
