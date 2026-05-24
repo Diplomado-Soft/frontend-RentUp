@@ -78,7 +78,7 @@ function LandlordReviews() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mb-4"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-500 mb-4"></div>
         <p className="text-body-md text-on-surface-variant">Cargando reseñas...</p>
       </div>
     );
@@ -101,8 +101,8 @@ function LandlordReviews() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-primary-gradient rounded-xl flex items-center justify-center shadow-md">
-          <span className="material-symbols-outlined text-on-primary text-lg">star</span>
+        <div className="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center shadow-md">
+          <span className="material-symbols-outlined text-white text-lg">star</span>
         </div>
         <div>
           <h2 className="font-headline text-headline-md text-on-surface">Reseñas de Mis Propiedades</h2>
@@ -114,13 +114,13 @@ function LandlordReviews() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-surface-container-low rounded-xl p-4 text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
-            <span className="font-headline text-headline-lg font-bold text-primary">{averageRating}</span>
+            <span className="font-headline text-headline-lg font-bold text-brand-500">{averageRating}</span>
             <span className="material-symbols-outlined text-amber-400 text-xl">star</span>
           </div>
           <p className="text-label-md uppercase tracking-wider text-outline">Promedio</p>
         </div>
         <div className="bg-surface-container-low rounded-xl p-4 text-center">
-          <p className="font-headline text-headline-lg font-bold text-primary">{stats?.total_reviews || 0}</p>
+          <p className="font-headline text-headline-lg font-bold text-brand-500">{stats?.total_reviews || 0}</p>
           <p className="text-label-md uppercase tracking-wider text-outline">Total reseñas</p>
         </div>
         <div className="bg-surface-container-low rounded-xl p-4 text-center">
@@ -137,7 +137,7 @@ function LandlordReviews() {
       {reviewsByProperty.length > 0 && (
         <div>
           <h3 className="font-headline text-headline-sm text-on-surface mb-3 flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-lg">bar_chart</span>
+            <span className="material-symbols-outlined text-brand-500 text-lg">bar_chart</span>
             Reseñas por Propiedad
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -146,7 +146,7 @@ function LandlordReviews() {
                 onClick={() => setSelectedProperty(selectedProperty === prop.property_id.toString() ? 'all' : prop.property_id.toString())}
                 className={`text-left p-4 rounded-xl transition-all ${
                   selectedProperty === prop.property_id.toString()
-                    ? 'bg-primary/10 ring-2 ring-primary'
+                    ? 'bg-brand-500/10 ring-2 ring-brand-500'
                     : 'bg-surface-container-low hover:bg-surface-container-high'
                 }`}
               >
@@ -156,7 +156,7 @@ function LandlordReviews() {
                 <p className="text-label-md text-outline truncate mt-0.5">{prop.direccion_apt}</p>
                 <div className="flex items-center justify-between mt-2">
                   <div className="flex items-center gap-1">
-                    <span className="font-headline text-headline-md font-bold text-primary">
+                    <span className="font-headline text-headline-md font-bold text-brand-500">
                       {prop.average_rating ? parseFloat(prop.average_rating).toFixed(1) : '0.0'}
                     </span>
                     <span className="material-symbols-outlined text-amber-400 text-sm">star</span>
@@ -179,12 +179,12 @@ function LandlordReviews() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-headline text-headline-sm text-on-surface flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-lg">reviews</span>
+            <span className="material-symbols-outlined text-brand-500 text-lg">reviews</span>
             Reseñas Recientes
           </h3>
           {selectedProperty !== 'all' && (
             <button onClick={() => setSelectedProperty('all')}
-              className="text-label-md text-primary hover:underline flex items-center gap-1">
+              className="text-label-md text-brand-500 hover:underline flex items-center gap-1">
               <span className="material-symbols-outlined text-xs">close</span>
               Ver todas
             </button>
@@ -209,8 +209,8 @@ function LandlordReviews() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <span className="text-label-md font-bold text-primary">{getInitials(review.reviewer_name)}</span>
+                      <div className="w-10 h-10 rounded-full bg-brand-500/10 flex items-center justify-center flex-shrink-0">
+                        <span className="text-label-md font-bold text-brand-500">{getInitials(review.reviewer_name)}</span>
                       </div>
                       <div>
                         <p className="text-body-md font-semibold text-on-surface">

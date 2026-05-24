@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import axiosInstance from "../contexts/axiosInstance";
 
-const inputClass = "w-full px-4 py-3 rounded-lg bg-surface-container-low text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 transition text-body-md placeholder:text-outline";
-const labelClass = "text-label-md uppercase tracking-wider text-outline mb-1.5 block";
+const inputClass = "w-full px-4 py-3 rounded-lg bg-paper-sunk text-ink focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition text-body-md placeholder:text-ink-muted";
+const labelClass = "text-label-md uppercase tracking-wider text-ink-muted mb-1.5 block";
 
 function ContractManager() {
   const [contracts, setContracts] = useState([]);
@@ -180,16 +180,16 @@ function ContractManager() {
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary-gradient rounded-xl flex items-center justify-center shadow-md">
-            <span className="material-symbols-outlined text-on-primary text-lg">description</span>
+          <div className="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center">
+            <span className="material-symbols-outlined text-white text-lg">description</span>
           </div>
           <div>
-            <h2 className="font-headline text-headline-md text-on-surface">Gestión de Arriendos</h2>
-            <p className="text-body-md text-on-surface-variant">Administra y crea contratos de arrendamiento</p>
+            <h2 className="font-headline text-headline-md text-ink">Gestión de Arriendos</h2>
+            <p className="text-body-md text-ink-muted">Administra y crea contratos de arrendamiento</p>
           </div>
         </div>
         <button onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold rounded-lg shadow-md hover:shadow-lg active:scale-[0.98] transition-all"
+          className="flex items-center gap-1.5 px-4 py-2.5 bg-brand-500 text-white font-semibold rounded-lg hover:bg-brand-600 transition-all text-label-md"
         >
           <span className="material-symbols-outlined text-sm">add</span>
           Nuevo Arriendo
@@ -198,10 +198,10 @@ function ContractManager() {
 
       {/* Form */}
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-surface-container-low rounded-xl p-6 space-y-5">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="material-symbols-outlined text-primary text-lg">add_circle</span>
-            <h3 className="font-headline text-headline-sm text-on-surface">Crear Nuevo Contrato</h3>
+        <form onSubmit={handleSubmit} className="bg-paper-card rounded-xl p-6 border border-line/50 space-y-5">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-brand-500 text-lg">add_circle</span>
+            <h3 className="font-headline text-headline-sm text-ink">Crear Nuevo Contrato</h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -218,7 +218,7 @@ function ContractManager() {
               {availableApartments.length === 0 && (
                 <p className="text-label-md text-secondary mt-1 flex items-center gap-1">
                   <span className="material-symbols-outlined text-xs">info</span>
-                  No hay apartamentos disponibles
+                  No hay apartamentos disponibles para arrendar
                 </p>
               )}
             </div>
@@ -227,26 +227,26 @@ function ContractManager() {
               <label className={labelClass}>Inquilino</label>
               <div className="relative">
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-outline">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted">
                     <span className="material-symbols-outlined text-sm">person_search</span>
                   </span>
                   <input type="text" value={searchQuery} onChange={handleSearchChange}
                     onFocus={() => searchQuery.length >= 1 && setShowDropdown(true)}
                     placeholder="Escriba para buscar usuarios..." className={`${inputClass} pl-10`} />
-                  {searching && <span className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin material-symbols-outlined text-sm text-outline">sync</span>}
+                  {searching && <span className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin material-symbols-outlined text-sm text-ink-muted">sync</span>}
                 </div>
 
                 {showDropdown && tenantResults.length > 0 && (
-                  <div className="absolute z-20 w-full mt-1 bg-surface-container-lowest rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                  <div className="absolute z-20 w-full mt-1 bg-paper-card border border-line/50 rounded-xl shadow-ambient-sm max-h-60 overflow-y-auto">
                     {tenantResults.map(tenant => (
                       <button key={tenant.user_id} type="button" onClick={() => selectTenant(tenant)}
-                        className="w-full px-4 py-3 text-left hover:bg-surface-container-low flex items-center gap-3 transition-colors">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <span className="text-label-md font-bold text-primary">{getInitials(tenant.user_name)}</span>
+                        className="w-full px-4 py-3 text-left hover:bg-paper-sunk flex items-center gap-3 transition-colors">
+                        <div className="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center flex-shrink-0">
+                          <span className="text-label-md font-bold text-brand-500">{getInitials(tenant.user_name)}</span>
                         </div>
                         <div>
-                          <p className="text-body-md font-medium text-on-surface">{tenant.user_name} {tenant.user_lastname}</p>
-                          <p className="text-label-md text-outline">{tenant.user_email}</p>
+                          <p className="text-body-md font-medium text-ink">{tenant.user_name} {tenant.user_lastname}</p>
+                          <p className="text-label-md text-ink-muted">{tenant.user_email}</p>
                         </div>
                       </button>
                     ))}
@@ -254,20 +254,20 @@ function ContractManager() {
                 )}
 
                 {showDropdown && searchQuery.length >= 1 && tenantResults.length === 0 && !searching && (
-                  <div className="absolute z-20 w-full mt-1 bg-surface-container-lowest rounded-xl shadow-lg p-4 text-center">
-                    <p className="text-body-md text-on-surface-variant">No se encontraron usuarios</p>
+                  <div className="absolute z-20 w-full mt-1 bg-paper-card border border-line/50 rounded-xl shadow-ambient-sm p-4 text-center">
+                    <p className="text-body-md text-ink-muted">No se encontraron usuarios</p>
                   </div>
                 )}
 
                 {selectedTenant && (
-                  <div className="mt-2 p-3 bg-surface-container-low rounded-lg flex items-center justify-between">
+                  <div className="mt-2 p-3 bg-paper-sunk border border-line/50 rounded-lg flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                        <span className="text-label-md font-bold text-on-primary">{getInitials(selectedTenant.user_name)}</span>
+                      <div className="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center flex-shrink-0">
+                        <span className="text-label-md font-bold text-white">{getInitials(selectedTenant.user_name)}</span>
                       </div>
                       <div>
-                        <p className="text-body-md font-medium text-on-surface">{selectedTenant.user_name} {selectedTenant.user_lastname}</p>
-                        <p className="text-label-md text-outline">{selectedTenant.user_email}</p>
+                        <p className="text-body-md font-medium text-ink">{selectedTenant.user_name} {selectedTenant.user_lastname}</p>
+                        <p className="text-label-md text-ink-muted">{selectedTenant.user_email}</p>
                       </div>
                     </div>
                     <button type="button" onClick={clearTenant} className="text-error hover:bg-error/10 rounded-lg p-1.5 transition">
@@ -303,11 +303,11 @@ function ContractManager() {
           </div>
 
           <div className="flex gap-3 pt-2">
-            <button type="submit" className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold rounded-lg shadow-md hover:shadow-lg active:scale-[0.98] transition-all">
+            <button type="submit" className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-brand-500 text-white font-bold rounded-lg hover:bg-brand-600 transition-all">
               <span className="material-symbols-outlined text-sm">check</span> Crear Contrato
             </button>
             <button type="button" onClick={() => { setShowForm(false); resetForm(); }}
-              className="flex items-center gap-2 px-6 py-3 bg-surface-container-high text-on-surface font-semibold rounded-lg hover:bg-surface-container-highest transition-all">
+              className="flex items-center gap-2 px-6 py-3 bg-paper-sunk border border-line text-ink font-semibold rounded-lg hover:bg-line/30 transition-all">
               <span className="material-symbols-outlined text-sm">close</span> Cancelar
             </button>
           </div>
@@ -316,51 +316,51 @@ function ContractManager() {
 
       {/* Contracts list */}
       <div>
-        <h3 className="font-headline text-headline-sm text-on-surface mb-4">Contratos Recientes</h3>
+        <h3 className="font-headline text-headline-sm text-ink mb-4">Contratos Recientes</h3>
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mb-4"></div>
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-500 mb-4"></div>
           </div>
         ) : contracts.length === 0 ? (
-          <div className="bg-surface-container-low rounded-xl p-12 text-center">
+          <div className="bg-paper-card border border-line/50 rounded-xl p-12 text-center">
             <span className="material-symbols-outlined text-5xl text-outline mb-4">description</span>
-            <p className="text-body-md text-on-surface-variant">No hay arriendos registrados</p>
+            <p className="text-body-md text-ink-muted">No hay arriendos registrados</p>
           </div>
         ) : (
           <div className="space-y-3">
             {contracts.map(contract => (
-              <div key={contract.agreement_id} className="bg-surface-container-low rounded-xl p-4 hover:bg-surface-container-high transition-all">
+              <div key={contract.agreement_id} className="bg-paper-card border border-line/50 rounded-xl p-4">
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <span className="material-symbols-outlined text-primary text-lg">home</span>
+                  <div className="w-10 h-10 rounded-lg bg-brand-500/10 flex items-center justify-center flex-shrink-0">
+                    <span className="material-symbols-outlined text-brand-500 text-lg">home</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <h4 className="font-headline text-headline-sm text-on-surface">{contract.barrio || 'Sin barrio'}</h4>
-                        <p className="text-body-md text-on-surface-variant truncate">{contract.direccion_apt || 'Sin dirección'}</p>
+                        <h4 className="font-headline text-headline-sm text-ink">{contract.barrio || 'Sin barrio'}</h4>
+                        <p className="text-body-md text-ink-muted truncate">{contract.direccion_apt || 'Sin dirección'}</p>
                       </div>
                       {getStatusBadge(contract.status)}
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
                       <div>
-                        <p className="text-label-md uppercase tracking-wider text-outline">Inquilino</p>
-                        <p className="text-body-md font-medium text-on-surface truncate">
+                        <p className="text-label-md uppercase tracking-wider text-ink-muted">Inquilino</p>
+                        <p className="text-body-md font-medium text-ink truncate">
                           {contract.tenant_name ? `${contract.tenant_name} ${contract.tenant_lastname || ''}` : '-'}
                         </p>
                       </div>
                       <div>
-                        <p className="text-label-md uppercase tracking-wider text-outline">Canon</p>
-                        <p className="text-body-md font-medium text-on-surface">{formatPrice(contract.monthly_rent)}</p>
+                        <p className="text-label-md uppercase tracking-wider text-ink-muted">Canon</p>
+                        <p className="text-body-md font-medium text-ink">{formatPrice(contract.monthly_rent)}</p>
                       </div>
                       <div>
-                        <p className="text-label-md uppercase tracking-wider text-outline">Inicio</p>
-                        <p className="text-body-md text-on-surface">{formatDate(contract.start_date)}</p>
+                        <p className="text-label-md uppercase tracking-wider text-ink-muted">Inicio</p>
+                        <p className="text-body-md text-ink">{formatDate(contract.start_date)}</p>
                       </div>
                       <div>
-                        <p className="text-label-md uppercase tracking-wider text-outline">Fin</p>
-                        <p className="text-body-md text-on-surface">{formatDate(contract.end_date)}</p>
+                        <p className="text-label-md uppercase tracking-wider text-ink-muted">Fin</p>
+                        <p className="text-body-md text-ink">{formatDate(contract.end_date)}</p>
                       </div>
                     </div>
                   </div>
@@ -378,8 +378,8 @@ function ContractManager() {
       </div>
 
       {toast && (
-        <div className={`fixed bottom-4 right-4 px-5 py-3 rounded-xl shadow-lg z-50 flex items-center gap-2 ${
-          toast.type === 'error' ? 'bg-error text-on-error' : 'bg-tertiary text-on-tertiary'
+        <div className={`fixed bottom-4 right-4 px-5 py-3 rounded-xl shadow-ambient-sm z-50 flex items-center gap-2 ${
+          toast.type === 'error' ? 'bg-error text-white' : 'bg-tertiary text-white'
         }`}>
           <span className="material-symbols-outlined text-sm">{toast.type === 'error' ? 'error' : 'check_circle'}</span>
           {toast.message}
