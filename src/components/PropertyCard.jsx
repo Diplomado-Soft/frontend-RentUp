@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { FaHeart } from "react-icons/fa";
 import axiosInstance from "../contexts/axiosInstance";
 
@@ -34,6 +35,21 @@ const getImages = (apt) => {
 };
 
 function PropertyCard({ apt, onViewMore, isFavorite, onToggleFavorite }) {
+  const navigate = useNavigate();
+
+  const goToMap = (e) => {
+    e.stopPropagation();
+    const lat = Number(apt.latitud_apt || apt.latitud_apartamento);
+    const lng = Number(apt.longitud_apt || apt.longitud_apartamento);
+    if (!lat || !lng) return;
+    navigate('/map', {
+      state: {
+        id: apt.id_apt || apt.id_apartamento,
+        lat,
+        lng
+      }
+    });
+  };
   const allImages = getImages(apt);
   const [imgErrors, setImgErrors] = useState({});
   const location = apt.barrio || apt.direccion_apt || 'Mocoa';
@@ -56,7 +72,7 @@ function PropertyCard({ apt, onViewMore, isFavorite, onToggleFavorite }) {
   }, [apt.id_apt]);
 
   return (
-    <div
+    <div id="rentup-property-card"
       onClick={() => { onViewMore && onViewMore(apt); }}
       className="rcard overflow-hidden cursor-pointer group transition-transform hover:-translate-y-0.5"
     >
@@ -132,6 +148,16 @@ function PropertyCard({ apt, onViewMore, isFavorite, onToggleFavorite }) {
             <span className="material-symbols-outlined text-[12px]">square_foot</span>
             {apt.metros_apt || '?'}m²
           </span>
+          {(apt.latitud_apt || apt.latitud_apartamento) && (
+            <button
+              onClick={goToMap}
+              className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-500/10 text-brand-500 hover:bg-brand-500/20 transition-colors text-[10px] font-semibold"
+              title="Ver en el mapa"
+            >
+              <span className="material-symbols-outlined text-[10px]">map</span>
+              Ubicación
+            </button>
+          )}
         </div>
 
         {/* Amenities */}

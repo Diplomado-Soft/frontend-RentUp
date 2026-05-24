@@ -5,6 +5,7 @@ import ApartmentForm from "../components/ApartmentForm";
 import Manage from '../components/Manage';
 import ContractManager from '../components/ContractManager';
 import LandlordReviews from '../components/LandlordReviews';
+import LandlordVisits from '../components/LandlordVisits';
 import Toast from '../components/Toast';
 
 function Dashboard() {
@@ -55,6 +56,7 @@ function Dashboard() {
     { id: 'list', label: 'Mis Apartamentos', icon: 'domain' },
     { id: 'add', label: 'Añadir Propiedad', icon: 'add_business' },
     { id: 'contracts', label: 'Contratos', icon: 'description' },
+    { id: 'visits', label: 'Visitas', icon: 'calendar_month' },
     { id: 'reviews', label: 'Reseñas', icon: 'star' },
   ];
 
@@ -131,6 +133,7 @@ function Dashboard() {
               {activeTab === 'list' && <Manage totalIncome={stats.totalIncome} activeProps={stats.activeProps} activeContracts={stats.activeContracts} />}
               {activeTab === 'add' && <ApartmentForm onSuccess={handleApartmentAdded} />}
               {activeTab === 'contracts' && <ContractManager />}
+              {activeTab === 'visits' && <LandlordVisits />}
               {activeTab === 'reviews' && <LandlordReviews />}
             </div>
           </div>

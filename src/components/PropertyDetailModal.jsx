@@ -272,7 +272,7 @@ function PropertyDetailModal({ apartment, onClose }) {
                 </div>
 
                 {/* CTA Buttons */}
-                <div className="mt-5 space-y-3">
+                <div id="rentup-cta-section" className="mt-5 space-y-3">
                   {user ? (
                     apartment.whatsapp || apartment.user_phonenumber ? (
                       <a
@@ -299,10 +299,13 @@ function PropertyDetailModal({ apartment, onClose }) {
 
                   <button
                     onClick={() => {
-                      localStorage.setItem("mapCenter", JSON.stringify([parseFloat(apartment.latitud_apt) || 1.156667, parseFloat(apartment.longitud_apt) || -76.651944]));
-                      localStorage.setItem("selectedAptId", apartment.id_apt);
-                      window.dispatchEvent(new CustomEvent("mapCenterChanged", { detail: [parseFloat(apartment.latitud_apt) || 1.156667, parseFloat(apartment.longitud_apt) || -76.651944] }));
-                      navigate('/map');
+                      navigate('/map', {
+                        state: {
+                          id: apartment.id_apt,
+                          lat: parseFloat(apartment.latitud_apt) || 1.156667,
+                          lng: parseFloat(apartment.longitud_apt) || -76.651944
+                        }
+                      });
                     }}
                     className="w-full py-3 rounded-full border border-line text-ink-muted hover:text-ink hover:border-ink transition-colors text-sm font-medium flex items-center justify-center gap-2"
                   >
