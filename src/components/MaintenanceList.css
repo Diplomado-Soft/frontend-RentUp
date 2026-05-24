@@ -1,74 +1,136 @@
 .maintenance-list-container {
     max-width: 900px;
-    margin: 40px auto;
-    padding: 24px;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    margin: 1.5rem auto;
+    padding: 1.5rem;
+    background: #ffffff;
+    border: 1px solid #e5dfd2;
+    border-radius: 0.75rem;
 }
+
 .maintenance-list-container h2 {
-    margin-bottom: 20px;
-    color: #333;
+    margin-bottom: 1.25rem;
+    color: #0e1a2b;
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
 }
+
 .maintenance-card {
-    border: 1px solid #eee;
-    border-radius: 10px;
-    padding: 16px;
-    margin-bottom: 14px;
+    border: 1px solid #e5dfd2;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
+    transition: border-color 0.15s ease;
 }
+
+.maintenance-card:hover {
+    border-color: #cdc6b3;
+}
+
 .maintenance-card-info { flex: 1; }
-.maintenance-card-info h4 { margin: 0 0 6px; color: #2c3e50; }
-.maintenance-card-info p { margin: 2px 0; color: #666; font-size: 14px; }
-.maintenance-card-info .property { font-weight: 600; color: #e67e22; }
+
+.maintenance-card-info h4 {
+    margin: 0 0 0.35rem;
+    color: #0e1a2b;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.maintenance-card-info p {
+    margin: 0.15rem 0;
+    color: #536379;
+    font-size: 0.85rem;
+}
+
+.maintenance-card-info .property {
+    font-weight: 600;
+    color: #2e5a88;
+}
+
+.maintenance-notes {
+    font-size: 0.8rem;
+    color: #536379;
+    font-style: italic;
+}
+
+.maintenance-date {
+    color: #777587;
+    font-size: 0.8rem;
+}
+
+/* Status Badges */
 .badge {
     display: inline-block;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 12px;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
+    letter-spacing: 0.03em;
 }
-.badge-pending { background: #fef3cd; color: #856404; }
-.badge-in_progress { background: #cce5ff; color: #004085; }
-.badge-resolved { background: #d4edda; color: #155724; }
-.badge-rejected { background: #f8d7da; color: #721c24; }
+.badge-pending { background: rgba(0, 88, 190, 0.1); color: #0058be; }
+.badge-in_progress { background: rgba(63, 42, 204, 0.1); color: #3f2acc; }
+.badge-resolved { background: rgba(0, 113, 77, 0.1); color: #00714d; }
+.badge-rejected { background: rgba(186, 26, 26, 0.1); color: #ba1a1a; }
+
+/* Priority Badges */
 .priority-badge {
     display: inline-block;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 11px;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.65rem;
     font-weight: 600;
 }
-.priority-low { background: #e8f5e9; color: #2e7d32; }
-.priority-medium { background: #fff3e0; color: #e65100; }
-.priority-high { background: #fce4ec; color: #c62828; }
-.priority-urgent { background: #fce4ec; color: #b71c1c; font-weight: 800; }
+.priority-low { background: rgba(0, 113, 77, 0.1); color: #00714d; }
+.priority-medium { background: rgba(0, 88, 190, 0.1); color: #0058be; }
+.priority-high { background: rgba(186, 26, 26, 0.1); color: #ba1a1a; }
+.priority-urgent { background: rgba(186, 26, 26, 0.15); color: #ba1a1a; font-weight: 800; }
+
 .maintenance-list-empty {
     text-align: center;
-    padding: 60px 20px;
-    color: #999;
+    padding: 3.75rem 1.25rem;
+    color: #777587;
+    font-size: 0.9rem;
 }
+
 .maintenance-image {
-    max-width: 120px;
-    max-height: 120px;
-    border-radius: 8px;
-    margin-left: 16px;
+    max-width: 100px;
+    max-height: 100px;
+    border-radius: 0.5rem;
+    margin-left: 1rem;
     object-fit: cover;
 }
+
+/* Action Buttons */
 .btn-status {
-    padding: 6px 16px;
+    padding: 0.4rem 1rem;
     border: none;
-    border-radius: 6px;
-    font-size: 13px;
+    border-radius: 0.375rem;
+    font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
-    margin-right: 8px;
+    margin-right: 0.5rem;
+    margin-top: 0.5rem;
+    transition: opacity 0.15s ease;
 }
-.btn-status.in-progress { background: #cce5ff; color: #004085; }
-.btn-status.resolved { background: #d4edda; color: #155724; }
-.btn-status.rejected { background: #f8d7da; color: #721c24; }
-.btn-status.delete { background: #fee2e2; color: #991b1b; }
+.btn-status:hover { opacity: 0.85; }
 
+.btn-status.in-progress { background: #2e5a88; color: #fff; }
+.btn-status.resolved { background: #00714d; color: #fff; }
+.btn-status.rejected { background: rgba(186, 26, 26, 0.1); color: #ba1a1a; }
+.btn-status.delete { background: rgba(186, 26, 26, 0.08); color: #991b1b; }
+
+@media (max-width: 768px) {
+    .maintenance-card {
+        flex-direction: column;
+    }
+    .maintenance-image {
+        margin-left: 0;
+        margin-top: 0.75rem;
+        max-width: 100%;
+        max-height: 200px;
+    }
+}

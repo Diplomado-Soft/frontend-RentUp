@@ -28,6 +28,21 @@ export const confirmPayment = async (payment_id, payment_intent_id = null, paypa
     }
 };
 
+export const registerManualPayment = async (data) => {
+    try {
+        const response = await axiosInstance.post('/payments/manual', {
+            agreement_id: data.agreement_id,
+            amount: data.amount,
+            payment_method: data.payment_method || 'cash',
+            paid_at: data.paid_at || new Date().toISOString()
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Error registering manual payment:", error.response?.data || error.message);
+        return null;
+    }
+};
+
 export const getPaymentHistory = async () => {
     try {
         const response = await axiosInstance.get('/payments/history');

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { UserContext } from "../contexts/UserContext";
 import { getMyReports, deleteReport } from "../apis/maintenanceController";
+import ConfirmModal from "./ConfirmModal";
 import "./MaintenanceList.css";
 
 const STATUS_LABELS = {
@@ -14,6 +15,8 @@ export default function MaintenanceList({ refreshKey }) {
     const { user } = useContext(UserContext);
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [deleteTarget, setDeleteTarget] = useState(null);
+    const [errorMsg, setErrorMsg] = useState(null);
 
     useEffect(() => {
         if (!user) return;
@@ -28,15 +31,19 @@ export default function MaintenanceList({ refreshKey }) {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('¿Eliminar este reporte? También se borrará la imagen adjunta.')) return;
+        setDeleteTarget(id);
+    };
+
+    const handleDeleteConfirm = async () => {
         try {
-            const res = await deleteReport(id);
+            const res = await deleteReport(deleteTarget);
             if (res.success) {
-                setReports(prev => prev.filter(r => r.id !== id));
+                setReports(prev => prev.filter(r => r.id !== deleteTarget));
             }
         } catch {
-            alert('Error al eliminar el reporte');
+            setErrorMsg('Error al eliminar el reporte');
         }
+        setDeleteTarget(null);
     };
 
     if (loading) return <div className="maintenance-list-container"><p>Cargando...</p></div>;
@@ -65,11 +72,11 @@ export default function MaintenanceList({ refreshKey }) {
                                 </span>
                             </p>
                             {r.landlord_notes && (
-                                <p style={{ fontSize: 13, color: "#555", fontStyle: "italic" }}>
+                                <p className="maintenance-notes">
                                     Nota: {r.landlord_notes}
                                 </p>
                             )}
-                            <small style={{ color: "#aaa" }}>
+                            <small className="maintenance-date">
                                 {new Date(r.created_at).toLocaleDateString("es-CO", {
                                     day: "numeric", month: "long", year: "numeric"
                                 })}
@@ -90,6 +97,19 @@ export default function MaintenanceList({ refreshKey }) {
                         )}
                     </div>
                 ))
+            )}
+            <ConfirmModal
+                open={!!deleteTarget}
+                title="¿Eliminar reporte?"
+                message="Esta acción no se puede deshacer. También se borrará la imagen adjunta."
+                confirmLabel="Eliminar"
+                onConfirm={handleDeleteConfirm}
+                onCancel={() => setDeleteTarget(null)}
+            />
+            {errorMsg && (
+                <div className="toast toast-error" onClick={() => setErrorMsg(null)}>
+                    {errorMsg}
+                </div>
             )}
         </div>
     );

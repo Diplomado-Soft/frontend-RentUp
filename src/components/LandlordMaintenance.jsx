@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useContext } from "react";
 import { UserContext } from "../contexts/UserContext";
 import { getLandlordReports, updateReportStatus, deleteReport } from "../apis/maintenanceController";
+import ConfirmModal from "./ConfirmModal";
+import PromptModal from "./PromptModal";
 import "./MaintenanceList.css";
 
 const STATUS_LABELS = {
@@ -15,6 +17,8 @@ export default function LandlordMaintenance() {
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState(null);
+    const [rejectTarget, setRejectTarget] = useState(null);
+    const [deleteTarget, setDeleteTarget] = useState(null);
 
     const fetchReports = () => {
         if (!user) return;
@@ -27,10 +31,12 @@ export default function LandlordMaintenance() {
     useEffect(() => { fetchReports(); }, [user]);
 
     const handleStatusChange = async (reportId, newStatus) => {
-        const notes = newStatus === "rejected" ? prompt("Motivo del rechazo:") : null;
-        if (newStatus === "rejected" && !notes) return;
+        if (newStatus === "rejected") {
+            setRejectTarget(reportId);
+            return;
+        }
         try {
-            const res = await updateReportStatus(reportId, newStatus, notes);
+            const res = await updateReportStatus(reportId, newStatus, null);
             if (res.success) {
                 setToast({ msg: `Reporte actualizado a "${STATUS_LABELS[newStatus]}"`, type: "success" });
                 fetchReports();
@@ -40,10 +46,27 @@ export default function LandlordMaintenance() {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm('¿Eliminar este reporte? También se borrará la imagen adjunta.')) return;
+    const handleRejectConfirm = async (notes) => {
+        if (!notes?.trim()) return;
         try {
-            const res = await deleteReport(id);
+            const res = await updateReportStatus(rejectTarget, "rejected", notes);
+            if (res.success) {
+                setToast({ msg: 'Reporte rechazado', type: 'success' });
+                fetchReports();
+            }
+        } catch {
+            setToast({ msg: "Error al rechazar el reporte", type: "error" });
+        }
+        setRejectTarget(null);
+    };
+
+    const handleDelete = async (id) => {
+        setDeleteTarget(id);
+    };
+
+    const handleDeleteConfirm = async () => {
+        try {
+            const res = await deleteReport(deleteTarget);
             if (res.success) {
                 setToast({ msg: 'Reporte eliminado', type: 'success' });
                 fetchReports();
@@ -51,12 +74,13 @@ export default function LandlordMaintenance() {
         } catch {
             setToast({ msg: 'Error al eliminar el reporte', type: 'error' });
         }
+        setDeleteTarget(null);
     };
 
     return (
         <div className="maintenance-list-container">
-            <h2>Mantenimiento - Mis Propiedades</h2>
-            {loading ? <p>Cargando...</p> : reports.length === 0 ? (
+            <h2 className="font-display text-2xl text-ink">Mantenimiento</h2>
+            {loading ? <p className="text-center text-ink-muted py-8">Cargando...</p> : reports.length === 0 ? (
                 <div className="maintenance-list-empty">
                     <p>No hay reportes de mantenimiento en tus propiedades.</p>
                 </div>
@@ -66,7 +90,7 @@ export default function LandlordMaintenance() {
                         <div className="maintenance-card-info">
                             <h4>{r.title}</h4>
                             <p className="property">{r.direccion_apt} - {r.barrio}</p>
-                            <p style={{ fontSize: 13, color: "#555" }}>
+                            <p>
                                 Reportado por: {r.user_name} {r.user_lastname} | {r.user_phonenumber}
                             </p>
                             <p>{r.description}</p>
@@ -80,16 +104,16 @@ export default function LandlordMaintenance() {
                                 </span>
                             </p>
                             {r.landlord_notes && (
-                                <p style={{ fontSize: 13, color: "#555", fontStyle: "italic" }}>
+                                <p className="maintenance-notes">
                                     Nota: {r.landlord_notes}
                                 </p>
                             )}
-                            <small style={{ color: "#aaa" }}>
+                            <small className="maintenance-date">
                                 {new Date(r.created_at).toLocaleDateString("es-CO", {
                                     day: "numeric", month: "long", year: "numeric"
                                 })}
                             </small>
-                            <div style={{ marginTop: 10 }}>
+                            <div className="mt-2">
                                 {r.status === "pending" && (
                                     <>
                                         <button className="btn-status in-progress" onClick={() => handleStatusChange(r.id, "in_progress")}>
@@ -131,6 +155,23 @@ export default function LandlordMaintenance() {
                     {toast.msg}
                 </div>
             )}
+            <PromptModal
+                open={!!rejectTarget}
+                title="Rechazar reporte"
+                message="Indica el motivo del rechazo:"
+                confirmLabel="Rechazar"
+                variant="danger"
+                onConfirm={handleRejectConfirm}
+                onCancel={() => setRejectTarget(null)}
+            />
+            <ConfirmModal
+                open={!!deleteTarget}
+                title="¿Eliminar reporte?"
+                message="Esta acción no se puede deshacer. También se borrará la imagen adjunta."
+                confirmLabel="Eliminar"
+                onConfirm={handleDeleteConfirm}
+                onCancel={() => setDeleteTarget(null)}
+            />
         </div>
     );
 }

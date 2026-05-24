@@ -1,7 +1,8 @@
 import React, { useContext, useRef, useLayoutEffect } from 'react';
 import { UserContext } from '../contexts/UserContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import FilterPanel from './FilterPanel';
+import MessagesPanel from './MessagesPanel';
 
 function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, listingFilters, setListingFilters, onHeightChange }) {
   const { user } = useContext(UserContext);
@@ -11,6 +12,7 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [scrolled, setScrolled] = React.useState(false);
   const [showFilters, setShowFilters] = React.useState(false);
+  const [showMessages, setShowMessages] = React.useState(false);
   const activeFilterCount = [
     (listingFilters.priceMin || listingFilters.priceMax) ? 1 : 0,
     listingFilters.bedrooms.length,
@@ -45,6 +47,18 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
 
   const userRole = user?.rol || user?.rol_id || user?.rolId || null;
 
+  const isLandlordPanel = ['/dashboard', '/mantenimiento-panel'].includes(location.pathname);
+  const [searchParams] = useSearchParams();
+  const activeDashboardTab = location.pathname === '/mantenimiento-panel'
+    ? 'mantenimiento'
+    : (searchParams.get('tab') || 'list');
+
+  const dashboardNavItems = [
+    { id: 'list', label: 'Mis Apartamentos', icon: 'domain', path: '/dashboard' },
+    { id: 'contracts', label: 'Contratos', icon: 'description', path: '/dashboard?tab=contracts' },
+    { id: 'mantenimiento', label: 'Mantenimiento', icon: 'build', path: '/mantenimiento-panel' },
+  ];
+
   const handleTitleClick = () => {
       window.scrollTo(0, 0);
       navigate('/');
@@ -72,21 +86,43 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
           <div onClick={handleTitleClick} className="font-display text-xl leading-none text-ink cursor-pointer select-none whitespace-nowrap">
             Rent<span className="italic-serif text-brand-500">UP</span>
           </div>
-          <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => (
-              <button
-                key={link.label}
-                onClick={() => { window.scrollTo(0, 0); navigate(link.path); }}
-                className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-                  isActive(link.path)
-                    ? 'bg-brand-100 text-brand-700 font-semibold'
-                    : 'text-ink-soft hover:bg-paper-sunk hover:text-ink'
-                }`}
-              >
-                {link.label}
-              </button>
-            ))}
-          </div>
+
+          {isLandlordPanel ? (
+            /* Dashboard tabs */
+            <div className="hidden md:flex items-center gap-1">
+              {dashboardNavItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => { window.scrollTo(0, 0); navigate(item.path); }}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    activeDashboardTab === item.id
+                      ? 'bg-brand-100 text-brand-700 font-semibold'
+                      : 'text-ink-muted hover:text-ink hover:bg-line/30'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-sm">{item.icon}</span>
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            /* Public nav links */
+            <div className="hidden md:flex items-center gap-1">
+              {navLinks.map((link) => (
+                <button
+                  key={link.label}
+                  onClick={() => { window.scrollTo(0, 0); navigate(link.path); }}
+                  className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                    isActive(link.path)
+                      ? 'bg-brand-100 text-brand-700 font-semibold'
+                      : 'text-ink-soft hover:bg-paper-sunk hover:text-ink'
+                  }`}
+                >
+                  {link.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Derecha: tenant links + acciones + hamburger */}
@@ -100,6 +136,13 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
               >
                 <span className="material-symbols-outlined text-sm">space_dashboard</span>
                 <span>Mi Espacio</span>
+              </button>
+              <button
+                onClick={() => setShowMessages(v => !v)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors"
+              >
+                <span className="material-symbols-outlined text-sm">forum</span>
+                <span>Mensajes</span>
               </button>
             </div>
           )}
@@ -116,16 +159,28 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
               </>
             ) : (
               <>
-                {userRole === 2 && (
+                {isLandlordPanel && (
+                    <button onClick={() => { window.scrollTo(0, 0); navigate('/'); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-ink-soft hover:text-error hover:bg-error/5 transition-colors">
+                      <span className="material-symbols-outlined text-sm">logout</span>
+                      <span>Salir</span>
+                    </button>
+                )}
+                {isLandlordPanel && (
+                    <button onClick={() => { window.scrollTo(0, 0); navigate('/dashboard'); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold bg-brand-100 text-brand-700 transition-all">
+                      <span className="material-symbols-outlined text-sm">dashboard</span>
+                      <span>Panel</span>
+                    </button>
+                )}
+                {!isLandlordPanel && userRole === 2 && (
                     <button onClick={() => { window.scrollTo(0, 0); navigate('/dashboard'); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors">
                       <span className="material-symbols-outlined text-sm">dashboard</span>
                       <span>Panel</span>
                     </button>
                 )}
-                {userRole === 2 && (
-                    <button onClick={() => { window.scrollTo(0, 0); navigate('/mantenimiento-panel'); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors">
-                      <span className="material-symbols-outlined text-sm">build</span>
-                      <span>Mantenimiento</span>
+                {user && [1, 2].includes(userRole) && (
+                    <button onClick={() => setShowMessages(v => !v)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors">
+                      <span className="material-symbols-outlined text-sm">forum</span>
+                      <span>Mensajes</span>
                     </button>
                 )}
                 {userRole === 3 && (
@@ -145,8 +200,8 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
             <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="w-9 h-9 rounded-full hover:bg-paper-sunk flex items-center justify-center text-ink-soft transition-colors">
               <span className="material-symbols-outlined text-sm">{isMenuOpen ? 'close' : 'menu'}</span>
             </button>
-          </div>
-        </div>
+      </div>
+      </div>
       </div>
 
       {/* Fila de búsqueda — solo en /listings, debajo del navbar */}
@@ -197,13 +252,24 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
       {isMenuOpen && (
         <div className="md:hidden border-t border-line bg-paper/95 backdrop-blur-md">
           <div className="flex flex-col gap-1 px-8 py-4">
-            {navLinks.map((link) => (
-              <button key={link.label} onClick={() => { window.scrollTo(0, 0); navigate(link.path); setIsMenuOpen(false); }} className={`w-full text-left text-sm py-2 px-3 rounded-lg transition-colors ${
-                isActive(link.path) ? 'bg-brand-100 text-brand-700 font-semibold' : 'text-ink-soft hover:bg-paper-sunk hover:text-ink'
-              }`}>
-                {link.label}
-              </button>
-            ))}
+            {isLandlordPanel ? (
+              dashboardNavItems.map(item => (
+                <button key={item.id} onClick={() => { window.scrollTo(0, 0); navigate(item.path); setIsMenuOpen(false); }} className={`w-full text-left text-sm py-2 px-3 rounded-lg transition-colors ${
+                  activeDashboardTab === item.id ? 'bg-brand-100 text-brand-700 font-semibold' : 'text-ink-soft hover:bg-paper-sunk hover:text-ink'
+                }`}>
+                  <span className="material-symbols-outlined text-sm align-middle mr-1.5">{item.icon}</span>
+                  {item.label}
+                </button>
+              ))
+            ) : (
+              navLinks.map((link) => (
+                <button key={link.label} onClick={() => { window.scrollTo(0, 0); navigate(link.path); setIsMenuOpen(false); }} className={`w-full text-left text-sm py-2 px-3 rounded-lg transition-colors ${
+                  isActive(link.path) ? 'bg-brand-100 text-brand-700 font-semibold' : 'text-ink-soft hover:bg-paper-sunk hover:text-ink'
+                }`}>
+                  {link.label}
+                </button>
+              ))
+            )}
             {!user ? (
               <div className="flex flex-col gap-2 mt-2">
                 <button onClick={() => { window.scrollTo(0, 0); navigate('/login'); setIsMenuOpen(false); }} className="w-full py-2.5 rounded-full text-sm border border-line-strong text-ink hover:bg-paper-sunk transition-colors">
@@ -223,14 +289,14 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
                     Mi Espacio
                   </button>
                 )}
-                {userRole === 2 && (
-                  <button onClick={() => { window.scrollTo(0, 0); navigate('/dashboard'); setIsMenuOpen(false); }} className="w-full text-left text-sm py-2 px-3 rounded-lg text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors">
-                    Panel de Gestión
+                {user && [1, 2].includes(userRole) && (
+                  <button onClick={() => { setShowMessages(true); setIsMenuOpen(false); }} className="w-full text-left text-sm py-2 px-3 rounded-lg text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors">
+                    Mensajes
                   </button>
                 )}
-                {userRole === 2 && (
-                  <button onClick={() => { window.scrollTo(0, 0); navigate('/mantenimiento-panel'); setIsMenuOpen(false); }} className="w-full text-left text-sm py-2 px-3 rounded-lg text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors">
-                    Mantenimiento
+                {userRole === 2 && !isLandlordPanel && (
+                  <button onClick={() => { window.scrollTo(0, 0); navigate('/dashboard'); setIsMenuOpen(false); }} className="w-full text-left text-sm py-2 px-3 rounded-lg text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors">
+                    Panel de Gestión
                   </button>
                 )}
                 {userRole === 3 && (
@@ -244,6 +310,11 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
         </div>
       )}
       </div>
+
+      {/* Messages Panel */}
+      {showMessages && user && (
+        <MessagesPanel userId={user.id} userRole={userRole} onClose={() => setShowMessages(false)} />
+      )}
     </nav>
   );
 }
