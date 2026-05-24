@@ -24,7 +24,7 @@ const amenitiesList = [
   { label: 'Balcón', icon: 'balcony' },
 ];
 
-function ApartmentForm({ onApartmentAdded, onSuccess }) {
+function ApartmentForm({ onApartmentAdded, onSuccess, onClose }) {
   const handleSuccess = onApartmentAdded || onSuccess;
 const { user } = useContext(UserContext);
 
@@ -186,7 +186,34 @@ const steps = [
 ];
 
 return (
-    <div className="space-y-6">
+    <div className="flex-1 min-h-0 flex flex-col">
+
+      {/* Header: Logo + Salir + Progress */}
+      <div className="border-b border-line bg-paper flex-shrink-0">
+        <div className="px-8 py-3 flex items-center justify-between">
+          <div className="font-display text-xl leading-none text-ink">Rent<span className="italic-serif text-brand-500">UP</span></div>
+          <button onClick={onClose} className="text-sm text-ink-muted hover:text-ink transition-all font-medium">Salir</button>
+        </div>
+        <div className="px-8 pb-3">
+          <div className="flex items-center gap-2">
+            {steps.map((s, i) => (
+              <div key={s.num} className="flex-1 flex items-center gap-2">
+                <div className={`flex-1 h-1.5 rounded-full transition-all ${s.num <= currentStep ? 'bg-brand-500' : 'bg-paper-sunk'}`} />
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-between mt-2 text-xs">
+            {steps.map(s => (
+              <div key={s.num} className={`font-medium transition-all ${s.num === currentStep ? 'text-ink' : 'text-ink-muted'}`}>
+                <span className="font-mono">{String(s.num).padStart(2,'0')}</span> · {s.label}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Scrollable Content */}
+      <div className="flex-1 min-h-0 max-w-[1100px] mx-auto px-8 py-12 w-full overflow-y-auto">
 
     {message && (
         <div className={`p-4 rounded-xl flex items-start gap-3 ${
@@ -205,24 +232,6 @@ return (
             </div>
         </div>
     )}
-
-    {/* Progress Indicator — prototype style: line segments + labels */}
-    <div>
-      <div className="flex items-center gap-2">
-        {steps.map((s, i) => (
-          <div key={s.num} className="flex-1 flex items-center gap-2">
-            <div className={`flex-1 h-1.5 rounded-full transition-all ${s.num <= currentStep ? 'bg-brand-500' : 'bg-paper-sunk'}`} />
-          </div>
-        ))}
-      </div>
-      <div className="flex justify-between mt-2 text-xs">
-        {steps.map(s => (
-          <div key={s.num} className={`font-medium transition-all ${s.num === currentStep ? 'text-ink' : 'text-ink-muted'}`}>
-            <span className="font-mono">{String(s.num).padStart(2,'0')}</span> · {s.label}
-          </div>
-        ))}
-      </div>
-    </div>
 
     {/* Step 1: Ubicación */}
     {currentStep === 1 && (
@@ -285,11 +294,6 @@ return (
           </div>
         </div>
 
-        <button type="button" onClick={() => setCurrentStep(2)}
-          className="w-full py-3 bg-brand-500 text-white font-semibold rounded-lg hover:bg-brand-600 transition-all flex items-center justify-center gap-2 text-label-md mt-8">
-          Continuar
-          <span className="material-symbols-outlined text-sm">arrow_forward</span>
-        </button>
       </div>
     )}
 
@@ -380,18 +384,6 @@ return (
           </div>
         </div>
 
-        <div className="flex gap-3 mt-10">
-          <button type="button" onClick={() => setCurrentStep(1)}
-            className="flex-1 py-3 bg-paper-sunk border border-line text-ink font-semibold rounded-lg hover:bg-line/30 transition-all flex items-center justify-center gap-2 text-label-md">
-            <span className="material-symbols-outlined text-sm">arrow_back</span>
-            Atrás
-          </button>
-          <button type="button" onClick={() => setCurrentStep(3)}
-            className="flex-1 py-3 bg-brand-500 text-white font-semibold rounded-lg hover:bg-brand-600 transition-all flex items-center justify-center gap-2 text-label-md">
-            Continuar
-            <span className="material-symbols-outlined text-sm">arrow_forward</span>
-          </button>
-        </div>
       </div>
     )}
 
@@ -447,18 +439,6 @@ return (
           <p className="text-body-md text-ink-muted text-center mt-6">Todavía no hay fotos seleccionadas</p>
         )}
 
-        <div className="flex gap-3 mt-10">
-          <button type="button" onClick={() => setCurrentStep(2)}
-            className="flex-1 py-3 bg-paper-sunk border border-line text-ink font-semibold rounded-lg hover:bg-line/30 transition-all flex items-center justify-center gap-2 text-label-md">
-            <span className="material-symbols-outlined text-sm">arrow_back</span>
-            Atrás
-          </button>
-          <button type="button" onClick={() => setCurrentStep(4)}
-            className="flex-1 py-3 bg-brand-500 text-white font-semibold rounded-lg hover:bg-brand-600 transition-all flex items-center justify-center gap-2 text-label-md">
-            Continuar
-            <span className="material-symbols-outlined text-sm">arrow_forward</span>
-          </button>
-        </div>
       </div>
     )}
 
@@ -481,18 +461,6 @@ return (
           <p className="text-label-md text-ink-muted mt-2">/ mes</p>
         </div>
 
-        <div className="flex gap-3 mt-10">
-          <button type="button" onClick={() => setCurrentStep(3)}
-            className="flex-1 py-3 bg-paper-sunk border border-line text-ink font-semibold rounded-lg hover:bg-line/30 transition-all flex items-center justify-center gap-2 text-label-md">
-            <span className="material-symbols-outlined text-sm">arrow_back</span>
-            Atrás
-          </button>
-          <button type="button" onClick={() => setCurrentStep(5)}
-            className="flex-1 py-3 bg-brand-500 text-white font-semibold rounded-lg hover:bg-brand-600 transition-all flex items-center justify-center gap-2 text-label-md">
-            Continuar
-            <span className="material-symbols-outlined text-sm">arrow_forward</span>
-          </button>
-        </div>
       </div>
     )}
 
@@ -513,19 +481,6 @@ return (
 
         {/* KYC */}
         <KycUploadSection kycFiles={kycFiles} setKycFiles={setKycFiles} />
-
-        <div className="flex gap-3 mt-10">
-          <button type="button" onClick={() => setCurrentStep(4)}
-            className="flex-1 py-3 bg-paper-sunk border border-line text-ink font-semibold rounded-lg hover:bg-line/30 transition-all flex items-center justify-center gap-2 text-label-md">
-            <span className="material-symbols-outlined text-sm">arrow_back</span>
-            Atrás
-          </button>
-          <button type="button" onClick={() => setCurrentStep(6)}
-            className="flex-1 py-3 bg-brand-500 text-white font-semibold rounded-lg hover:bg-brand-600 transition-all flex items-center justify-center gap-2 text-label-md">
-            Revisar y Publicar
-            <span className="material-symbols-outlined text-sm">arrow_forward</span>
-          </button>
-        </div>
       </div>
     )}
 
@@ -622,25 +577,48 @@ return (
           </div>
         </div>
 
-        <div className="flex gap-3 mt-10">
-          <button type="button" onClick={() => setCurrentStep(5)}
-            className="flex-1 py-3 bg-paper-sunk border border-line text-ink font-semibold rounded-lg hover:bg-line/30 transition-all flex items-center justify-center gap-2 text-label-md">
-            <span className="material-symbols-outlined text-sm">arrow_back</span>
-            Atrás
-          </button>
-          <button onClick={handleSubmit}
-            className="flex-1 py-3 bg-brand-500 text-white font-bold rounded-lg hover:bg-brand-600 transition-all flex items-center justify-center gap-2 text-label-md">
-            <span className="material-symbols-outlined text-sm">send</span> Publicar Propiedad
-          </button>
-        </div>
       </div>
     )}
 
     {createdApartmentId && (
-      <div className="mt-6 border-t border-line pt-6">
+      <div className="border-t border-line pt-6">
         <KycUploadPanel apartmentId={createdApartmentId} />
       </div>
     )}
+      </div>{/* end Scrollable Content */}
+
+      {/* Footer */}
+      <div className="border-t border-line bg-paper flex-shrink-0">
+        <div className="px-8 py-4 flex items-center justify-between">
+          <div>
+            {currentStep > 1 ? (
+              <button type="button" onClick={() => setCurrentStep(currentStep - 1)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold text-ink hover:bg-paper-sunk transition-all">
+                <span className="material-symbols-outlined text-sm">arrow_back</span>
+                Atrás
+              </button>
+            ) : (
+              <div className="w-24" />
+            )}
+          </div>
+          <div className="text-xs text-ink-muted font-medium">Paso {currentStep} de {steps.length}</div>
+          <div>
+            {currentStep < 6 ? (
+              <button type="button" onClick={() => setCurrentStep(currentStep + 1)}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold bg-brand-500 text-white hover:bg-brand-600 transition-all shadow-sm">
+                {currentStep === 5 ? 'Revisar y Publicar' : 'Continuar'}
+                <span className="material-symbols-outlined text-sm">arrow_forward</span>
+              </button>
+            ) : (
+              <button onClick={handleSubmit}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold bg-brand-500 text-white hover:bg-brand-600 transition-all shadow-sm">
+                <span className="material-symbols-outlined text-sm">send</span>
+                Publicar Propiedad
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
 );
 }

@@ -113,7 +113,7 @@ export default function ChatComponent({ emisor_id, receptor_id }) {
           placeholder="Escribe un mensaje..."
           onKeyDown={(e) => e.key === "Enter" && enviarMensaje()}
         />
-        <button onClick={enviarMensaje}>Enviar</button>
+        <button onClick={enviarMensaje} className="bg-brand-500 text-white font-semibold hover:bg-brand-600 transition-all">Enviar</button>
       </div>
     </div>
   );

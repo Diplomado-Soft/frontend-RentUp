@@ -3,6 +3,7 @@ import useManageController from "../apis/manageController";
 import MapModal from './MapModal';
 import Toast from './Toast';
 import KycUploadSection from './KycUploadSection';
+import ConfirmModal from './ConfirmModal';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -27,6 +28,9 @@ const {
 
 const [newImageFiles, setNewImageFiles] = useState([]);
 const [showMap, setShowMap] = useState(false);
+const [filter, setFilter] = useState('all');
+const [deleteTarget, setDeleteTarget] = useState(null);
+const [primaryImageIdx, setPrimaryImageIdx] = useState(0);
 
 const handleNewImageChange = (e) => {
     if (e.target.files) {
@@ -107,6 +111,19 @@ const totalProps = apartmentList.length;
 const approvedCount = apartmentList.filter(a => a.publication_status === 'approved').length;
 const pendingCount = apartmentList.filter(a => a.publication_status === 'pending').length;
 
+const filterOptions = [
+    { value: 'all', label: 'Todas' },
+    { value: 'rented', label: 'Arrendadas' },
+    { value: 'review', label: 'En revisión' }
+];
+
+const filteredList = apartmentList.filter(a => {
+    if (filter === 'all') return true;
+    if (filter === 'rented') return a.status === 'rented';
+    if (filter === 'review') return a.publication_status === 'pending';
+    return true;
+});
+
 const getImageUrl = (apt) => {
     if (apt.images && apt.images.length > 0) {
         const first = apt.images[0];
@@ -115,68 +132,20 @@ const getImageUrl = (apt) => {
     return null;
 };
 
+const resolveImageUrl = (img) => {
+    if (!img) return null;
+    return typeof img === 'object' && img?.url ? img.url : img;
+};
+
+const getImageKey = (img) => {
+    if (!img) return '';
+    if (typeof img === 'object' && img?.s3_key) return img.s3_key;
+    if (typeof img === 'object' && img?.url) return img.url;
+    return String(img);
+};
+
 return (
     <div className="space-y-6">
-        {/* Stats row */}
-        <div className="grid grid-cols-5 gap-4">
-            {/* Portfolio Card */}
-            <div className="col-span-2 bg-paper-card rounded-xl p-4 border border-line/50 flex items-center gap-4">
-                <div className="text-center min-w-[120px] pr-4 border-r border-line">
-                    <p className="font-display text-2xl text-brand-500 font-bold leading-none mb-0.5">
-                        {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(totalIncome || 0)}
-                    </p>
-                    <p className="text-label-sm uppercase tracking-wider text-ink-muted">Ingreso Mensual</p>
-                </div>
-                <div className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-sm text-ink-muted">apartment</span>
-                        <span className="text-label-md text-ink">{totalProps} Propiedade{totalProps !== 1 ? 's' : ''}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-sm text-tertiary">check_circle</span>
-                        <span className="text-label-md text-ink">{activeProps} Activa{activeProps !== 1 ? 's' : ''}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-sm text-ink-muted">description</span>
-                        <span className="text-label-md text-ink">{activeContracts} Contrato{activeContracts !== 1 ? 's' : ''} Vig.</span>
-                    </div>
-                </div>
-            </div>
-
-            <div className="bg-paper-card rounded-xl p-2.5">
-                <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-brand-500/10 flex items-center justify-center">
-                        <span className="material-symbols-outlined text-sm text-brand-500">apartment</span>
-                    </div>
-                    <div>
-                        <p className="text-label-sm uppercase tracking-wider text-ink-muted">Total</p>
-                        <p className="text-base font-bold text-ink">{totalProps}</p>
-                    </div>
-                </div>
-            </div>
-            <div className="bg-paper-card rounded-xl p-2.5">
-                <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-tertiary/10 flex items-center justify-center">
-                        <span className="material-symbols-outlined text-sm text-tertiary">check_circle</span>
-                    </div>
-                    <div>
-                        <p className="text-label-sm uppercase tracking-wider text-ink-muted">Aprobadas</p>
-                        <p className="text-base font-bold text-tertiary">{approvedCount}</p>
-                    </div>
-                </div>
-            </div>
-            <div className="bg-paper-card rounded-xl p-2.5">
-                <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-secondary/10 flex items-center justify-center">
-                        <span className="material-symbols-outlined text-sm text-secondary">pending</span>
-                    </div>
-                    <div>
-                        <p className="text-label-sm uppercase tracking-wider text-ink-muted">En Revisión</p>
-                        <p className="text-base font-bold text-secondary">{pendingCount}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
 
     {loading ? (
         <div className="flex flex-col items-center justify-center py-20">
@@ -186,18 +155,27 @@ return (
     ) : apartmentList.length === 0 ? (
         <div className="bg-paper-card rounded-xl border border-line/50 p-12 text-center">
             <span className="material-symbols-outlined text-5xl text-outline mb-4">home</span>
-            <h3 className="font-headline text-headline-md text-ink mb-2">No hay apartamentos disponibles</h3>
+            <h3 className="font-display text-2xl text-ink mb-2">No hay apartamentos disponibles</h3>
             <p className="text-body-md text-ink-muted">Aún no has publicado ningún apartamento.</p>
         </div>
     ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {apartmentList.map((apt) => (
+        <div>
+            <div className="inline-flex bg-paper-sunk rounded-full p-1 mb-4">
+                {filterOptions.map(o => (
+                    <button key={o.value} onClick={() => setFilter(o.value)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${filter === o.value ? 'bg-ink text-paper' : 'text-ink-muted hover:text-ink'}`}>
+                        {o.label}
+                    </button>
+                ))}
+            </div>
+            <div className="grid grid-cols-1 gap-4">
+        {[...filteredList].reverse().map((apt) => (
             <div key={apt.id_apt} className="bg-paper-card rounded-xl border border-line/50 overflow-hidden">
             {editApartmentId === apt.id_apt ? (
                 <div className="p-6 space-y-6">
                     <div className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-brand-500">edit</span>
-                        <h3 className="font-headline text-headline-md text-ink">Editando Apartamento</h3>
+                        <h3 className="font-display text-2xl text-ink">Editando Apartamento</h3>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
@@ -231,31 +209,38 @@ return (
                     <div className="bg-paper-card rounded-xl p-5 border border-line/50">
                         <div className="flex items-center gap-2 mb-3">
                             <span className="material-symbols-outlined text-brand-500 text-lg">image</span>
-                            <p className="font-headline text-headline-sm text-ink">Imágenes existentes</p>
+                            <p className="font-display text-lg text-ink">Imágenes existentes</p>
                         </div>
                         {editFormData.images?.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {editFormData.images.map((img, idx) => (
-                                    <div key={idx} className="flex items-center justify-between gap-2 bg-paper-sunk p-3 rounded-lg">
-                                        <span className="text-body-md text-ink">Imagen {idx + 1}</span>
-                                        <div className="flex gap-2">
-                                            <button onClick={() => handleViewImageExisting(img)} className="w-8 h-8 rounded-lg bg-brand-500/10 text-brand-500 flex items-center justify-center hover:bg-brand-500/20 transition">
-                                                <span className="material-symbols-outlined text-sm">visibility</span>
-                                            </button>
-                                            <button onClick={() => handleRemoveExistingImage(idx)} className="w-8 h-8 rounded-lg bg-error/10 text-error flex items-center justify-center hover:bg-error/20 transition">
-                                                <span className="material-symbols-outlined text-sm">delete</span>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                                {editFormData.images.map((img, idx) => {
+                                    const imgUrl = resolveImageUrl(img);
+                                    const isPrimary = primaryImageIdx === idx;
+                                    return (
+                                        <div key={idx} className="relative group bg-paper-sunk rounded-lg overflow-hidden aspect-[4/3]">
+                                            <img src={imgUrl} alt={`Imagen ${idx + 1}`} className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                                                <button onClick={() => handleViewImageExisting(img)} className="w-8 h-8 rounded-full bg-white/90 text-ink flex items-center justify-center hover:bg-white transition shadow-sm">
+                                                    <span className="material-symbols-outlined text-sm">visibility</span>
+                                                </button>
+                                                <button onClick={() => handleRemoveExistingImage(idx)} className="w-8 h-8 rounded-full bg-white/90 text-error flex items-center justify-center hover:bg-white transition shadow-sm">
+                                                    <span className="material-symbols-outlined text-sm">delete</span>
+                                                </button>
+                                            </div>
+                                            <button onClick={() => setPrimaryImageIdx(idx)} className={`absolute top-2 left-2 w-7 h-7 rounded-full flex items-center justify-center transition shadow-sm ${isPrimary ? 'bg-brand-500 text-white' : 'bg-white/80 text-ink-muted opacity-0 group-hover:opacity-100 hover:text-amber-500'}`} title={isPrimary ? 'Imagen principal' : 'Marcar como principal'}>
+                                                <span className="material-symbols-outlined text-sm">{isPrimary ? 'star' : 'star_outline'}</span>
                                             </button>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         ) : <p className="text-body-md text-ink-muted">No hay imágenes cargadas.</p>}
                     </div>
 
                     <div className="bg-paper-card rounded-xl p-5 border border-line/50">
                         <div className="flex items-center gap-2 mb-3">
-                            <span className="material-symbols-outlined text-secondary text-lg">add_photo_alternate</span>
-                            <p className="font-headline text-headline-sm text-ink">Añadir nuevas imágenes</p>
+                            <span className="material-symbols-outlined text-brand-500 text-lg">add_photo_alternate</span>
+                            <p className="font-display text-lg text-ink">Añadir nuevas imágenes</p>
                         </div>
                         <div className="border-2 border-dashed border-line rounded-xl p-6 bg-paper-sunk hover:bg-line/20 transition cursor-pointer relative text-center">
                             <input type="file" multiple accept="image/*" onChange={handleNewImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
@@ -263,28 +248,35 @@ return (
                             <p className="text-body-md text-ink-muted">Haga clic para seleccionar imágenes</p>
                         </div>
                         {newImageFiles.length > 0 && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
-                                {newImageFiles.map((file, idx) => (
-                                    <div key={idx} className="flex items-center justify-between gap-2 bg-paper-sunk p-3 rounded-lg">
-                                        <span className="text-body-md text-ink truncate">Nueva {idx + 1}</span>
-                                        <div className="flex gap-2">
-                                            <button onClick={() => handleViewNewImage(file)} className="w-8 h-8 rounded-lg bg-brand-500/10 text-brand-500 flex items-center justify-center hover:bg-brand-500/20 transition">
-                                                <span className="material-symbols-outlined text-sm">visibility</span>
-                                            </button>
-                                            <button onClick={() => handleRemoveNewImage(idx)} className="w-8 h-8 rounded-lg bg-error/10 text-error flex items-center justify-center hover:bg-error/20 transition">
-                                                <span className="material-symbols-outlined text-sm">delete</span>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mt-3">
+                                {newImageFiles.map((file, idx) => {
+                                    const previewUrl = URL.createObjectURL(file);
+                                    const isPrimary = primaryImageIdx === editFormData.images.length + idx;
+                                    return (
+                                        <div key={idx} className="relative group bg-paper-sunk rounded-lg overflow-hidden aspect-[4/3]">
+                                            <img src={previewUrl} alt={`Nueva ${idx + 1}`} className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                                                <button onClick={() => handleViewNewImage(file)} className="w-8 h-8 rounded-full bg-white/90 text-ink flex items-center justify-center hover:bg-white transition shadow-sm">
+                                                    <span className="material-symbols-outlined text-sm">visibility</span>
+                                                </button>
+                                                <button onClick={() => handleRemoveNewImage(idx)} className="w-8 h-8 rounded-full bg-white/90 text-error flex items-center justify-center hover:bg-white transition shadow-sm">
+                                                    <span className="material-symbols-outlined text-sm">delete</span>
+                                                </button>
+                                            </div>
+                                            <button onClick={() => setPrimaryImageIdx(editFormData.images.length + idx)} className={`absolute top-2 left-2 w-7 h-7 rounded-full flex items-center justify-center transition shadow-sm ${isPrimary ? 'bg-brand-500 text-white' : 'bg-white/80 text-ink-muted opacity-0 group-hover:opacity-100 hover:text-amber-500'}`} title={isPrimary ? 'Imagen principal' : 'Marcar como principal'}>
+                                                <span className="material-symbols-outlined text-sm">{isPrimary ? 'star' : 'star_outline'}</span>
                                             </button>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
 
                     {/* Existing documents badge */}
                     {(apt.id_document_url || apt.property_certificate_url) && (
-                      <div className="flex items-center gap-2 bg-tertiary/10 border border-tertiary/20 rounded-lg px-4 py-2">
-                        <span className="text-tertiary font-medium text-sm flex items-center gap-1.5">
+                      <div className="flex items-center gap-2 bg-brand-500/10 border border-brand-500/20 rounded-lg px-4 py-2">
+                        <span className="text-brand-500 font-medium text-sm flex items-center gap-1.5">
                           <span className="material-symbols-outlined text-sm">check_circle</span>
                           <span>Documentos cargados previamente</span>
                         </span>
@@ -303,7 +295,7 @@ return (
                     <KycUploadSection kycFiles={kycFiles} setKycFiles={setKycFiles} />
 
                     <div className="flex gap-3 pt-4 border-t border-line">
-                        <button onClick={() => { handleUpdate(apt.id_apt, newImageFiles); setNewImageFiles([]); setKycFiles({ id_document: null, property_certificate: null }); }} className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-brand-500 text-white font-bold rounded-lg hover:bg-brand-600 transition-all">
+                        <button onClick={() => { handleUpdate(apt.id_apt, newImageFiles, primaryImageIdx); setNewImageFiles([]); setKycFiles({ id_document: null, property_certificate: null }); }} className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-brand-500 text-white font-bold rounded-lg hover:bg-brand-600 transition-all">
                             <span className="material-symbols-outlined text-sm">save</span> Guardar Cambios
                         </button>
                         <button onClick={handleCancelEdit} className="flex items-center gap-2 px-6 py-3 bg-paper-sunk border border-line text-ink font-semibold rounded-lg hover:bg-line/30 transition-all">
@@ -328,7 +320,7 @@ return (
                         <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
-                                    <h3 className="font-headline text-headline-sm text-ink">{apt.barrio || 'Sin barrio'}</h3>
+                                    <h3 className="font-display text-xl text-ink">{apt.barrio || 'Sin barrio'}</h3>
                                     <p className="text-body-md text-ink-muted truncate">{apt.direccion_apt || ''}</p>
                                     <p className="text-label-md text-ink-muted mt-0.5">{apt.habitaciones ?? apt.bedrooms ?? '-'} hab &bull; {apt.banos ?? apt.bathrooms ?? '-'} baños &bull; {apt.metros_apt ?? apt.area_m2 ?? '-'}m²</p>
                                 </div>
@@ -339,16 +331,16 @@ return (
                             </div>
                             <div className="flex items-center justify-between mt-3">
                                 <div>
-                                    <span className="font-headline text-headline-md font-bold text-brand-500">
+                                    <span className="font-display text-2xl font-bold text-brand-500">
                                         {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(apt.precio_apt ?? apt.price ?? 0)}
                                         <span className="text-body-md text-ink-muted font-normal"> /mes</span>
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
-                                    <button onClick={() => handleEditClick(apt)} className="w-9 h-9 rounded-lg bg-brand-500/10 text-brand-500 flex items-center justify-center hover:bg-brand-500/20 transition" title="Editar">
+                                    <button onClick={() => { handleEditClick(apt); setPrimaryImageIdx(0); }} className="w-9 h-9 rounded-lg bg-brand-500/10 text-brand-500 flex items-center justify-center hover:bg-brand-500/20 transition" title="Editar">
                                         <span className="material-symbols-outlined text-sm">edit</span>
                                     </button>
-                                    <button onClick={() => handleDelete(apt.id_apt)} className="w-9 h-9 rounded-lg bg-error/10 text-error flex items-center justify-center hover:bg-error/20 transition" title="Eliminar">
+                                    <button onClick={() => setDeleteTarget(apt.id_apt)} className="w-9 h-9 rounded-lg bg-error/10 text-error flex items-center justify-center hover:bg-error/20 transition" title="Eliminar">
                                         <span className="material-symbols-outlined text-sm">delete</span>
                                     </button>
                                     <button onClick={() => downloadDocument(apt.id_apt, "pdf")} className="w-9 h-9 rounded-lg bg-paper-sunk border border-line/50 text-ink-muted flex items-center justify-center hover:bg-line/30 transition" title="Descargar PDF">
@@ -363,8 +355,20 @@ return (
             </div>
         ))}
         </div>
+        </div>
     )}
-    
+
+    <ConfirmModal
+      open={!!deleteTarget}
+      title="¿Eliminar propiedad?"
+      message="Esta acción no se puede deshacer. ¿Estás seguro de que deseas eliminar este apartamento?"
+      confirmLabel="Eliminar"
+      onConfirm={async () => {
+        await handleDelete(deleteTarget);
+        setDeleteTarget(null);
+      }}
+      onCancel={() => setDeleteTarget(null)}
+    />
     {toast && (
         <Toast message={toast.message} type={toast.type} onClose={closeToast} duration={2000} />
     )}
