@@ -12,7 +12,6 @@ function Dashboard() {
   const [activeTab, setActiveTab] = useState('list');
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [stats, setStats] = useState({ totalProps: 0, activeProps: 0, activeContracts: 0, totalIncome: 0 });
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -73,15 +72,8 @@ function Dashboard() {
     <div className="min-h-screen bg-paper">
       <div className="flex">
         {/* Sidebar */}
-        <aside className={`fixed left-0 top-20 h-[calc(100vh-5rem)] bg-paper-sunk border-r border-line transition-all duration-300 z-30 ${sidebarCollapsed ? 'w-16' : 'w-60'}`}>
+        <aside className="fixed left-0 top-20 h-[calc(100vh-5rem)] w-60 bg-paper-sunk border-r border-line z-30">
           <div className="flex flex-col h-full p-3">
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="self-end p-1.5 rounded-lg text-ink-muted hover:text-ink-muted hover:bg-line/30 transition-all mb-4"
-            >
-              <span className="material-symbols-outlined text-sm">{sidebarCollapsed ? 'menu_open' : 'menu'}</span>
-            </button>
-
             <nav className="flex-1 space-y-1">
               {navItems.map(item => (
                 <button
@@ -89,74 +81,54 @@ function Dashboard() {
                   onClick={() => setActiveTab(item.id)}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
                     activeTab === item.id
-                      ? 'bg-brand-500 text-white shadow-md'
+                      ? 'bg-brand-100 text-brand-700 font-semibold'
                       : 'text-ink-muted hover:text-ink hover:bg-line/30'
                   }`}
-                  title={sidebarCollapsed ? item.label : undefined}
                 >
                   <span className="material-symbols-outlined text-lg flex-shrink-0">{item.icon}</span>
-                  {!sidebarCollapsed && <span className="text-label-md font-medium truncate">{item.label}</span>}
+                  <span className="text-label-md font-medium truncate">{item.label}</span>
                 </button>
               ))}
             </nav>
 
             {/* User info at bottom */}
-            {!sidebarCollapsed && (
-              <div className="pt-3 mt-3 border-t border-line">
-                <div className="flex items-center gap-3 px-2">
-                  <div className="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center text-white text-label-md font-bold flex-shrink-0">
-                    {initials || '?'}
-                  </div>
-                  <div className="truncate">
-                    <p className="text-label-md font-medium text-ink truncate">{firstName || 'Usuario'}</p>
-                    <p className="text-label-md text-ink-muted uppercase tracking-wider">ARRENDADOR</p>
-                  </div>
+            <div className="pt-3 mt-3 border-t border-line">
+              <div className="flex items-center gap-3 px-2">
+                <div className="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center text-white text-label-md font-bold flex-shrink-0">
+                  {initials || '?'}
+                </div>
+                <div className="truncate">
+                  <p className="text-label-md font-medium text-ink truncate">{firstName || 'Usuario'}</p>
+                  <p className="text-label-md text-ink-muted uppercase tracking-wider">ARRENDADOR</p>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </aside>
 
         {/* Main content */}
-        <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-60'}`}>
-          <div className="max-w-6xl mx-auto px-6 py-6">
-            {/* Header */}
-            <div className="bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl p-6 mb-6 shadow-lg">
+        <div className="flex-1 ml-60">
+          <div className="px-6 py-6">
+            {activeTab === 'list' && (
+            <div className="mb-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="font-headline text-headline-lg text-white mb-1">Bienvenido de nuevo, {firstName}</h1>
-                  <p className="text-white/80 text-body-md">Este es el resumen general de tu portafolio inmobiliario.</p>
+                  <h1 className="font-display text-5xl md:text-7xl leading-none text-brand-500 mb-2">Bienvenido de nuevo, {firstName}</h1>
                 </div>
                 <button
                   onClick={() => window.print()}
-                  className="px-4 py-2 rounded-lg bg-white/20 text-white text-label-md font-medium hover:bg-white/30 transition-all flex items-center gap-2 backdrop-blur-sm"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-label-md font-medium bg-paper-sunk border border-line text-ink-muted hover:text-ink hover:bg-line/30 transition-all"
                 >
                   <span className="material-symbols-outlined text-sm">summarize</span>
                   Generar Reporte
                 </button>
               </div>
             </div>
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              {statCards.map((card, i) => (
-                <div key={i} className="bg-paper-sunkest rounded-xl p-4 shadow-ambient-sm">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-lg ${card.bg} flex items-center justify-center`}>
-                      <span className={`material-symbols-outlined text-lg ${card.color}`}>{card.icon}</span>
-                    </div>
-                    <div>
-                      <p className="text-label-md uppercase tracking-wider text-ink-muted">{card.label}</p>
-                      <p className={`font-headline text-headline-md font-bold ${card.color}`}>{card.value}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            )}
 
             {/* Content area */}
-            <div className="bg-paper-sunkest rounded-xl shadow-ambient-sm">
-              {activeTab === 'list' && <Manage />}
+            <div className="space-y-4 pt-2">
+              {activeTab === 'list' && <Manage totalIncome={stats.totalIncome} activeProps={stats.activeProps} activeContracts={stats.activeContracts} />}
               {activeTab === 'add' && <ApartmentForm onSuccess={handleApartmentAdded} />}
               {activeTab === 'contracts' && <ContractManager />}
               {activeTab === 'reviews' && <LandlordReviews />}
