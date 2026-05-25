@@ -2,12 +2,14 @@ import React, { useState, useEffect, useContext } from "react";
 import { UserContext } from "../contexts/UserContext";
 import axiosInstance from "../contexts/axiosInstance";
 import ChatComponent from "../components/ChatComponent";
-import ContractSigner from "../components/ContractSigner";
+
 import VisitScheduler from "../components/VisitScheduler";
 import TenantVisits from "../components/TenantVisits";
 import { getMyReports, createMaintenanceReport, getMyProperties } from "../apis/maintenanceController";
 import { getPaymentHistory, downloadReceipt } from "../apis/paymentController";
+import { previewContractPdf, downloadContractPdf } from "../apis/contractController";
 import PaymentModal from "../components/Payment/PaymentModal";
+import SignaturePad from "../components/SignaturePad";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
@@ -28,6 +30,9 @@ function TenantDashboard() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPaymentContract, setSelectedPaymentContract] = useState(null);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showSignaturePad, setShowSignaturePad] = useState(false);
+  const [signingContract, setSigningContract] = useState(null);
+  const [signSuccess, setSignSuccess] = useState(null);
   const [reportProperties, setReportProperties] = useState([]);
   const [reportForm, setReportForm] = useState({ property_id: "", title: "", description: "", priority: "medium" });
   const [reportImage, setReportImage] = useState(null);
@@ -345,6 +350,53 @@ function TenantDashboard() {
                                     <span>Arrendador: <strong className="text-ink">{rent.landlord_name} {rent.landlord_lastname || ""}</strong></span>
                                   </div>
                                 )}
+
+                                {rent.signature_status && (
+                                  <div className="pt-1">
+                                    <span className={`inline-flex items-center gap-1 text-label-md px-2 py-0.5 rounded-full ${
+                                      rent.signature_status === 'fully_signed' ? 'bg-tertiary/10 text-tertiary' :
+                                      rent.signature_status === 'signed_by_tenant' ? 'bg-secondary/10 text-secondary' :
+                                      rent.signature_status === 'signed_by_landlord' ? 'bg-secondary/10 text-secondary' :
+                                      'bg-warning/10 text-warning'
+                                    }`}>
+                                      <span className="material-symbols-outlined text-[14px]">
+                                        {rent.signature_status === 'fully_signed' ? 'verified' :
+                                         rent.signature_status === 'signed_by_tenant' ? 'draw' :
+                                         rent.signature_status === 'signed_by_landlord' ? 'draw' :
+                                         'pending'}
+                                      </span>
+                                      {rent.signature_status === 'fully_signed' ? 'Ambos firmaron' :
+                                       rent.signature_status === 'signed_by_tenant' ? 'Esperando firma del arrendador' :
+                                       rent.signature_status === 'signed_by_landlord' ? 'Esperando tu firma' :
+                                       'Pendiente de firmas'}
+                                    </span>
+                                  </div>
+                                )}
+
+                                <div className="flex items-center gap-2 pt-2">
+                                  <button
+                                    onClick={() => {
+                                      const url = previewContractPdf(rent.agreement_id);
+                                      if (url) window.open(url, '_blank');
+                                    }}
+                                    className="flex items-center gap-1 text-label-md text-ink-muted hover:text-ink transition-all px-2 py-1 rounded-lg hover:bg-line/30"
+                                  >
+                                    <span className="material-symbols-outlined text-sm">visibility</span>
+                                    Vista previa PDF
+                                  </button>
+                                  {rent.signature_status !== 'fully_signed' && (
+                                    <button
+                                      onClick={() => {
+                                        setSigningContract(rent);
+                                        setShowSignaturePad(true);
+                                      }}
+                                      className="flex items-center gap-1 text-label-md text-brand-500 hover:text-brand-600 transition-all px-2 py-1 rounded-lg hover:bg-brand-500/10"
+                                    >
+                                      <span className="material-symbols-outlined text-sm">draw</span>
+                                      Firmar contrato
+                                    </button>
+                                  )}
+                                </div>
                               </div>
 
                               <div className="w-full md:w-1/2 h-48 md:h-auto bg-paper-sunk overflow-hidden">
@@ -828,16 +880,80 @@ function TenantDashboard() {
                           key={contract.agreement_id}
                           className="bg-paper-card border border-line/50 rounded-xl overflow-hidden"
                         >
-                          <ContractSigner
-                            contract={contract}
-                            onSigned={() => fetchContracts()}
-                          />
-
-                          <div className="p-4 border-t border-line/50 flex items-center gap-3">
-                            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-500 text-white text-label-md hover:bg-brand-600 transition-all">
-                              <span className="material-symbols-outlined text-xs">download</span>
-                              Contrato
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex items-start gap-3 flex-1 min-w-0">
+                              <div className="w-10 h-10 bg-brand-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <span className="material-symbols-outlined text-sm text-brand-500">description</span>
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-headline font-semibold text-ink">
+                                  Contrato de Arriendo —{" "}
+                                  {contract.barrio_name || contract.barrio || "Sin barrio"}
+                                </p>
+                                <p className="text-xs text-ink-muted mt-0.5 truncate">
+                                  {contract.direccion_apt || "Sin dirección"}
+                                </p>
+                                <div className="flex items-center gap-3 mt-1 text-xs text-ink-muted">
+                                  <span>
+                                    {formatDate(contract.start_date)} — {formatDate(contract.end_date)}
+                                  </span>
+                                  <span className="text-outline">·</span>
+                                  {getStatusBadge(contract.status)}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex-shrink-0">
+                              <p className="font-headline font-semibold text-ink text-right">{formatPrice(contract.monthly_rent)}</p>
+                              <p className="text-xs text-ink-muted text-right">/mes</p>
+                            </div>
+                          </div>
+                           {contract.signature_status && (
+                            <div className="flex items-center gap-2 mt-2 mb-2">
+                              <span className={`inline-flex items-center gap-1 text-label-md px-2 py-0.5 rounded-full ${
+                                contract.signature_status === 'fully_signed' ? 'bg-tertiary/10 text-tertiary' :
+                                contract.signature_status === 'signed_by_tenant' ? 'bg-secondary/10 text-secondary' :
+                                contract.signature_status === 'signed_by_landlord' ? 'bg-secondary/10 text-secondary' :
+                                'bg-warning/10 text-warning'
+                              }`}>
+                                <span className="material-symbols-outlined text-[14px]">
+                                  {contract.signature_status === 'fully_signed' ? 'verified' :
+                                   contract.signature_status === 'signed_by_tenant' ? 'draw' :
+                                   contract.signature_status === 'signed_by_landlord' ? 'draw' :
+                                   'pending'}
+                                </span>
+                                {contract.signature_status === 'fully_signed' ? 'Totalmente firmado' :
+                                 contract.signature_status === 'signed_by_tenant' ? 'Esperando firma del arrendador' :
+                                 contract.signature_status === 'signed_by_landlord' ? 'Esperando tu firma' :
+                                 'Pendiente de firmas'}
+                              </span>
+                            </div>
+                          )}
+                           <div className="flex items-center gap-3 mt-4 pt-3 border-t border-surface-container-high">
+                            <button onClick={() => {
+                                const url = previewContractPdf(contract.agreement_id);
+                                if (url) window.open(url, '_blank');
+                              }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-500 text-white text-label-md hover:bg-brand-600 transition-all">
+                              <span className="material-symbols-outlined text-xs">visibility</span>
+                              Ver contrato
                             </button>
+                            {contract.signature_status !== 'fully_signed' && (
+                              <button onClick={() => {
+                                  setSigningContract(contract);
+                                  setShowSignaturePad(true);
+                                }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-high text-ink text-label-md hover:bg-surface-container-highest transition-all">
+                                <span className="material-symbols-outlined text-xs">draw</span>
+                                Firmar
+                              </button>
+                            )}
+                            {contract.signature_status === 'fully_signed' && (
+                              <button onClick={() => downloadContractPdf(contract.agreement_id)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-high text-ink text-label-md hover:bg-surface-container-highest transition-all">
+                                <span className="material-symbols-outlined text-xs">description</span>
+                                Contrato PDF
+                              </button>
+                            )}
                             <button
                               onClick={() => {
                                 const payment = getContractPayment(contract.agreement_id);
@@ -1067,6 +1183,25 @@ function TenantDashboard() {
             />
           </PayPalScriptProvider>
         )
+      )}
+      {signSuccess && (
+        <div className="fixed bottom-6 right-6 z-[200] bg-tertiary text-white px-5 py-3 rounded-xl shadow-ambient-sm flex items-center gap-2">
+          <span className="material-symbols-outlined text-sm">check_circle</span>
+          {signSuccess}
+        </div>
+      )}
+      {showSignaturePad && signingContract && (
+        <SignaturePad
+          contract={signingContract}
+          onClose={() => { setShowSignaturePad(false); setSigningContract(null); }}
+          onSigned={(result) => {
+            setShowSignaturePad(false);
+            setSigningContract(null);
+            setSignSuccess('Contrato firmado exitosamente');
+            setTimeout(() => setSignSuccess(null), 4000);
+            fetchContracts();
+          }}
+        />
       )}
     </div>
   );

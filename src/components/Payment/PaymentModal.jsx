@@ -1,8 +1,8 @@
-import React, { useState, useContext, useRef } from "react";
+import React, { useState, useContext, useRef, useEffect } from "react";
 import { UserContext } from "../../contexts/UserContext";
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { PayPalButtons, usePayPalScriptReducer } from "@paypal/react-paypal-js";
-import { createPaymentIntent, confirmPayment, downloadReceipt, createPayPalOrder, capturePayPalOrder } from "../../apis/paymentController";
+import { createPaymentIntent, confirmPayment, downloadReceipt, createPayPalOrder, capturePayPalOrder, getPaymentsByAgreement } from "../../apis/paymentController";
 
 const STRIPE_PK = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
 const HAS_STRIPE = Boolean(STRIPE_PK);
@@ -46,12 +46,32 @@ function PaymentModal({ contract, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState("form");
   const [paymentResult, setPaymentResult] = useState(null);
+  const [isFirstPayment, setIsFirstPayment] = useState(true);
+
+  useEffect(() => {
+    getPaymentsByAgreement(contract.agreement_id).then(payments => {
+      const hasCompleted = payments.some(p => p.status === 'completed');
+      setIsFirstPayment(!hasCompleted);
+    });
+  }, [contract.agreement_id]);
+
+  const depositApplies = isFirstPayment && Number(contract.deposit_amount) > 0;
+  const totalAmount = Math.max(0, (contract.monthly_rent || 0) - (depositApplies ? Number(contract.deposit_amount) : 0));
+
+  useEffect(() => {
+    if (paymentMethod === 'card' && totalAmount < 3500) {
+      setPaymentMethod('simulated');
+    }
+    if (paymentMethod === 'paypal' && totalAmount < 3500) {
+      setPaymentMethod('simulated');
+    }
+  }, [totalAmount, paymentMethod]);
 
   const formatPrice = (price) =>
     new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(price || 0);
 
   const handlePaySimulated = async () => {
-    const result = await createPaymentIntent(contract.agreement_id, contract.monthly_rent, paymentMethod);
+    const result = await createPaymentIntent(contract.agreement_id, totalAmount, paymentMethod === 'simulated' ? 'other' : paymentMethod);
     if (!result) {
       alert("Error al crear el pago. Intenta de nuevo.");
       setLoading(false);
@@ -60,7 +80,7 @@ function PaymentModal({ contract, onClose, onSuccess }) {
     await new Promise(r => setTimeout(r, 1500));
     const confirmResult = await confirmPayment(result.payment_id);
     if (confirmResult) {
-      setPaymentResult(confirmResult.payment || { payment_id: result.payment_id, amount: contract.monthly_rent });
+      setPaymentResult(confirmResult.payment || { payment_id: result.payment_id, amount: totalAmount });
       setStep("success");
       if (onSuccess) onSuccess(confirmResult);
     }
@@ -80,7 +100,7 @@ function PaymentModal({ contract, onClose, onSuccess }) {
       return;
     }
 
-    const result = await createPaymentIntent(contract.agreement_id, contract.monthly_rent, "card");
+    const result = await createPaymentIntent(contract.agreement_id, totalAmount, "card");
     if (!result || !result.clientSecret) {
       alert("Error al crear el pago con Stripe");
       setLoading(false);
@@ -100,7 +120,7 @@ function PaymentModal({ contract, onClose, onSuccess }) {
     if (paymentIntent.status === "succeeded") {
       const confirmResult = await confirmPayment(result.payment_id, paymentIntent.id);
       if (confirmResult) {
-        setPaymentResult(confirmResult.payment || { payment_id: result.payment_id, amount: contract.monthly_rent });
+        setPaymentResult(confirmResult.payment || { payment_id: result.payment_id, amount: totalAmount });
         setStep("success");
         if (onSuccess) onSuccess(confirmResult);
       }
@@ -111,7 +131,7 @@ function PaymentModal({ contract, onClose, onSuccess }) {
     if (loading) return;
     setLoading(true);
     try {
-      if (HAS_STRIPE && stripe && elements && paymentMethod === "card" && (contract.monthly_rent || 0) >= 2000) {
+      if (HAS_STRIPE && stripe && elements && paymentMethod === "card" && (totalAmount || 0) >= 3500) {
         await handlePayStripe();
       } else if (paymentMethod === "paypal" && HAS_PAYPAL) {
         return; // PayPalButtons maneja el flujo directamente
@@ -194,26 +214,32 @@ function PaymentModal({ contract, onClose, onSuccess }) {
                       <span className="text-[#536379]">Arriendo mensual</span>
                       <span className="text-[#0e1a2b] font-semibold">{formatPrice(contract.monthly_rent)}</span>
                     </div>
+                    {depositApplies && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-[#2e5a88]">Descuento depósito</span>
+                        <span className="text-[#2e5a88] font-semibold">-{formatPrice(contract.deposit_amount)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-sm">
                       <span className="text-[#536379]">Cargos</span>
                       <span className="text-[#0e1a2b]">$0</span>
                     </div>
                     <div className="border-t border-[#e5dfd2] pt-2 flex justify-between">
                       <span className="text-[#0e1a2b] font-bold">Total</span>
-                      <span className="text-[#2e5a88] font-bold text-lg">{formatPrice(contract.monthly_rent)}</span>
+                      <span className="text-[#2e5a88] font-bold text-lg">{formatPrice(totalAmount)}</span>
                     </div>
                   </div>
                   <button
                     onClick={handlePay}
                     disabled={loading || (!stripe && paymentMethod === 'card' && HAS_STRIPE)}
                     className={`w-full bg-[#2e5a88] text-white font-bold text-sm rounded-lg px-4 py-2.5 hover:bg-[#264c74] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
-                      paymentMethod === "paypal" && HAS_PAYPAL && (contract.monthly_rent || 0) >= 2000 ? "hidden" : ""
+                      paymentMethod === "paypal" ? "hidden" : ""
                     }`}
                   >
                     {loading ? (
                       <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> Procesando...</>
                     ) : (
-                      <>Pagar {formatPrice(contract.monthly_rent)}</>
+                      <>Pagar {formatPrice(totalAmount)}</>
                     )}
                   </button>
                 </div>
@@ -282,8 +308,9 @@ function PaymentModal({ contract, onClose, onSuccess }) {
                 <div className="w-48 space-y-2">
                   <p className="text-[#536379] font-bold text-xs tracking-[1.2px] uppercase">Método</p>
                     {[
-                      { id: "card", label: "Tarjeta" },
-                      ...(HAS_PAYPAL ? [{ id: "paypal", label: "PayPal" }] : []),
+                      ...(totalAmount >= 3500 ? [{ id: "card", label: "Tarjeta" }] : []),
+                      ...(HAS_PAYPAL && totalAmount >= 3500 ? [{ id: "paypal", label: "PayPal" }] : []),
+                      { id: "simulated", label: "Simulado" },
                     ].map((m) => (
                     <button
                       key={m.id}
@@ -332,12 +359,12 @@ function PaymentModal({ contract, onClose, onSuccess }) {
                   )}
                   {paymentMethod === "paypal" && (
                     <div className="bg-white border border-[#e5dfd2] rounded-xl p-4">
-                      {(contract.monthly_rent || 0) >= 2000 ? (
+                      {(totalAmount || 0) >= 3500 ? (
                         <PayPalOrderButton
                           agreement_id={contract.agreement_id}
-                          amount={contract.monthly_rent}
+                          amount={totalAmount}
                           onSuccess={(result) => {
-                            setPaymentResult(result.payment || { payment_id: result.payment?.payment_id, amount: contract.monthly_rent });
+                            setPaymentResult(result.payment || { payment_id: result.payment?.payment_id, amount: totalAmount });
                             setStep("success");
                             if (onSuccess) onSuccess(result);
                           }}
@@ -348,13 +375,21 @@ function PaymentModal({ contract, onClose, onSuccess }) {
                           <p className="text-lg font-bold">
                             <span className="text-[#003087]">Pay</span><span className="text-[#009cde]">Pal</span>
                           </p>
-                          <p className="text-[#536379] text-xs mt-2">Monto mínimo: $2,000 COP</p>
+                          <p className="text-[#536379] text-xs mt-2">Monto mínimo: $3,500 COP</p>
                         </div>
                       )}
                     </div>
                   )}
-
+                  {paymentMethod === "simulated" && (
+                    <div className="bg-white border border-[#e5dfd2] rounded-xl p-4 text-center">
+                      <p className="text-base font-bold text-[#0e1a2b]">Pago simulado</p>
+                      <p className="text-xs text-[#536379] mt-2">
+                        No se realizará un cobro real. Usá este método para montos pequeños o pruebas.
+                      </p>
+                    </div>
+                  )}
                 </div>
+
               </div>
             </div>
           )}
@@ -398,7 +433,7 @@ function PaymentModal({ contract, onClose, onSuccess }) {
             <p className="text-[#536379] text-xs">Pago seguro · No compartimos tus datos</p>
             <div className="text-right">
               <p className="text-[#2e5a88] font-bold text-xl">
-                Total: {formatPrice(contract.monthly_rent)}
+                Total: {formatPrice(totalAmount)}
               </p>
             </div>
           </div>

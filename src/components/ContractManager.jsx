@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import axiosInstance from "../contexts/axiosInstance";
 import ConfirmModal from "./ConfirmModal";
+import { previewContractPdf, downloadContractPdf, renewContract } from "../apis/contractController";
+import SignaturePad from "./SignaturePad";
 
 const inputClass = "w-full px-4 py-3 rounded-lg bg-paper-sunk text-ink focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition text-body-md placeholder:text-ink-muted";
 const labelClass = "text-label-md uppercase tracking-wider text-ink-muted mb-1.5 block";
@@ -17,6 +19,9 @@ function ContractManager() {
   const [toast, setToast] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [terminateTarget, setTerminateTarget] = useState(null);
+  const [renewTarget, setRenewTarget] = useState(null);
+  const [showSignaturePad, setShowSignaturePad] = useState(false);
+  const [signingContract, setSigningContract] = useState(null);
   const searchRef = useRef(null);
   const searchTimeoutRef = useRef(null);
   const [formData, setFormData] = useState({
@@ -27,10 +32,25 @@ function ContractManager() {
     monthly_rent: "",
     deposit_amount: ""
   });
+  const [durationDays, setDurationDays] = useState(30);
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (formData.start_date) {
+      const start = new Date(formData.start_date);
+      const months = durationDays / 30;
+      start.setMonth(start.getMonth() + months);
+      const endStr = start.toISOString().split('T')[0];
+      setFormData(prev => ({ ...prev, end_date: endStr }));
+    }
+  }, [formData.start_date, durationDays]);
+
+  const totalContractValue = formData.monthly_rent && durationDays
+    ? (durationDays / 30) * parseFloat(formData.monthly_rent)
+    : 0;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -154,17 +174,44 @@ function ContractManager() {
     if (!terminateTarget) return;
     try {
       await axiosInstance.put(`/contracts/${terminateTarget}/status`, { status: 'terminated' });
-      showToast('Contrato finalizado');
+      showToast('Estado actualizado');
       setTerminateTarget(null);
       fetchData();
     } catch (error) {
-      showToast(error.response?.data?.error || 'Error al finalizar contrato', 'error');
+      showToast(error.response?.data?.error || 'Error al actualizar estado', 'error');
       setTerminateTarget(null);
+    }
+  };
+
+  const canRenewContract = (c) => {
+    if (c.status === 'active') return true;
+    if (c.status === 'expired') {
+      const endDate = new Date(c.end_date);
+      const now = new Date();
+      const diffDays = Math.floor((now - endDate) / (1000 * 60 * 60 * 24));
+      return diffDays <= 7;
+    }
+    return false;
+  };
+
+  const handleRenewContract = async () => {
+    if (!renewTarget) return;
+    try {
+      const result = await renewContract(renewTarget.agreement_id, 12);
+      if (result) {
+        showToast('Contrato renovado exitosamente por 12 meses');
+        setRenewTarget(null);
+        fetchData();
+      }
+    } catch (error) {
+      showToast(error.response?.data?.error || 'Error al renovar contrato', 'error');
+      setRenewTarget(null);
     }
   };
 
   const resetForm = () => {
     setFormData({ id_apt: "", tenant_id: "", start_date: "", end_date: "", monthly_rent: "", deposit_amount: "" });
+    setDurationDays(30);
     setSelectedTenant(null);
     setSearchQuery("");
     setTenantResults([]);
@@ -298,8 +345,24 @@ function ContractManager() {
               <input type="date" name="start_date" value={formData.start_date} onChange={handleInputChange} required className={inputClass} />
             </div>
             <div>
-              <label className={labelClass}>Fecha Fin</label>
-              <input type="date" name="end_date" value={formData.end_date} onChange={handleInputChange} required className={inputClass} />
+              <label className={labelClass}>Duración</label>
+              <div className="flex gap-2">
+                {[30, 60, 90, 120].map(d => (
+                  <button key={d} type="button" onClick={() => setDurationDays(d)}
+                    className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                      durationDays === d
+                        ? 'bg-brand-500 text-white shadow-sm'
+                        : 'bg-paper-sunk text-ink hover:bg-line/30'
+                    }`}>
+                    {d / 30} {d === 30 ? 'Mes' : 'Meses'}
+                  </button>
+                ))}
+              </div>
+              {formData.start_date && (
+                <p className="text-label-md text-ink-muted mt-1">
+                  Fin estimado: <strong>{new Date(formData.end_date).toLocaleDateString('es-CO')}</strong>
+                </p>
+              )}
             </div>
             <div>
               <label className={labelClass}>Canon Mensual (COP)</label>
@@ -315,6 +378,16 @@ function ContractManager() {
                 <input type="number" name="deposit_amount" value={formData.deposit_amount} onChange={handleInputChange} min="0" placeholder="0" className={`${inputClass} pl-8`} />
               </div>
             </div>
+            {formData.monthly_rent && durationDays > 30 && (
+              <div className="md:col-span-2 p-3 rounded-lg bg-brand-50 border border-brand-200">
+                <p className="text-label-md text-brand-700">
+                  Valor total del contrato: <strong className="text-lg">
+                    ${(totalContractValue).toLocaleString('es-CO')} COP
+                  </strong>
+                  <span className="text-brand-500 ml-1">({durationDays / 30} meses × {parseFloat(formData.monthly_rent).toLocaleString('es-CO')}/mes)</span>
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-3 pt-2">
@@ -378,8 +451,63 @@ function ContractManager() {
                         <p className="text-body-md text-ink">{formatDate(contract.end_date)}</p>
                       </div>
                     </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      {contract.signature_status && (
+                        <span className={`inline-flex items-center gap-1 text-label-md px-2 py-0.5 rounded-full ${
+                          contract.signature_status === 'fully_signed' ? 'bg-tertiary/10 text-tertiary' :
+                          contract.signature_status === 'signed_by_tenant' ? 'bg-secondary/10 text-secondary' :
+                          contract.signature_status === 'signed_by_landlord' ? 'bg-secondary/10 text-secondary' :
+                          'bg-warning/10 text-warning'
+                        }`}>
+                          <span className="material-symbols-outlined text-[14px]">
+                            {contract.signature_status === 'fully_signed' ? 'verified' :
+                             contract.signature_status === 'signed_by_tenant' ? 'draw' :
+                             contract.signature_status === 'signed_by_landlord' ? 'draw' :
+                             'pending'}
+                          </span>
+                          {contract.signature_status === 'fully_signed' ? 'Totalmente firmado' :
+                           contract.signature_status === 'signed_by_tenant' ? 'Inquilino firmó' :
+                           contract.signature_status === 'signed_by_landlord' ? 'Tú firmaste' :
+                           'Pendiente de firmas'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 mt-3">
+                      <button onClick={() => {
+                          const url = previewContractPdf(contract.agreement_id);
+                          if (url) window.open(url, '_blank');
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-paper-sunk text-ink hover:bg-line/30 transition text-label-md font-medium">
+                        <span className="material-symbols-outlined text-sm">visibility</span>
+                        Vista previa
+                      </button>
+                      {contract.signature_status !== 'fully_signed' && (contract.status === 'active' || contract.status === 'pending') && (
+                        <button onClick={() => {
+                            setSigningContract(contract);
+                            setShowSignaturePad(true);
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-brand-500/10 text-brand-500 hover:bg-brand-500/20 transition text-label-md font-medium">
+                          <span className="material-symbols-outlined text-sm">draw</span>
+                          Firmar
+                        </button>
+                      )}
+                      {contract.signature_status === 'fully_signed' && (
+                        <button onClick={() => downloadContractPdf(contract.agreement_id)}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-tertiary/10 text-tertiary hover:bg-tertiary/20 transition text-label-md font-medium">
+                          <span className="material-symbols-outlined text-sm">download</span>
+                          Descargar PDF
+                        </button>
+                      )}
+                      {canRenewContract(contract) && (
+                        <button onClick={() => setRenewTarget(contract)}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary/10 text-secondary hover:bg-secondary/20 transition text-label-md font-medium">
+                          <span className="material-symbols-outlined text-sm">refresh</span>
+                          Renovar
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {contract.status === 'active' && (
+                  {(contract.status === 'active' || (contract.status === 'expired' && canRenewContract(contract))) && (
                     <button onClick={() => setTerminateTarget(contract.agreement_id)}
                       className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-error/10 text-error hover:bg-error/20 transition flex-shrink-0 text-label-md font-semibold" title="Finalizar contrato">
                       <span className="material-symbols-outlined text-sm">gavel</span>
@@ -393,6 +521,19 @@ function ContractManager() {
         )}
       </div>
 
+      {showSignaturePad && signingContract && (
+        <SignaturePad
+          contract={signingContract}
+          onClose={() => { setShowSignaturePad(false); setSigningContract(null); }}
+          onSigned={(result) => {
+            setShowSignaturePad(false);
+            setSigningContract(null);
+            showToast('Contrato firmado exitosamente');
+            fetchData();
+          }}
+        />
+      )}
+
       <ConfirmModal
         open={!!terminateTarget}
         title="¿Finalizar contrato?"
@@ -401,6 +542,15 @@ function ContractManager() {
         variant="danger"
         onConfirm={handleTerminateContract}
         onCancel={() => setTerminateTarget(null)}
+      />
+
+      <ConfirmModal
+        open={!!renewTarget}
+        title="¿Renovar contrato?"
+        message={`Se renovará el contrato por 12 meses adicionales a partir de la fecha actual.${renewTarget?.status === 'expired' ? ' El contrato está vencido, se reactivará automáticamente.' : ''}`}
+        confirmLabel="Renovar"
+        onConfirm={handleRenewContract}
+        onCancel={() => setRenewTarget(null)}
       />
 
       {toast && (
