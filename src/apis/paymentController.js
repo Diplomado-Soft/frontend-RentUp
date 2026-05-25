@@ -70,32 +70,50 @@ export const getReceiptUrl = (payment_id) => {
     return `${API_URL}/payments/receipt/${payment_id}?token=${token}`;
 };
 
-export const downloadReceipt = (payment_id) => {
+export const downloadReceipt = async (payment_id) => {
     const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:9000';
     const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
     const token = storedUser.token || localStorage.getItem('token');
 
-    const link = document.createElement('a');
-    link.href = `${API_URL}/payments/receipt/${payment_id}`;
-    link.setAttribute('download', `recibo_pago_${payment_id}.pdf`);
-    link.style.display = 'none';
-
-    fetch(`${API_URL}/payments/receipt/${payment_id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(res => {
+    try {
+        const res = await fetch(`${API_URL}/payments/receipt/${payment_id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
         if (!res.ok) throw new Error('Error downloading receipt');
-        return res.blob();
-    })
-    .then(blob => {
+
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            const data = await res.json();
+            if (data.url) {
+                window.open(data.url, '_blank');
+                return;
+            }
+        }
+
+        const blob = await res.blob();
         const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
         link.href = url;
+        link.setAttribute('download', `recibo_pago_${payment_id}.pdf`);
+        link.style.display = 'none';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-    })
-    .catch(err => console.error("Error downloading receipt:", err));
+    } catch (err) {
+        console.error('Error downloading receipt:', err);
+        alert('Error al descargar el recibo');
+    }
+};
+
+export const getPaymentsByAgreement = async (agreement_id) => {
+    try {
+        const response = await axiosInstance.get(`/payments/agreement/${agreement_id}`);
+        return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+        console.error("Error fetching payments by agreement:", error);
+        return [];
+    }
 };
 
 export const createPayPalOrder = async (agreement_id, amount) => {

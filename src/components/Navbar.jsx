@@ -84,7 +84,7 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
         {/* Izquierda: Logo + Nav links */}
         <div className="flex items-center gap-4">
           <div onClick={handleTitleClick} className="cursor-pointer select-none">
-            <img src="/Preview.png" alt="RentUP" className="h-16 w-auto" />
+            <img src="/Preview-nobg.png" alt="RentUP" className="h-16 w-auto" />
           </div>
 
           {isLandlordPanel ? (
