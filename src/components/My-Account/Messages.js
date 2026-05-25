@@ -7,6 +7,7 @@ import { faComments } from '@fortawesome/free-solid-svg-icons';
 
 function Messages() {
   const { user } = useContext(UserContext);
+  const userId = user?.id || user?.user_id;
   const userRole = user?.rol || user?.rol_id || user?.rolId || null;
   const isLandlord = userRole === 2;
 
@@ -36,9 +37,9 @@ function Messages() {
 
       <div className="messages-container">
         {isLandlord ? (
-          <ChatList arrendador_id={user.id} />
+          <ChatList arrendador_id={userId} />
         ) : (
-          <TenantChatList tenant_id={user.id} />
+          <TenantChatList tenant_id={userId} />
         )}
       </div>
     </div>

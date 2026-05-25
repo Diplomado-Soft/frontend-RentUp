@@ -83,8 +83,8 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
       <div className="flex items-center justify-between px-8 py-3 max-w-[1440px] mx-auto">
         {/* Izquierda: Logo + Nav links */}
         <div className="flex items-center gap-4">
-          <div onClick={handleTitleClick} className="font-display text-xl leading-none text-ink cursor-pointer select-none whitespace-nowrap">
-            Rent<span className="italic-serif text-brand-500">UP</span>
+          <div onClick={handleTitleClick} className="cursor-pointer select-none">
+            <img src="/Preview.png" alt="RentUP" className="h-16 w-auto" />
           </div>
 
           {isLandlordPanel ? (
