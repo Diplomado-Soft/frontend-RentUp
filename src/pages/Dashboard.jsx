@@ -6,6 +6,7 @@ import ApartmentForm from "../components/ApartmentForm";
 import Manage from '../components/Manage';
 import ContractManager from '../components/ContractManager';
 import LandlordReviews from '../components/LandlordReviews';
+import LandlordVisits from '../components/LandlordVisits';
 import Toast from '../components/Toast';
 import { AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -385,6 +386,8 @@ function Dashboard() {
               </div>
               )}
               {activeTab === 'contracts' && <ContractManager />}
+              {activeTab === 'visits' && <LandlordVisits />}
+              {activeTab === 'reviews' && <LandlordReviews />}
             </div>
           </div>
 

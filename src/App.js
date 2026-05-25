@@ -22,6 +22,7 @@ import MyRents from './components/My-Account/MyRents';
 import TenantMaintenance from './components/TenantMaintenance';
 import LandlordMaintenance from './components/LandlordMaintenance';
 import TenantDashboard from './pages/TenantDashboard';
+import OnboardingTour from './components/OnboardingTour';
 import './App.css';
 
 function ListingsPage({ goToJoin, listingSearch, setListingSearch, listingFilters }) {
@@ -122,6 +123,8 @@ function AppContent() {
           onClose={() => setShowLogoutToast(false)} 
         />
       )}
+
+      <OnboardingTour />
 
       <div style={{ paddingTop: isAuthPage ? 0 : (location.pathname === '/listings' ? navbarHeight : 56) }}>
         <Routes>

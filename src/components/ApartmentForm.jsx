@@ -30,8 +30,8 @@ const { user } = useContext(UserContext);
 
 const [barrio, setBarrio] = useState('');
 const [direccion, setDireccion] = useState('');
-const [latitud, setLatitud] = useState('');
-const [longitud, setLongitud] = useState('');
+const [latitud, setLatitud] = useState('1.157037');
+const [longitud, setLongitud] = useState('-76.651443');
 const [addInfo, setAddInfo] = useState('');
 const [charCount, setCharCount] = useState(0);
 const [message, setMessage] = useState('');

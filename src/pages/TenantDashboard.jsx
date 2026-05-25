@@ -2,6 +2,9 @@ import React, { useState, useEffect, useContext } from "react";
 import { UserContext } from "../contexts/UserContext";
 import axiosInstance from "../contexts/axiosInstance";
 import ChatComponent from "../components/ChatComponent";
+import ContractSigner from "../components/ContractSigner";
+import VisitScheduler from "../components/VisitScheduler";
+import TenantVisits from "../components/TenantVisits";
 import { getMyReports, createMaintenanceReport, getMyProperties } from "../apis/maintenanceController";
 import { getPaymentHistory, downloadReceipt } from "../apis/paymentController";
 import PaymentModal from "../components/Payment/PaymentModal";
@@ -30,6 +33,7 @@ function TenantDashboard() {
   const [reportImage, setReportImage] = useState(null);
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [showVisitScheduler, setShowVisitScheduler] = useState(true);
 
   const userId = user?.id || user?.user_id;
 
@@ -152,6 +156,7 @@ function TenantDashboard() {
     { id: "proximos-pagos", label: "Próximos Pagos", icon: "payments" },
     { id: "mis-reportes", label: "Mis Reportes", icon: "build" },
     { id: "contacto", label: "Contacto", icon: "chat" },
+    { id: "visitas", label: "Visitas", icon: "calendar_month" },
     { id: "documentos", label: "Documentos", icon: "description" },
   ];
 
@@ -751,6 +756,54 @@ function TenantDashboard() {
                 </div>
               )}
 
+              {activeTab === "visitas" && (
+                <div className="space-y-4">
+                  <div>
+                    <h2 className="font-headline text-headline-md text-ink mb-1">Visitas</h2>
+                    <p className="text-body-md text-ink-muted">Agenda una visita o revisa el estado de tus solicitudes</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className="space-y-4">
+                      <button
+                        onClick={() => setShowVisitScheduler(!showVisitScheduler)}
+                        className="w-full text-left font-headline text-headline-sm text-ink flex items-center gap-2 cursor-pointer bg-transparent border-none p-0 hover:text-brand-500 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-brand-500 text-lg">add_circle</span>
+                        Agendar nueva visita
+                        <span className={`material-symbols-outlined text-ink-muted text-sm ml-auto transition-transform ${showVisitScheduler ? 'rotate-180' : ''}`}>expand_more</span>
+                      </button>
+                      {showVisitScheduler && (
+                        activeContracts.length === 0 ? (
+                          <div className="text-center py-8 bg-paper-card rounded-xl border border-line/50">
+                            <span className="material-symbols-outlined text-3xl text-outline mb-2">home_work</span>
+                            <p className="text-body-md text-ink-muted">No tienes propiedades activas para agendar visitas</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {activeContracts.map((contract) => (
+                              <VisitScheduler
+                                key={contract.agreement_id}
+                                landlord_id={contract.landlord_id}
+                                property_id={contract.property_id || contract.id_apt}
+                                propertyAddress={`${contract.barrio_name || contract.barrio || ''} - ${contract.direccion_apt || ''}`}
+                                onScheduled={() => {
+                                  fetchContracts();
+                                }}
+                              />
+                            ))}
+                          </div>
+                        )
+                      )}
+                    </div>
+
+                    <div>
+                      <TenantVisits />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {activeTab === "documentos" && (
                 <div className="space-y-4">
                   <div>
@@ -773,36 +826,14 @@ function TenantDashboard() {
                       {contracts.map((contract) => (
                         <div
                           key={contract.agreement_id}
-                          className="bg-surface-container-low rounded-xl p-5 hover:bg-surface-container-high transition-colors"
+                          className="bg-paper-card border border-line/50 rounded-xl overflow-hidden"
                         >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex items-start gap-3 flex-1 min-w-0">
-                              <div className="w-10 h-10 bg-brand-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <span className="material-symbols-outlined text-sm text-brand-500">description</span>
-                              </div>
-                              <div className="min-w-0">
-                                <p className="font-headline font-semibold text-ink">
-                                  Contrato de Arriendo —{" "}
-                                  {contract.barrio_name || contract.barrio || "Sin barrio"}
-                                </p>
-                                <p className="text-xs text-ink-muted mt-0.5 truncate">
-                                  {contract.direccion_apt || "Sin dirección"}
-                                </p>
-                                <div className="flex items-center gap-3 mt-1 text-xs text-ink-muted">
-                                  <span>
-                                    {formatDate(contract.start_date)} — {formatDate(contract.end_date)}
-                                  </span>
-                                  <span className="text-outline">·</span>
-                                  {getStatusBadge(contract.status)}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex-shrink-0">
-                              <p className="font-headline font-semibold text-ink text-right">{formatPrice(contract.monthly_rent)}</p>
-                              <p className="text-xs text-ink-muted text-right">/mes</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3 mt-4 pt-3 border-t border-surface-container-high">
+                          <ContractSigner
+                            contract={contract}
+                            onSigned={() => fetchContracts()}
+                          />
+
+                          <div className="p-4 border-t border-line/50 flex items-center gap-3">
                             <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-500 text-white text-label-md hover:bg-brand-600 transition-all">
                               <span className="material-symbols-outlined text-xs">download</span>
                               Contrato
@@ -824,6 +855,12 @@ function TenantDashboard() {
                               </span>
                               {getContractPayment(contract.agreement_id) ? 'Recibo' : 'Pagar'}
                             </button>
+                            {contract.status === 'active' && contract.status !== 'signed' && (
+                              <span className="text-label-md text-secondary ml-auto flex items-center gap-1">
+                                <span className="material-symbols-outlined text-xs">info</span>
+                                Este contrato está pendiente de firma
+                              </span>
+                            )}
                           </div>
                         </div>
                       ))}

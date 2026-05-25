@@ -210,7 +210,7 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
           <div className="border-t border-line" />
           <div className="px-8 py-3 max-w-[1440px] mx-auto">
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 bg-paper-sunk border border-line rounded-full px-4 py-2.5 flex-1 max-w-xl">
+              <div id="rentup-search-bar" className="flex items-center gap-2 bg-paper-sunk border border-line rounded-full px-4 py-2.5 flex-1 max-w-xl">
                 <span className="material-symbols-outlined text-brand-500 text-sm">search</span>
                 <input
                   className="flex-1 bg-transparent outline-none text-sm text-ink placeholder:text-ink-muted leading-none"

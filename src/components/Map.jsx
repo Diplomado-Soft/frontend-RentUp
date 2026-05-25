@@ -1,10 +1,40 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { MapContainer, Marker, TileLayer, Popup, useMap, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 import PropertyDetailModal from "./PropertyDetailModal";
 import './Map.css';
+
+// Vuela y abre el popup del apartamento seleccionado desde una tarjeta
+function FlyToSelected({ apartments, markerRefs }) {
+  const map = useMap();
+  const location = useLocation();
+  const selected = location.state;
+
+  useEffect(() => {
+    if (!selected?.lat || !selected?.lng) return;
+
+    const aptId = Number(selected.id);
+    map.flyTo([Number(selected.lat), Number(selected.lng)], 18, { duration: 1.5 });
+
+    const tryOpenPopup = (attempts = 0) => {
+      const marker = markerRefs.current[aptId];
+      if (marker) {
+        marker.openPopup();
+        return;
+      }
+      if (attempts < 10) {
+        setTimeout(() => tryOpenPopup(attempts + 1), 300);
+      }
+    };
+
+    setTimeout(() => tryOpenPopup(), 600);
+  }, [selected, map, markerRefs, apartments]);
+
+  return null;
+}
 
 // Actualiza la vista del mapa cuando cambian las coordenadas
 function UpdateMapCenter({ center }) {
@@ -59,19 +89,24 @@ return null;
 }
 
 function Map() {
+    const location = useLocation();
+    const selectedFromCard = location.state;
+    const markerRefs = useRef({});
+
     const [apartments, setApartments] = useState([]);
     const [center, setCenter] = useState(() => {
-    const stored = localStorage.getItem("mapCenter");
-    return stored ? JSON.parse(stored) : [1.156667, -76.651944];
-});
+        if (selectedFromCard?.lat && selectedFromCard?.lng) {
+            return [Number(selectedFromCard.lat), Number(selectedFromCard.lng)];
+        }
+        const stored = localStorage.getItem("mapCenter");
+        return stored ? JSON.parse(stored) : [1.156667, -76.651944];
+    });
     const [routeCoordinates, setRouteCoordinates] = useState([]);
     const [distance, setDistance] = useState(null);
     const [selectedApartment, setSelectedApartment] = useState(null);
-    const [highlightedAptId, setHighlightedAptId] = useState(() => {
-        const stored = localStorage.getItem("selectedAptId");
-        localStorage.removeItem("selectedAptId");
-        return stored ? Number(stored) : null;
-    });
+    const [highlightedAptId, setHighlightedAptId] = useState(
+        selectedFromCard?.id ? Number(selectedFromCard.id) : null
+    );
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [detailProperty, setDetailProperty] = useState(null);
 
@@ -87,28 +122,6 @@ function Map() {
 
     const UNIPUTUMAYO_COORDINATES = [1.156667, -76.651944];
 
-
-useEffect(() => {
-    const handleStorageChange = () => {
-        const storedCenter = localStorage.getItem("mapCenter");
-        if (storedCenter) {
-            setCenter(JSON.parse(storedCenter));
-            localStorage.removeItem("mapCenter");
-        }
-    };
-    const handleCustomEvent = (e) => {
-        if (e.detail) {
-            setCenter(e.detail);
-        }
-    };
-    window.addEventListener("storage", handleStorageChange);
-    window.addEventListener("mapCenterChanged", handleCustomEvent);
-    return () => {
-        window.removeEventListener("storage", handleStorageChange);
-        window.removeEventListener("mapCenterChanged", handleCustomEvent);
-    };
-}, []);
-
 useEffect(() => {
 const fetchData = async () => {
     try {
@@ -123,6 +136,26 @@ const fetchData = async () => {
 };
 fetchData();
 }, []);
+
+useEffect(() => {
+    if (!selectedFromCard?.lat || !selectedFromCard?.lng || apartments.length === 0) return;
+
+    const apt = apartments.find(a =>
+        (a.id_apt || a.id_apartamento) === Number(selectedFromCard.id)
+    );
+
+    if (apt) {
+        const lat = Number(apt.latitud_apt || apt.latitud_apartamento);
+        const lng = Number(apt.longitud_apt || apt.longitud_apartamento);
+        setSelectedApartment({
+            ...apt,
+            id_apartamento: apt.id_apt || apt.id_apartamento,
+            latitud_apartamento: lat,
+            longitud_apartamento: lng
+        });
+        calculateRoute(lat, lng);
+    }
+}, [apartments, selectedFromCard?.id]);
 
 const DefaultIcon = L.icon({
 iconUrl: '/apartmentLogo.png',
@@ -219,6 +252,7 @@ return (
     className="w-full h-full z-0"
     maxZoom={18}
     >
+    <FlyToSelected apartments={apartments} markerRefs={markerRefs} />
     <UpdateMapCenter center={center} />
     <InvalidateSize />
     <TileLayer
@@ -234,19 +268,16 @@ return (
     </Marker>
 
     {apartments.map((apt) => {
+        const aptId = apt.id_apt || apt.id_apartamento;
         const imageUrls = getImageUrls(apt.images);
         const primaryImage = imageUrls[0] || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
         
         return (
         <Marker
-        key={apt.id_apt || apt.id_apartamento}
+        key={aptId}
         position={[apt.latitud_apt || apt.latitud_apartamento, apt.longitud_apt || apt.longitud_apartamento]}
-        icon={(apt.id_apt || apt.id_apartamento) === highlightedAptId ? HighlightedIcon : DefaultIcon}
-        ref={(ref) => {
-            if (ref && highlightedAptId && (apt.id_apt || apt.id_apartamento) === highlightedAptId) {
-                setTimeout(() => { ref.openPopup(); setHighlightedAptId(null); }, 300);
-            }
-        }}
+        icon={aptId === highlightedAptId ? HighlightedIcon : DefaultIcon}
+        ref={(ref) => { if (ref) markerRefs.current[aptId] = ref; }}
         eventHandlers={{
             click: () => handleApartmentClick({
                 ...apt,
