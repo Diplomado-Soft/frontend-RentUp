@@ -10,16 +10,6 @@ export const renewContract = async (agreement_id, months = 12) => {
     }
 };
 
-export const signContract = async (agreement_id) => {
-    try {
-        const response = await axiosInstance.put(`/contracts/${agreement_id}/sign`);
-        return response.data;
-    } catch (error) {
-        console.error("Error signing contract:", error);
-        throw error;
-    }
-};
-
 export const endContract = async (agreement_id) => {
     try {
         const response = await axiosInstance.post(`/contracts/${agreement_id}/end`);
