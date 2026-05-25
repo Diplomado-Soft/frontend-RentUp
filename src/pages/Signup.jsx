@@ -93,8 +93,9 @@ function Signup() {
             const result = await firebaseGoogleSignIn(rolId);
             
             if (result.success) {
-                setPendingUser(result.user);
-                login(result.user);
+                const userWithToken = { ...result.user, token: result.token };
+                setPendingUser(userWithToken);
+                login(userWithToken);
                 
                 if (!result.user.telefono && !result.user.whatsapp) {
                     setShowPhoneModal(true);
@@ -142,13 +143,14 @@ function Signup() {
 
             if (response.ok) {
                 if (pendingUser) {
+                    const token = pendingUser.token;
                     const updatedUser = {
                         ...pendingUser,
                         telefono: cleanPhone,
                         whatsapp: cleanWhatsApp || cleanPhone
                     };
                     localStorage.setItem('user', JSON.stringify(updatedUser));
-                    login(updatedUser);
+                    login({ ...updatedUser, token });
                 }
                 setShowPhoneModal(false);
                 setShowSucess(true);
