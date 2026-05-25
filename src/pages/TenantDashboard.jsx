@@ -33,6 +33,7 @@ function TenantDashboard() {
   const [reportImage, setReportImage] = useState(null);
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [showVisitScheduler, setShowVisitScheduler] = useState(true);
 
   const userId = user?.id || user?.user_id;
 
@@ -764,29 +765,35 @@ function TenantDashboard() {
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div className="space-y-4">
-                      <h3 className="font-headline text-headline-sm text-ink flex items-center gap-2">
+                      <button
+                        onClick={() => setShowVisitScheduler(!showVisitScheduler)}
+                        className="w-full text-left font-headline text-headline-sm text-ink flex items-center gap-2 cursor-pointer bg-transparent border-none p-0 hover:text-brand-500 transition-colors"
+                      >
                         <span className="material-symbols-outlined text-brand-500 text-lg">add_circle</span>
                         Agendar nueva visita
-                      </h3>
-                      {activeContracts.length === 0 ? (
-                        <div className="text-center py-8 bg-paper-card rounded-xl border border-line/50">
-                          <span className="material-symbols-outlined text-3xl text-outline mb-2">home_work</span>
-                          <p className="text-body-md text-ink-muted">No tienes propiedades activas para agendar visitas</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {activeContracts.map((contract) => (
-                            <VisitScheduler
-                              key={contract.agreement_id}
-                              landlord_id={contract.landlord_id}
-                              property_id={contract.property_id || contract.id_apt}
-                              propertyAddress={`${contract.barrio_name || contract.barrio || ''} - ${contract.direccion_apt || ''}`}
-                              onScheduled={() => {
-                                fetchContracts();
-                              }}
-                            />
-                          ))}
-                        </div>
+                        <span className={`material-symbols-outlined text-ink-muted text-sm ml-auto transition-transform ${showVisitScheduler ? 'rotate-180' : ''}`}>expand_more</span>
+                      </button>
+                      {showVisitScheduler && (
+                        activeContracts.length === 0 ? (
+                          <div className="text-center py-8 bg-paper-card rounded-xl border border-line/50">
+                            <span className="material-symbols-outlined text-3xl text-outline mb-2">home_work</span>
+                            <p className="text-body-md text-ink-muted">No tienes propiedades activas para agendar visitas</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {activeContracts.map((contract) => (
+                              <VisitScheduler
+                                key={contract.agreement_id}
+                                landlord_id={contract.landlord_id}
+                                property_id={contract.property_id || contract.id_apt}
+                                propertyAddress={`${contract.barrio_name || contract.barrio || ''} - ${contract.direccion_apt || ''}`}
+                                onScheduled={() => {
+                                  fetchContracts();
+                                }}
+                              />
+                            ))}
+                          </div>
+                        )
                       )}
                     </div>
 

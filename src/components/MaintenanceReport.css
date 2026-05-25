@@ -1,63 +1,93 @@
 .maintenance-report-container {
     max-width: 600px;
-    margin: 40px auto;
-    padding: 24px;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    margin: 1.5rem auto;
+    padding: 1.5rem;
+    background: #ffffff;
+    border: 1px solid #e5dfd2;
+    border-radius: 0.75rem;
 }
+
 .maintenance-report-container h2 {
-    margin-bottom: 20px;
-    color: #333;
+    margin-bottom: 1.25rem;
+    color: #0e1a2b;
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
 }
+
 .maintenance-form label {
     display: block;
-    margin-top: 16px;
+    margin-top: 1rem;
     font-weight: 600;
-    color: #555;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #536379;
 }
+
 .maintenance-form input,
 .maintenance-form select,
 .maintenance-form textarea {
     width: 100%;
-    padding: 10px 12px;
-    margin-top: 4px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 14px;
+    padding: 0.75rem;
+    margin-top: 0.25rem;
+    border: 1px solid #e5dfd2;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
     box-sizing: border-box;
+    background: #f1ede4;
+    color: #0e1a2b;
+    outline: none;
+    transition: border-color 0.15s ease;
 }
+
+.maintenance-form input:focus,
+.maintenance-form select:focus,
+.maintenance-form textarea:focus {
+    border-color: #2e5a88;
+    box-shadow: 0 0 0 2px rgba(46, 90, 136, 0.15);
+}
+
 .maintenance-form textarea {
     resize: vertical;
 }
+
 .maintenance-form button {
-    margin-top: 24px;
+    margin-top: 1.5rem;
     width: 100%;
-    padding: 12px;
-    background: #e67e22;
+    padding: 0.75rem;
+    background: #2e5a88;
     color: #fff;
     border: none;
-    border-radius: 8px;
-    font-size: 16px;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
+    transition: background 0.15s ease;
 }
+
+.maintenance-form button:hover {
+    background: #264c74;
+}
+
 .maintenance-form button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
+
 .toast {
     position: fixed;
-    bottom: 24px;
+    bottom: 1.5rem;
     left: 50%;
     transform: translateX(-50%);
-    padding: 14px 28px;
-    border-radius: 8px;
+    padding: 0.875rem 1.75rem;
+    border-radius: 0.5rem;
     color: #fff;
     font-weight: 600;
     cursor: pointer;
     z-index: 9999;
+    font-size: 0.875rem;
 }
-.toast-success { background: #27ae60; }
-.toast-error { background: #e74c3c; }
-.toast-warning { background: #f39c12; }
+.toast-success { background: #00714d; }
+.toast-error { background: #ba1a1a; }
+.toast-warning { background: #f59e0b; }

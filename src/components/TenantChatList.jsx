@@ -57,13 +57,18 @@ export default function TenantChatList({ tenant_id }) {
       {!conversacionActiva ? (
         <div className="conversaciones-lista">
           <div className="chat-list-header">
-            <h2>Mis Conversaciones</h2>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="material-symbols-outlined text-brand-500 text-xl">chat</span>
+              <h2 className="font-display text-2xl text-ink m-0">Mis Conversaciones</h2>
+            </div>
             <p className="subtitle">Mensajes con tus arrendadores</p>
           </div>
 
           {conversaciones.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-icon">📭</div>
+              <div className="empty-icon">
+                <span className="material-symbols-outlined text-4xl text-outline">forum</span>
+              </div>
               <h3>No tienes conversaciones</h3>
               <p>Cuando contactes a un arrendador, aparecerán aquí</p>
             </div>
@@ -102,7 +107,8 @@ export default function TenantChatList({ tenant_id }) {
                     </p>
                     {conv.propiedades_asociadas && (
                       <span className="propiedad-tag">
-                        🏠 {conv.propiedades_asociadas}
+                        <span className="material-symbols-outlined" style={{fontSize:'0.7rem'}}>domain</span>
+                        {conv.propiedades_asociadas}
                       </span>
                     )}
                   </div>

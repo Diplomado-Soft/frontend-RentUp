@@ -50,63 +50,82 @@ function User() {
             alert("Error al actualizar los datos.");
         }
     }
-    const initials = (nombre?.charAt(0) || '') + (apellido?.charAt(0) || '');
     return (
         <div>
-            <div className="flex items-center gap-6 mb-8">
-                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/20">
-                    <span className="text-primary font-headline text-headline-md">{initials || 'U'}</span>
+            <div className="flex items-center gap-4 mb-8 px-1">
+                <div className="w-16 h-16 rounded-full bg-brand-100 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-3xl text-brand-500">person</span>
                 </div>
                 <div>
-                    <h2 className="font-headline text-headline-md text-on-surface">Información Personal</h2>
-                    <p className="text-body-md text-on-surface-variant">Actualiza tu foto y detalles de contacto.</p>
+                    <h2 className="font-display text-2xl text-ink">Información Personal</h2>
+                    <p className="text-body-md text-ink-muted">Actualiza tus datos de contacto.</p>
                 </div>
             </div>
 
-            <form onSubmit={createNewUserData} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-1">
+            <form onSubmit={createNewUserData} className="space-y-5">
+                <div className="space-y-1.5">
                     <label htmlFor="nombre" className="text-label-md text-on-surface-variant uppercase tracking-wider">Nombre</label>
-                    <input
-                        type="text" id="nombre" name="nombre" required
-                        value={formData.nombre} onChange={handleChange}
-                        className="w-full px-4 py-3 rounded-lg bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-on-surface placeholder:text-outline text-body-md"
-                    />
+                    <div className="relative">
+                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">person</span>
+                        <input
+                            type="text" id="nombre" name="nombre" required
+                            value={formData.nombre} onChange={handleChange}
+                            className="w-full pl-10 pr-4 py-3 rounded-lg bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all text-on-surface placeholder:text-outline text-body-md"
+                        />
+                    </div>
                 </div>
-                <div className="space-y-1">
+
+                <div className="space-y-1.5">
                     <label htmlFor="apellido" className="text-label-md text-on-surface-variant uppercase tracking-wider">Apellido</label>
-                    <input
-                        type="text" id="apellido" name="apellido" required
-                        value={formData.apellido} onChange={handleChange}
-                        className="w-full px-4 py-3 rounded-lg bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-on-surface placeholder:text-outline text-body-md"
-                    />
+                    <div className="relative">
+                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">person</span>
+                        <input
+                            type="text" id="apellido" name="apellido" required
+                            value={formData.apellido} onChange={handleChange}
+                            className="w-full pl-10 pr-4 py-3 rounded-lg bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all text-on-surface placeholder:text-outline text-body-md"
+                        />
+                    </div>
                 </div>
-                <div className="space-y-1">
+
+                <div className="space-y-1.5">
                     <label htmlFor="email" className="text-label-md text-on-surface-variant uppercase tracking-wider">Email</label>
-                    <input
-                        type="email" id="email" name="email" required
-                        value={formData.email} onChange={handleChange}
-                        className="w-full px-4 py-3 rounded-lg bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-on-surface placeholder:text-outline text-body-md"
-                    />
+                    <div className="relative">
+                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">mail</span>
+                        <input
+                            type="email" id="email" name="email" required
+                            value={formData.email} onChange={handleChange}
+                            className="w-full pl-10 pr-4 py-3 rounded-lg bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all text-on-surface placeholder:text-outline text-body-md"
+                        />
+                    </div>
                 </div>
-                <div className="space-y-1">
+
+                <div className="space-y-1.5">
                     <label htmlFor="telefono" className="text-label-md text-on-surface-variant uppercase tracking-wider">Teléfono</label>
-                    <input
-                        type="phone" id="telefono" name="telefono" required
-                        value={formData.telefono} onChange={handleChange}
-                        className="w-full px-4 py-3 rounded-lg bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-on-surface placeholder:text-outline text-body-md"
-                    />
+                    <div className="relative">
+                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">phone</span>
+                        <input
+                            type="tel" id="telefono" name="telefono" required
+                            value={formData.telefono} onChange={handleChange}
+                            className="w-full pl-10 pr-4 py-3 rounded-lg bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all text-on-surface placeholder:text-outline text-body-md"
+                        />
+                    </div>
                 </div>
-                <div className="space-y-1 md:col-span-2">
+
+                <div className="space-y-1.5">
                     <label htmlFor="password" className="text-label-md text-on-surface-variant uppercase tracking-wider">Contraseña</label>
-                    <input
-                        type="password" id="password" name="password"
-                        value={formData.password} onChange={handleChange}
-                        placeholder="Deja en blanco para mantener la actual"
-                        className="w-full px-4 py-3 rounded-lg bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-on-surface placeholder:text-outline text-body-md"
-                    />
+                    <div className="relative">
+                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">lock</span>
+                        <input
+                            type="password" id="password" name="password"
+                            value={formData.password} onChange={handleChange}
+                            placeholder="Deja en blanco para mantener la actual"
+                            className="w-full pl-10 pr-4 py-3 rounded-lg bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all text-on-surface placeholder:text-outline text-body-md"
+                        />
+                    </div>
                 </div>
-                <div className="md:col-span-2 flex justify-end mt-2">
-                    <button type="submit" className="px-6 py-3 bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold rounded-lg shadow-md hover:shadow-lg active:scale-[0.98] transition-all flex items-center gap-2">
+
+                <div className="flex justify-end pt-2">
+                    <button type="submit" className="px-6 py-3 bg-brand-500 text-white rounded-lg text-label-md font-medium hover:brightness-110 active:scale-[0.98] transition-all flex items-center gap-2">
                         <span className="material-symbols-outlined text-sm">save</span>
                         Guardar cambios
                     </button>

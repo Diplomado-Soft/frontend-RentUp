@@ -6,7 +6,6 @@ const submitApartment = async (formData) => {
         !formData.get('direccion') ||
         !formData.get('latitud') ||
         !formData.get('longitud') ||
-        !formData.get('addInfo') ||
         !formData.get('price')
     ) {
         throw new Error('Por favor rellene los campos requeridos (incluyendo el precio)');

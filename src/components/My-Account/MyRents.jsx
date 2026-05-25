@@ -60,7 +60,7 @@ function MyRents() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mb-4"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-500 mb-4"></div>
         <p className="text-on-surface-variant">Cargando tus arriendos...</p>
       </div>
     );
@@ -81,8 +81,8 @@ function MyRents() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="font-headline text-headline-md text-on-surface mb-1">Mis Arriendos Activos</h2>
-        <p className="text-body-md text-on-surface-variant">{activeRents.length} Contrato{activeRents.length !== 1 ? 's' : ''} vigente{activeRents.length !== 1 ? 's' : ''}</p>
+        <h2 className="font-display text-2xl text-ink mb-1">Mis Arriendos Activos</h2>
+        <p className="text-body-md text-ink-muted">{activeRents.length} Contrato{activeRents.length !== 1 ? 's' : ''} vigente{activeRents.length !== 1 ? 's' : ''}</p>
       </div>
 
       {rents.length === 0 ? (
@@ -124,7 +124,7 @@ function MyRents() {
                       )}
                     </div>
                     <div className="mt-3">
-                      <span className="font-bold text-headline-md text-primary">{formatPrice(rent.monthly_rent)}</span>
+                      <span className="font-bold text-2xl text-brand-500 font-display">{formatPrice(rent.monthly_rent)}</span>
                       <span className="text-on-surface-variant text-sm"> /mes</span>
                     </div>
 
@@ -146,7 +146,7 @@ function MyRents() {
                     <div className="mt-4">
                       <button
                         onClick={() => setSelectedRent(selectedRent?.agreement_id === rent.agreement_id ? null : rent)}
-                        className="text-label-md text-primary hover:underline transition-all"
+                        className="text-label-md text-brand-500 hover:underline transition-all"
                       >
                         {selectedRent?.agreement_id === rent.agreement_id ? 'Cerrar reseñas' : 'Dejar una reseña'}
                       </button>
@@ -176,7 +176,7 @@ function MyRents() {
 
           {pastRents.length > 0 && (
             <div>
-              <h3 className="font-headline text-headline-md text-on-surface mb-4 flex items-center gap-2">
+              <h3 className="font-display text-2xl text-ink mb-4 flex items-center gap-2">
                 <span className="w-2 h-2 bg-outline rounded-full"></span>
                 Arriendos Anteriores
               </h3>

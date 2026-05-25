@@ -1,9 +1,8 @@
 import { useState, useContext, useMemo } from "react";
 import User from '../components/My-Account/User';
 import Billing from '../components/My-Account/Billing';
-import Record from '../components/My-Account/Record';
 import MyRents from '../components/My-Account/MyRents';
-import Messages from '../components/My-Account/Messages';
+import PaymentHistory from '../components/My-Account/PaymentHistory';
 import { UserContext } from "../contexts/UserContext";
 import { useLocation } from "react-router-dom";
 import axiosInstance from "../contexts/axiosInstance";
@@ -16,21 +15,16 @@ function MyAccount() {
     const userName = user?.nombre || '';
     const userLastname = user?.apellido || '';
     const isLandlord = userRole === 2;
-    const isRegularUser = userRole === 1;
 
     const tabs = useMemo(() => {
         const allTabs = [
             { key: 'datos', label: 'Mis Datos', icon: 'person', roles: [1, 2, 3] },
-            { key: 'mensajes', label: 'Mensajes', icon: 'chat', roles: [1, 2] },
-            { key: 'facturacion', label: 'Facturación', icon: 'payments', roles: [1, 2] },
-            { key: 'estadisticas', label: 'Estadísticas', icon: 'analytics', roles: [2] },
+            { key: 'facturacion', label: 'Facturación', icon: 'payments', roles: [1] },
+            { key: 'pagos', label: 'Mis Cobros', icon: 'payments', roles: [2] },
             { key: 'arriendos', label: 'Mis Arriendos', icon: 'domain', roles: [1] },
             { key: 'eliminar', label: 'Eliminar cuenta', icon: 'delete_forever', roles: [1, 2, 3], danger: true }
         ];
-        return allTabs.filter(tab =>
-            tab.roles.includes(userRole) &&
-            !(isRegularUser && (tab.key === 'facturacion' || tab.key === 'arriendos'))
-        );
+        return allTabs.filter(tab => tab.roles.includes(userRole));
     }, [userRole]);
 
     const [activeTab, setActiveTab] = useState(() => {
@@ -43,12 +37,10 @@ function MyAccount() {
         switch (activeTab) {
             case "datos":
                 return <User />
-            case "mensajes":
-                return <Messages />
             case "facturacion":
                 return <Billing />
-            case "estadisticas":
-                return <Record />
+            case "pagos":
+                return <PaymentHistory />
             case "arriendos":
                 return <MyRents />
             case "eliminar":
@@ -79,7 +71,7 @@ function MyAccount() {
         }
     };
 
-    const roleLabel = isLandlord ? 'Arrendador' : isRegularUser ? 'Usuario' : 'Administrador';
+    const roleLabel = isLandlord ? 'Arrendador' : userRole === 1 ? 'Usuario' : 'Administrador';
     const initials = (userName.charAt(0) + userLastname.charAt(0)).toUpperCase() || 'U';
 
     return (
@@ -90,12 +82,12 @@ function MyAccount() {
                     <aside className="lg:w-64 w-full flex-shrink-0">
                         <div className="bg-surface-container-lowest rounded-xl overflow-hidden">
                             {/* User profile card */}
-                            <div className="bg-gradient-to-br from-primary to-primary-container px-6 py-8 text-center">
-                                <div className="w-16 h-16 mx-auto rounded-full bg-white/20 backdrop-blur flex items-center justify-center border-2 border-white/40 mb-3">
-                                    <span className="text-on-primary font-headline text-headline-md">{initials}</span>
+                            <div className="bg-brand-50 px-6 py-8 text-center border-b border-brand-500/20">
+                                <div className="w-16 h-16 mx-auto rounded-full bg-brand-500 flex items-center justify-center shadow-sm mb-3">
+                                    <span className="material-symbols-outlined text-3xl text-white">person</span>
                                 </div>
-                                <h3 className="font-headline text-headline-md text-on-primary">{userName} {userLastname}</h3>
-                                <p className="text-label-md text-on-primary/80 uppercase tracking-wider mt-1">{roleLabel}</p>
+                                <h3 className="font-display text-2xl text-ink">{userName} {userLastname}</h3>
+                                <p className="text-label-md text-brand-500 uppercase tracking-wider mt-1">{roleLabel}</p>
                             </div>
 
                             <nav className="p-3">
@@ -105,11 +97,11 @@ function MyAccount() {
                                             <button
                                                 onClick={() => setActiveTab(tab.key)}
                                                 className={`flex items-center w-full text-left gap-3 px-4 py-3 rounded-lg text-label-md transition-all ${
-                                                    activeTab === tab.key
-                                                        ? 'bg-primary text-on-primary shadow-md'
-                                                        : tab.danger
-                                                            ? 'text-error hover:bg-error-container/30'
-                                                            : 'text-on-surface-variant hover:bg-surface-container-high'
+                                                activeTab === tab.key
+                                                    ? 'bg-brand-100 text-brand-700 font-semibold'
+                                                    : tab.danger
+                                                        ? 'text-error hover:bg-error/10'
+                                                        : 'text-ink-muted hover:bg-line/30 hover:text-ink'
                                                 }`}
                                             >
                                                 <span className="material-symbols-outlined text-sm">{tab.icon}</span>
@@ -125,8 +117,8 @@ function MyAccount() {
                     {/* Main content */}
                     <main className="flex-1 min-w-0">
                         <div className="mb-8">
-                            <h1 className="font-headline text-headline-lg text-on-surface">Mi Cuenta</h1>
-                            <p className="text-body-md text-on-surface-variant mt-1">
+                            <h1 className="font-display text-4xl text-ink">Mi Cuenta</h1>
+                            <p className="text-body-md text-ink-muted mt-1">
                                 {isLandlord
                                     ? 'Gestiona tu información personal, métodos de pago y visualiza tu rendimiento.'
                                     : 'Gestión de arriendos y perfil de usuario'}

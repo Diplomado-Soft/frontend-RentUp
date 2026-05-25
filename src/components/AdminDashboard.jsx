@@ -211,6 +211,15 @@ function AdminDashboard() {
     } catch (e) { console.error(e); }
   };
 
+  const deleteNotification = async (id, e) => {
+    e.stopPropagation();
+    try {
+      await axiosInstance.delete(`/admin/notifications/${id}`);
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      setUnreadCount(prev => Math.max(0, prev - (notifications.find(n => n.id === id)?.read_at ? 0 : 1)));
+    } catch (e) { console.error(e); }
+  };
+
   const fetchReports = async () => {
     try {
       const response = await axiosInstance.get('/admin/reports/available');
@@ -444,6 +453,9 @@ function AdminDashboard() {
                           <p className="text-[11px] text-outline/60 mt-1">{new Date(n.created_at).toLocaleString('es-CO')}</p>
                         </div>
                         {!n.read_at && <span className="w-2 h-2 rounded-full bg-[#5849E4] flex-shrink-0 mt-2" />}
+                        <button onClick={(e) => deleteNotification(n.id, e)} className="p-1 hover:bg-gray-200 rounded text-outline hover:text-danger-500 transition-colors flex-shrink-0 mt-0.5" title="Eliminar">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
                       </div>
                     ))
                   )}

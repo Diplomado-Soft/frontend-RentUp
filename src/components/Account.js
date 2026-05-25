@@ -95,14 +95,14 @@ function Account({ onClose, onLogoutSuccess }) {
                             </div>
 
                             <div className="flex flex-col items-center mt-4">
-                                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-on-primary text-headline-md font-bold shadow-lg">
+                                <div className="w-20 h-20 rounded-full bg-brand-500 flex items-center justify-center text-white text-headline-md font-bold shadow-lg">
                                     {initials || user.email.charAt(0).toUpperCase()}
                                 </div>
-                                <h3 className="mt-3 font-headline text-headline-md text-on-surface">¡Hola, {firstName}!</h3>
-                                <span className="mt-1 text-label-md uppercase tracking-wider text-primary">{roleName}</span>
+                                <h3 className="mt-3 font-display text-2xl text-ink">¡Hola, {firstName}!</h3>
+                                <span className="mt-1 text-label-md uppercase tracking-wider text-brand-500">{roleName}</span>
                                 <button
                                     onClick={goToConfigAccount}
-                                    className="mt-3 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-label-md hover:bg-primary/20 transition-all"
+                                    className="mt-3 px-4 py-1.5 rounded-full bg-brand-50 text-brand-500 text-label-md hover:bg-brand-100 transition-all"
                                 >
                                     Administrar tu Cuenta
                                 </button>
@@ -130,7 +130,7 @@ function Account({ onClose, onLogoutSuccess }) {
                             <div className="mt-5 space-y-2">
                                 <button
                                     onClick={handleLogoutClick}
-                                    className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold py-2.5 rounded-lg shadow-md hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                                    className="w-full bg-brand-500 text-white font-semibold py-2.5 rounded-lg hover:bg-brand-500/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                                 >
                                     <span className="material-symbols-outlined text-sm">logout</span>
                                     Cerrar sesión
@@ -146,7 +146,7 @@ function Account({ onClose, onLogoutSuccess }) {
 
                             {user.rol === 2 && (
                                 <button
-                                    className="mt-4 w-full text-label-md text-primary font-medium py-2 rounded-lg bg-primary/5 hover:bg-primary/10 transition-all flex items-center justify-center gap-2"
+                                    className="mt-4 w-full text-label-md text-brand-500 font-medium py-2 rounded-lg bg-brand-50 hover:bg-brand-100 transition-all flex items-center justify-center gap-2"
                                     onClick={goToDashboard}
                                 >
                                     <span className="material-symbols-outlined text-sm">dashboard</span>
@@ -162,11 +162,11 @@ function Account({ onClose, onLogoutSuccess }) {
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
                     <div className="bg-surface-container-lowest rounded-xl shadow-2xl w-80 max-w-md p-6">
                         <div className="flex items-center justify-center mb-4">
-                            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-                                <span className="material-symbols-outlined text-2xl text-primary">logout</span>
+                            <div className="w-14 h-14 rounded-full bg-brand-50 flex items-center justify-center">
+                                <span className="material-symbols-outlined text-2xl text-brand-500">logout</span>
                             </div>
                         </div>
-                        <p className="text-center font-headline text-headline-md text-on-surface mb-2">¿Cerrar sesión?</p>
+                        <p className="text-center font-display text-2xl text-ink mb-2">¿Cerrar sesión?</p>
                         <p className="text-center text-body-md text-on-surface-variant mb-6">¿Estás seguro de que deseas cerrar sesión?</p>
                         <div className="flex gap-3">
                             <button
@@ -177,7 +177,7 @@ function Account({ onClose, onLogoutSuccess }) {
                             </button>
                             <button
                                 onClick={confirmLogout}
-                                className="flex-1 py-2.5 bg-gradient-to-r from-primary to-primary-container text-on-primary font-semibold rounded-lg shadow-md hover:shadow-lg active:scale-[0.98] transition-all"
+                                className="flex-1 py-2.5 bg-brand-500 text-white font-semibold rounded-lg hover:bg-brand-500/90 active:scale-[0.98] transition-all"
                             >
                                 Sí, salir
                             </button>

@@ -60,13 +60,18 @@ export default function ChatList({ arrendador_id }) {
       {!conversacionActiva ? (
         <div className="conversaciones-lista">
           <div className="chat-list-header">
-            <h2>💬 Mis Conversaciones</h2>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="material-symbols-outlined text-brand-500 text-xl">chat</span>
+              <h2 className="font-display text-2xl text-ink m-0">Mis Conversaciones</h2>
+            </div>
             <p className="subtitle">Mensajes con tus inquilinos</p>
           </div>
 
           {conversaciones.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-icon">📭</div>
+              <div className="empty-icon">
+                <span className="material-symbols-outlined text-4xl text-outline">forum</span>
+              </div>
               <h3>No tienes conversaciones</h3>
               <p>Cuando los usuarios te contacten, aparecerán aquí</p>
             </div>
@@ -105,7 +110,8 @@ export default function ChatList({ arrendador_id }) {
                     </p>
                     {conv.apartamento_direccion && (
                       <span className="propiedad-tag">
-                        🏠 {conv.apartamento_direccion}
+                        <span className="material-symbols-outlined" style={{fontSize:'0.7rem'}}>domain</span>
+                        {conv.apartamento_direccion}
                       </span>
                     )}
                   </div>

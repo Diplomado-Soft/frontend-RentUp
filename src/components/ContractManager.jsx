@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import axiosInstance from "../contexts/axiosInstance";
+import ConfirmModal from "./ConfirmModal";
 
 const inputClass = "w-full px-4 py-3 rounded-lg bg-paper-sunk text-ink focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition text-body-md placeholder:text-ink-muted";
 const labelClass = "text-label-md uppercase tracking-wider text-ink-muted mb-1.5 block";
@@ -15,6 +16,7 @@ function ContractManager() {
   const [searching, setSearching] = useState(false);
   const [toast, setToast] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [terminateTarget, setTerminateTarget] = useState(null);
   const searchRef = useRef(null);
   const searchTimeoutRef = useRef(null);
   const [formData, setFormData] = useState({
@@ -148,6 +150,19 @@ function ContractManager() {
     }
   };
 
+  const handleTerminateContract = async () => {
+    if (!terminateTarget) return;
+    try {
+      await axiosInstance.put(`/contracts/${terminateTarget}/status`, { status: 'terminated' });
+      showToast('Contrato finalizado');
+      setTerminateTarget(null);
+      fetchData();
+    } catch (error) {
+      showToast(error.response?.data?.error || 'Error al finalizar contrato', 'error');
+      setTerminateTarget(null);
+    }
+  };
+
   const resetForm = () => {
     setFormData({ id_apt: "", tenant_id: "", start_date: "", end_date: "", monthly_rent: "", deposit_amount: "" });
     setSelectedTenant(null);
@@ -184,7 +199,7 @@ function ContractManager() {
             <span className="material-symbols-outlined text-white text-lg">description</span>
           </div>
           <div>
-            <h2 className="font-headline text-headline-md text-ink">Gestión de Arriendos</h2>
+            <h2 className="font-display text-2xl text-ink">Mis Contratos</h2>
             <p className="text-body-md text-ink-muted">Administra y crea contratos de arrendamiento</p>
           </div>
         </div>
@@ -201,7 +216,7 @@ function ContractManager() {
         <form onSubmit={handleSubmit} className="bg-paper-card rounded-xl p-6 border border-line/50 space-y-5">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-brand-500 text-lg">add_circle</span>
-            <h3 className="font-headline text-headline-sm text-ink">Crear Nuevo Contrato</h3>
+            <h3 className="font-display text-xl text-ink">Crear Nuevo Contrato</h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -289,14 +304,14 @@ function ContractManager() {
             <div>
               <label className={labelClass}>Canon Mensual (COP)</label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">$</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-muted">$</span>
                 <input type="number" name="monthly_rent" value={formData.monthly_rent} onChange={handleInputChange} required min="0" placeholder="0" className={`${inputClass} pl-8`} />
               </div>
             </div>
             <div>
               <label className={labelClass}>Depósito</label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">$</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-muted">$</span>
                 <input type="number" name="deposit_amount" value={formData.deposit_amount} onChange={handleInputChange} min="0" placeholder="0" className={`${inputClass} pl-8`} />
               </div>
             </div>
@@ -316,7 +331,7 @@ function ContractManager() {
 
       {/* Contracts list */}
       <div>
-        <h3 className="font-headline text-headline-sm text-ink mb-4">Contratos Recientes</h3>
+        <h3 className="font-display text-xl text-ink mb-4">Contratos Recientes</h3>
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12">
@@ -338,7 +353,7 @@ function ContractManager() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <h4 className="font-headline text-headline-sm text-ink">{contract.barrio || 'Sin barrio'}</h4>
+                        <h4 className="font-display text-xl text-ink">{contract.barrio || 'Sin barrio'}</h4>
                         <p className="text-body-md text-ink-muted truncate">{contract.direccion_apt || 'Sin dirección'}</p>
                       </div>
                       {getStatusBadge(contract.status)}
@@ -365,9 +380,10 @@ function ContractManager() {
                     </div>
                   </div>
                   {contract.status === 'active' && (
-                    <button onClick={() => updateContractStatus(contract.agreement_id, 'terminated')}
-                      className="w-9 h-9 rounded-lg bg-error/10 text-error flex items-center justify-center hover:bg-error/20 transition flex-shrink-0" title="Finalizar contrato">
-                      <span className="material-symbols-outlined text-sm">close</span>
+                    <button onClick={() => setTerminateTarget(contract.agreement_id)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-error/10 text-error hover:bg-error/20 transition flex-shrink-0 text-label-md font-semibold" title="Finalizar contrato">
+                      <span className="material-symbols-outlined text-sm">gavel</span>
+                      Finalizar
                     </button>
                   )}
                 </div>
@@ -376,6 +392,16 @@ function ContractManager() {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={!!terminateTarget}
+        title="¿Finalizar contrato?"
+        message="Se marcará el contrato como finalizado y la propiedad quedará disponible nuevamente."
+        confirmLabel="Finalizar"
+        variant="danger"
+        onConfirm={handleTerminateContract}
+        onCancel={() => setTerminateTarget(null)}
+      />
 
       {toast && (
         <div className={`fixed bottom-4 right-4 px-5 py-3 rounded-xl shadow-ambient-sm z-50 flex items-center gap-2 ${

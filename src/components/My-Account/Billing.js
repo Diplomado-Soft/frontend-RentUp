@@ -37,8 +37,7 @@ function Billing() {
   };
 
   const formatPrice = (price) => {
-    if (!price) return '$0';
-    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(price);
+    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(price || 0);
   };
 
   const formatDate = (dateStr) => {
@@ -104,7 +103,7 @@ function Billing() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-500"></div>
       </div>
     );
   }
@@ -112,8 +111,8 @@ function Billing() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="font-headline text-headline-md text-on-surface mb-1">Facturación y Pagos</h2>
-        <p className="text-body-md text-on-surface-variant">Gestiona tus pagos de arriendo y revisa tus recibos.</p>
+        <h2 className="font-display text-2xl text-ink mb-1">Facturación y Pagos</h2>
+        <p className="text-body-md text-ink-muted">Gestiona tus pagos de arriendo y revisa tus recibos.</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -123,7 +122,7 @@ function Billing() {
         </div>
         <div className="bg-surface-container-low rounded-xl p-5">
           <p className="text-label-md text-on-surface-variant uppercase tracking-wider mb-1">Contratos activos</p>
-          <p className="font-headline text-headline-md text-primary">{activeContracts.length}</p>
+          <p className="font-display text-2xl text-brand-500">{activeContracts.length}</p>
         </div>
         <div className="bg-surface-container-low rounded-xl p-5">
           <p className="text-label-md text-on-surface-variant uppercase tracking-wider mb-1">Total contratos</p>
@@ -135,7 +134,7 @@ function Billing() {
         <button
           onClick={() => setActiveTab("contracts")}
           className={`pb-3 text-label-md font-medium transition-colors ${
-            activeTab === "contracts" ? "text-primary border-b-2 border-primary" : "text-on-surface-variant hover:text-on-surface"
+            activeTab === "contracts" ? "text-brand-500 border-b-2 border-brand-500" : "text-on-surface-variant hover:text-on-surface"
           }`}
         >
           Contratos
@@ -143,7 +142,7 @@ function Billing() {
         <button
           onClick={() => setActiveTab("history")}
           className={`pb-3 text-label-md font-medium transition-colors ${
-            activeTab === "history" ? "text-primary border-b-2 border-primary" : "text-on-surface-variant hover:text-on-surface"
+            activeTab === "history" ? "text-brand-500 border-b-2 border-brand-500" : "text-on-surface-variant hover:text-on-surface"
           }`}
         >
           Historial de Pagos
@@ -163,13 +162,15 @@ function Billing() {
               {contracts.map(contract => {
                 const cfg = statusConfig[contract.status] || statusConfig.pending;
                 const contractPayments = payments.filter(p => p.agreement_id === contract.agreement_id);
-                const lastPayment = contractPayments.find(p => p.status === 'completed');
+                const lastPayment = [...contractPayments]
+                  .sort((a, b) => new Date(b.paid_at || b.created_at || 0) - new Date(a.paid_at || a.created_at || 0))
+                  .find(p => p.status === 'completed');
                 return (
                   <div key={contract.agreement_id} className="bg-surface-container-low rounded-xl p-5 hover:bg-surface-container-high transition-colors">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3 flex-1 min-w-0">
-                        <div className="w-10 h-10 bg-primary-container/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <span className="material-symbols-outlined text-sm text-primary">domain</span>
+                        <div className="w-10 h-10 bg-brand-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <span className="material-symbols-outlined text-sm text-brand-500">domain</span>
                         </div>
                         <div className="min-w-0">
                           <p className="font-semibold text-on-surface truncate">{contract.barrio || "Sin barrio"}</p>
@@ -213,7 +214,7 @@ function Billing() {
                             )}
                             <button
                               onClick={() => handlePayClick(contract)}
-                              className="flex items-center gap-1 px-3 py-1.5 bg-primary text-white text-label-md rounded-lg hover:bg-primary/90 transition-all"
+                              className="flex items-center gap-1 px-3 py-1.5 bg-brand-500 text-white text-label-md rounded-lg hover:bg-brand-500/90 transition-all"
                             >
                               <span className="material-symbols-outlined text-xs">payments</span>
                               Pagar ahora
@@ -234,7 +235,7 @@ function Billing() {
                             }
                           }}
                           className={`flex items-center gap-1 text-label-md transition-all ${
-                            lastPayment ? "text-primary hover:underline" : "text-outline cursor-not-allowed"
+                            lastPayment ? "text-brand-500 hover:underline" : "text-outline cursor-not-allowed"
                           }`}
                         >
                           <span className="material-symbols-outlined text-xs">download</span>
@@ -295,7 +296,7 @@ function Billing() {
                       {payment.status === 'completed' && (
                         <button
                           onClick={() => downloadReceipt(payment.payment_id)}
-                          className="flex items-center gap-1 text-label-md text-primary hover:underline transition-all"
+                          className="flex items-center gap-1 text-label-md text-brand-500 hover:underline transition-all"
                         >
                           <span className="material-symbols-outlined text-xs">download</span>
                           Recibo
