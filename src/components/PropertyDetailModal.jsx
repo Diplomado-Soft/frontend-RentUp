@@ -2,11 +2,13 @@ import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../contexts/UserContext";
 import ReviewSection from "./ReviewSection";
+import VisitScheduler from "./VisitScheduler";
 
 function PropertyDetailModal({ apartment, onClose }) {
   const navigate = useNavigate();
   const { user: contextUser } = useContext(UserContext);
   const [imageUrls, setImageUrls] = useState([]);
+  const [showVisitModal, setShowVisitModal] = useState(false);
   const [user, setUser] = useState(() => {
     try {
       const stored = localStorage.getItem("user");
@@ -274,16 +276,13 @@ function PropertyDetailModal({ apartment, onClose }) {
                 {/* CTA Buttons */}
                 <div id="rentup-cta-section" className="mt-5 space-y-3">
                   {user ? (
-                    apartment.whatsapp || apartment.user_phonenumber ? (
-                      <a
-                        href={`https://wa.me/${apartment.whatsapp || apartment.user_phonenumber}?text=${encodeURIComponent(`Hola, estoy interesado en el inmueble *"${apartment.barrio}"* ubicado en *${apartment.direccion_apt}* publicado en RentUp. Me gustaría más información para proceder con el arriendo.`)}`}
-                        target="_blank" rel="noopener noreferrer"
-                        className="btn btn-primary w-full py-3.5 flex items-center justify-center gap-2"
-                      >
-                        <span className="material-symbols-outlined text-sm">calendar_month</span>
-                        Agendar visita
-                      </a>
-                    ) : null
+                    <button
+                      onClick={() => setShowVisitModal(true)}
+                      className="btn btn-primary w-full py-3.5 flex items-center justify-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-sm">calendar_month</span>
+                      Agendar visita
+                    </button>
                   ) : (
                     <button
                       onClick={() => {
@@ -356,16 +355,13 @@ function PropertyDetailModal({ apartment, onClose }) {
               <p className="text-[11px] text-ink-muted">Por mes</p>
             </div>
             {user ? (
-              apartment.whatsapp || apartment.user_phonenumber ? (
-                <a
-                  href={`https://wa.me/${apartment.whatsapp || apartment.user_phonenumber}?text=${encodeURIComponent(`Hola, estoy interesado en el inmueble *"${apartment.barrio}"* ubicado en *${apartment.direccion_apt}* publicado en RentUp. Me gustaría más información para proceder con el arriendo.`)}`}
-                  target="_blank" rel="noopener noreferrer"
-                  className="bg-brand-500 text-white px-5 py-2.5 rounded-full text-sm font-semibold flex items-center gap-1.5 shadow-lg active:scale-95 transition-transform"
-                >
-                  <span className="material-symbols-outlined text-sm">calendar_month</span>
-                  Agendar
-                </a>
-              ) : null
+              <button
+                onClick={() => setShowVisitModal(true)}
+                className="bg-brand-500 text-white px-5 py-2.5 rounded-full text-sm font-semibold flex items-center gap-1.5 shadow-lg active:scale-95 transition-transform"
+              >
+                <span className="material-symbols-outlined text-sm">calendar_month</span>
+                Agendar
+              </button>
             ) : (
               <button
                 onClick={() => {
@@ -384,6 +380,20 @@ function PropertyDetailModal({ apartment, onClose }) {
         {/* padding for mobile bottom bar */}
         <div className="h-20 md:hidden" />
       </div>
+
+      {showVisitModal && (
+        <div className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center p-4" onClick={() => setShowVisitModal(false)}>
+          <div className="w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <VisitScheduler
+              landlord_id={apartment.user_id}
+              property_id={apartment.id_apt}
+              propertyAddress={`${apartment.barrio || ''} - ${apartment.direccion_apt || ''}`}
+              onScheduled={() => setShowVisitModal(false)}
+              onClose={() => setShowVisitModal(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

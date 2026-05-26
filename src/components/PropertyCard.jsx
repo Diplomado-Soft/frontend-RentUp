@@ -185,6 +185,7 @@ function PropertyCard({ apt, onViewMore, isFavorite, onToggleFavorite }) {
           );
         })()}
       </div>
+
     </div>
   );
 }

@@ -474,7 +474,7 @@ function ContractManager() {
                     </div>
                     <div className="flex items-center gap-2 mt-3">
                       <button onClick={() => {
-                          const url = previewContractPdf(contract.agreement_id);
+                          const url = previewContractPdf(contract.agreement_id, contract.signed_pdf_url);
                           if (url) window.open(url, '_blank');
                         }}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-paper-sunk text-ink hover:bg-line/30 transition text-label-md font-medium">
@@ -482,6 +482,7 @@ function ContractManager() {
                         Vista previa
                       </button>
                       {contract.signature_status !== 'fully_signed' && (contract.status === 'active' || contract.status === 'pending') && (
+                        (Date.now() - new Date(contract.created_at).getTime()) / (1000 * 60 * 60 * 24) <= 7 && (
                         <button onClick={() => {
                             setSigningContract(contract);
                             setShowSignaturePad(true);
@@ -490,9 +491,9 @@ function ContractManager() {
                           <span className="material-symbols-outlined text-sm">draw</span>
                           Firmar
                         </button>
-                      )}
+                      ))}
                       {contract.signature_status === 'fully_signed' && (
-                        <button onClick={() => downloadContractPdf(contract.agreement_id)}
+                        <button onClick={() => downloadContractPdf(contract.agreement_id, contract.signed_pdf_url)}
                           className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-tertiary/10 text-tertiary hover:bg-tertiary/20 transition text-label-md font-medium">
                           <span className="material-symbols-outlined text-sm">download</span>
                           Descargar PDF
