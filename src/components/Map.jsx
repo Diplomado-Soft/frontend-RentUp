@@ -3,12 +3,80 @@ import { useLocation } from "react-router-dom";
 import { MapContainer, Marker, TileLayer, Popup, useMap, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import markerShadow from "leaflet/dist/images/marker-shadow.png";
+import { animate } from "animejs";
 import PropertyDetailModal from "./PropertyDetailModal";
 import './Map.css';
 
-// Vuela y abre el popup del apartamento seleccionado desde una tarjeta
-function FlyToSelected({ apartments, markerRefs }) {
+const BRAND_RGB = '46,90,136';
+
+// Función reutilizable para animar un marcador (ripple + bounce + pulso continuo)
+function animateMarkerFx(markerRefs, aptId, mountedRef = { current: true }) {
+  const marker = markerRefs.current[aptId];
+  if (!marker) return [];
+
+  const iconEl = marker._icon || marker.getElement();
+  if (!iconEl || !mountedRef.current) return [];
+
+  const pin = iconEl.querySelector('.apt-pin-body');
+  const dot = iconEl.querySelector('.apt-pin-dot');
+  const shadow = iconEl.querySelector('.apt-pin-shadow');
+  const loopAnims = [];
+
+  // Ripple de entrada
+  const ring = document.createElement('div');
+  ring.style.cssText = 'position:absolute;inset:-12px;border-radius:50%;border:2px solid rgba(' + BRAND_RGB + ',0.35);pointer-events:none;';
+  iconEl.appendChild(ring);
+  animate(ring, {
+    scale: [{ value: 0.1, duration: 0 }, { value: 2.8, duration: 900, easing: 'outQuad' }],
+    opacity: [{ value: 1, duration: 0 }, { value: 0, duration: 900, easing: 'outQuad' }],
+  }).then(() => { if (ring.parentNode) ring.remove(); });
+
+  // Bounce de entrada en el pin
+  if (pin) {
+    animate(pin, {
+      translateY: [{ value: -60, duration: 0 }, { value: 6, duration: 500, easing: 'outQuad' }, { value: -2, duration: 180, easing: 'inQuad' }, { value: 0, duration: 120, easing: 'outQuad' }],
+    });
+    animate(pin, {
+      scale: [{ value: 0.4, duration: 0 }, { value: 1.2, duration: 400, easing: 'outQuad' }, { value: 0.9, duration: 180, easing: 'inQuad' }, { value: 1.05, duration: 150, easing: 'outQuad' }, { value: 1, duration: 200, easing: 'outElastic(1,0.5)' }],
+    });
+  }
+
+  // Sombra se expande al caer el pin
+  if (shadow) {
+    animate(shadow, {
+      scaleX: [{ value: 0.2, duration: 0 }, { value: 1.6, duration: 500, easing: 'outQuad' }, { value: 0.8, duration: 180, easing: 'inQuad' }, { value: 1, duration: 120, easing: 'outQuad' }],
+      opacity: [{ value: 0.3, duration: 0 }, { value: 1, duration: 300, easing: 'outQuad' }, { value: 0.7, duration: 400, easing: 'inQuad' }],
+    });
+  }
+
+  // Pulso continuo del glow
+  if (pin) {
+    loopAnims.push(animate(pin, {
+      boxShadow: [
+        '0 2px 8px rgba(' + BRAND_RGB + ',0.5), 0 0 0 4px rgba(' + BRAND_RGB + ',0.12)',
+        '0 2px 16px rgba(' + BRAND_RGB + ',0.7), 0 0 0 10px rgba(' + BRAND_RGB + ',0.06)',
+        '0 2px 8px rgba(' + BRAND_RGB + ',0.5), 0 0 0 4px rgba(' + BRAND_RGB + ',0.12)',
+      ],
+      duration: 2000,
+      easing: 'easeInOutSine',
+      loop: true,
+    }));
+  }
+  if (dot) {
+    loopAnims.push(animate(dot, {
+      opacity: [0.9, 0.3, 0.9],
+      scale: [1, 0.6, 1],
+      duration: 2000,
+      easing: 'easeInOutSine',
+      loop: true,
+    }));
+  }
+
+  return loopAnims;
+}
+
+// Vuela, abre el popup y anima el marcador destacado
+function FlyToSelected({ markerRefs }) {
   const map = useMap();
   const location = useLocation();
   const selected = location.state;
@@ -17,21 +85,30 @@ function FlyToSelected({ apartments, markerRefs }) {
     if (!selected?.lat || !selected?.lng) return;
 
     const aptId = Number(selected.id);
+    const mountedRef = { current: true };
+    let loopAnims = [];
+
     map.flyTo([Number(selected.lat), Number(selected.lng)], 18, { duration: 1.5 });
 
     const tryOpenPopup = (attempts = 0) => {
       const marker = markerRefs.current[aptId];
-      if (marker) {
+      if (marker && mountedRef.current) {
         marker.openPopup();
+        loopAnims = animateMarkerFx(markerRefs, aptId, mountedRef);
         return;
       }
-      if (attempts < 10) {
+      if (attempts < 10 && mountedRef.current) {
         setTimeout(() => tryOpenPopup(attempts + 1), 300);
       }
     };
 
     setTimeout(() => tryOpenPopup(), 600);
-  }, [selected, map, markerRefs, apartments]);
+
+    return () => {
+      mountedRef.current = false;
+      loopAnims.forEach(a => a.revert());
+    };
+  }, [selected, map, markerRefs]);
 
   return null;
 }
@@ -157,27 +234,29 @@ useEffect(() => {
     }
 }, [apartments, selectedFromCard?.id]);
 
-const DefaultIcon = L.icon({
-iconUrl: '/apartmentLogo.png',
-shadowUrl: markerShadow,
-iconSize: [25, 30],
-iconAnchor: [12, 30],
+const BluePinIcon = L.divIcon({
+  className: '',
+  html: '<div class="apt-pin-marker" style="position:relative;width:40px;height:48px;display:flex;flex-direction:column;align-items:center;">' +
+    '<div class="apt-pin-body" style="width:28px;height:28px;background:linear-gradient(135deg,#3a6ea0,#2e5a88);border:2.5px solid #fff;border-radius:50% 50% 50% 3px;transform:rotate(-45deg);box-shadow:0 1px 6px rgba(' + BRAND_RGB + ',0.4);flex-shrink:0;"></div>' +
+    '<div class="apt-pin-dot" style="position:absolute;top:7px;left:50%;margin-left:-2.5px;width:5px;height:5px;background:#fff;border-radius:50%;opacity:0.85;"></div>' +
+    '<div class="apt-pin-shadow" style="margin-top:-3px;width:14px;height:3.5px;background:rgba(0,0,0,0.12);border-radius:50%;filter:blur(1px);flex-shrink:0;"></div>' +
+  '</div>',
+  iconSize: [40, 52],
+  iconAnchor: [20, 52],
+  popupAnchor: [0, -48],
 });
 
-const InstituteIcon = L.icon({
-iconUrl: '/instituteLogo.png',
-iconSize: [25, 30],
-iconAnchor: [12, 30],
-popupAnchor: [0, -45],
+const InstituteIcon = L.divIcon({
+  className: '',
+  html: '<div style="width:42px;height:42px;border-radius:50%;overflow:hidden;border:3px solid #fff;box-shadow:0 0 0 3px #2e5a88,0 3px 12px rgba(0,0,0,0.3);">' +
+    '<img src="/uni.jpg" style="width:100%;height:100%;object-fit:cover;display:block;" alt="U" />' +
+  '</div>',
+  iconSize: [42, 42],
+  iconAnchor: [21, 42],
+  popupAnchor: [0, -42],
 });
 
-const HighlightedIcon = L.divIcon({
-className: '',
-html: '<div style="width:36px;height:36px;background:#6A6BEF;border:3px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px rgba(106,107,239,0.6);transform:scale(1.15);"><span style="font-size:18px;">📍</span></div>',
-iconSize: [36, 36],
-iconAnchor: [18, 36],
-popupAnchor: [0, -40],
-});
+
 
 // Función para calcular la ruta usando OSRM (OpenStreetMap Routing Machine)
 const calculateRoute = async (apartmentLat, apartmentLng) => {
@@ -230,16 +309,25 @@ const getImageUrls = (images) => {
     return [];
 };
 
+// Animación cuando se selecciona un marcador por clic
+useEffect(() => {
+    if (!highlightedAptId) return;
+    const timer = setTimeout(() => {
+      animateMarkerFx(markerRefs, highlightedAptId);
+    }, 400);
+    return () => clearTimeout(timer);
+}, [highlightedAptId, markerRefs]);
+
 // Manejar clic en apartamento
 const handleApartmentClick = async (apt) => {
     if (selectedApartment?.id_apartamento === apt.id_apartamento) {
-    // Si ya está seleccionado, deseleccionar
     setSelectedApartment(null);
+    setHighlightedAptId(null);
     setRouteCoordinates([]);
     setDistance(null);
     } else {
-    // Seleccionar nuevo apartamento y calcular ruta
     setSelectedApartment(apt);
+    setHighlightedAptId(apt.id_apartamento);
     await calculateRoute(apt.latitud_apartamento, apt.longitud_apartamento);
     }
 };
@@ -251,8 +339,11 @@ return (
     zoom={17}
     className="w-full h-full z-0"
     maxZoom={18}
+    minZoom={13}
+    maxBounds={[[1.12, -76.70], [1.19, -76.59]]}
+    maxBoundsViscosity={1}
     >
-    <FlyToSelected apartments={apartments} markerRefs={markerRefs} />
+    <FlyToSelected markerRefs={markerRefs} />
     <UpdateMapCenter center={center} />
     <InvalidateSize />
     <TileLayer
@@ -276,7 +367,7 @@ return (
         <Marker
         key={aptId}
         position={[apt.latitud_apt || apt.latitud_apartamento, apt.longitud_apt || apt.longitud_apartamento]}
-        icon={aptId === highlightedAptId ? HighlightedIcon : DefaultIcon}
+        icon={BluePinIcon}
         ref={(ref) => { if (ref) markerRefs.current[aptId] = ref; }}
         eventHandlers={{
             click: () => handleApartmentClick({

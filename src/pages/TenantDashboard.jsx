@@ -22,6 +22,13 @@ function TenantDashboard() {
   const { user } = useContext(UserContext);
   const [activeTab, setActiveTab] = useState("mis-arriendos");
 
+  const canSignContract = (c) => {
+    if (c.signature_status === 'fully_signed') return false;
+    if (c.status === 'terminated' || c.status === 'expired') return false;
+    const dias = (Date.now() - new Date(c.created_at).getTime()) / (1000 * 60 * 60 * 24);
+    return dias <= 7;
+  };
+
   const [contracts, setContracts] = useState([]);
   const [reports, setReports] = useState([]);
   const [payments, setPayments] = useState([]);
@@ -376,7 +383,7 @@ function TenantDashboard() {
                                 <div className="flex items-center gap-2 pt-2">
                                   <button
                                     onClick={() => {
-                                      const url = previewContractPdf(rent.agreement_id);
+                                      const url = previewContractPdf(rent.agreement_id, rent.signed_pdf_url);
                                       if (url) window.open(url, '_blank');
                                     }}
                                     className="flex items-center gap-1 text-label-md text-ink-muted hover:text-ink transition-all px-2 py-1 rounded-lg hover:bg-line/30"
@@ -384,7 +391,7 @@ function TenantDashboard() {
                                     <span className="material-symbols-outlined text-sm">visibility</span>
                                     Vista previa PDF
                                   </button>
-                                  {rent.signature_status !== 'fully_signed' && (
+                                  {canSignContract(rent) && (
                                     <button
                                       onClick={() => {
                                         setSigningContract(rent);
@@ -930,14 +937,14 @@ function TenantDashboard() {
                           )}
                            <div className="flex items-center gap-3 mt-4 pt-3 border-t border-surface-container-high">
                             <button onClick={() => {
-                                const url = previewContractPdf(contract.agreement_id);
+                                const url = previewContractPdf(contract.agreement_id, contract.signed_pdf_url);
                                 if (url) window.open(url, '_blank');
                               }}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-500 text-white text-label-md hover:bg-brand-600 transition-all">
                               <span className="material-symbols-outlined text-xs">visibility</span>
                               Ver contrato
                             </button>
-                            {contract.signature_status !== 'fully_signed' && (
+                            {canSignContract(contract) && (
                               <button onClick={() => {
                                   setSigningContract(contract);
                                   setShowSignaturePad(true);
@@ -948,7 +955,7 @@ function TenantDashboard() {
                               </button>
                             )}
                             {contract.signature_status === 'fully_signed' && (
-                              <button onClick={() => downloadContractPdf(contract.agreement_id)}
+                              <button onClick={() => downloadContractPdf(contract.agreement_id, contract.signed_pdf_url)}
                                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-high text-ink text-label-md hover:bg-surface-container-highest transition-all">
                                 <span className="material-symbols-outlined text-xs">description</span>
                                 Contrato PDF

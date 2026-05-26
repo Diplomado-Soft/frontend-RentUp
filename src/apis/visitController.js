@@ -49,3 +49,15 @@ export const cancelVisit = async (id) => {
         throw error;
     }
 };
+
+export const getOccupiedSlots = async (property_id, date) => {
+    try {
+        const response = await axiosInstance.get('/visits/occupied', {
+            params: { property_id, date }
+        });
+        return response.data.occupied;
+    } catch (error) {
+        console.error("Error fetching occupied slots:", error);
+        return [];
+    }
+};

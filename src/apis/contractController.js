@@ -30,15 +30,20 @@ export const signContract = async (agreement_id, signature) => {
     }
 };
 
-export const previewContractPdf = (agreement_id) => {
+export const previewContractPdf = (agreement_id, signedPdfUrl) => {
+    if (signedPdfUrl) return signedPdfUrl;
     const token = localStorage.getItem('token');
     const API_URL = process.env.REACT_APP_API_URL || "http://localhost:9000";
     const ts = Date.now();
     return `${API_URL}/contracts/${agreement_id}/pdf?token=${encodeURIComponent(token)}&_=${ts}`;
 };
 
-export const downloadContractPdf = async (agreement_id) => {
+export const downloadContractPdf = async (agreement_id, signedPdfUrl) => {
     try {
+        if (signedPdfUrl) {
+            window.open(signedPdfUrl, '_blank');
+            return;
+        }
         const token = localStorage.getItem('token');
         const API_URL = process.env.REACT_APP_API_URL || "http://localhost:9000";
         const response = await fetch(`${API_URL}/contracts/${agreement_id}/pdf`, {

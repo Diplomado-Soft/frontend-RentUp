@@ -89,7 +89,7 @@ function SignaturePad({ contract, onSigned, onClose }) {
   };
 
   const handlePreviewPdf = () => {
-    const url = previewContractPdf(contract.agreement_id);
+    const url = previewContractPdf(contract.agreement_id, contract.signed_pdf_url);
     if (url) window.open(url, "_blank");
   };
 
