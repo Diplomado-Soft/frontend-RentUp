@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 import { UserProvider } from './contexts/UserContext';
+import PushNotificationProvider from './components/PushNotificationProvider';
 import reportWebVitals from './reportWebVitals';
 import 'leaflet/dist/leaflet.css';
 
@@ -10,7 +11,9 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
     <React.StrictMode>
         <UserProvider>
-            <App />
+            <PushNotificationProvider>
+                <App />
+            </PushNotificationProvider>
         </UserProvider>
     </React.StrictMode>
 );
