@@ -1,6 +1,7 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { UserContext } from "../contexts/UserContext";
 import { useNavigate } from 'react-router-dom';
+import { usePushNotifications } from './PushNotificationProvider';
 
 function Account({ onClose, onLogoutSuccess }) {
     const navigate = useNavigate();
@@ -8,6 +9,7 @@ function Account({ onClose, onLogoutSuccess }) {
     const [showConfirmLogout, setShowConfirmLogout] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const { status: pushStatus, enable: enablePush, disable: disablePush } = usePushNotifications();
     const userRole = user?.rol || user?.rol_id || user?.rolId || null;
 
     if (!user) return null;
@@ -127,7 +129,72 @@ function Account({ onClose, onLogoutSuccess }) {
                                 </div>
                             </div>
 
-                            <div className="mt-5 space-y-2">
+                            <div className="mt-4 bg-surface-container-low rounded-xl p-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-sm text-outline">notifications</span>
+                                        <span className="text-label-md text-on-surface">Notificaciones push</span>
+                                    </div>
+                                    {pushStatus === 'active' || pushStatus === 'registered' ? (
+                                        <button
+                                            onClick={disablePush}
+                                            className="text-xs bg-green-100 text-green-700 px-2.5 py-1 rounded-full font-medium hover:bg-red-100 hover:text-red-700 transition-all"
+                                            title="Desactivar notificaciones push"
+                                        >
+                                            Activadas
+                                        </button>
+                                    ) : pushStatus === 'requesting-permission' || pushStatus === 'registering-sw' || pushStatus === 'subscribing' || pushStatus === 'getting-key' ? (
+                                        <span className="text-xs text-outline animate-pulse">Activando...</span>
+                                    ) : pushStatus === 'disabled' || pushStatus === 'inactive' || pushStatus === 'idle' ? (
+                                        <button
+                                            onClick={enablePush}
+                                            className="text-xs bg-surface-container-highest text-outline px-2.5 py-1 rounded-full font-medium hover:bg-brand-50 hover:text-brand-500 transition-all"
+                                        >
+                                            Activar
+                                        </button>
+                                    ) : (
+                                        <span className="text-xs text-outline">{pushStatus}</span>
+                                    )}
+                                </div>
+                                {pushStatus === 'denied' && (
+                                    <div className="mt-1">
+                                        <p className="text-xs text-error">Bloqueado por el navegador.</p>
+                                        <p className="text-xs text-on-surface-variant mt-0.5">
+                                            Haz click en el candado 🔒 junto a la URL → Notificaciones → Permitir
+                                        </p>
+                                        <button
+                                            onClick={enablePush}
+                                            className="text-xs text-brand-500 font-medium mt-1 hover:underline"
+                                        >
+                                            Reintentar después de cambiar
+                                        </button>
+                                    </div>
+                                )}
+                                {pushStatus === 'failed' && (
+                                    <p className="text-xs text-warning mt-1">Error al activar. Intenta de nuevo.</p>
+                                )}
+                                {pushStatus === 'active' && (
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                const token = JSON.parse(localStorage.getItem('user') || '{}').token;
+                                                if (!token) return;
+                                                await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:9000'}/push/test`, {
+                                                    method: 'POST',
+                                                    headers: { 'Authorization': `Bearer ${token}` }
+                                                });
+                                            } catch (e) {
+                                                console.error('Test push error:', e);
+                                            }
+                                        }}
+                                        className="text-xs text-brand-500 font-medium mt-1 hover:underline"
+                                    >
+                                        Enviar notificación de prueba
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="mt-4 space-y-2">
                                 <button
                                     onClick={handleLogoutClick}
                                     className="w-full bg-brand-500 text-white font-semibold py-2.5 rounded-lg hover:bg-brand-500/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2"

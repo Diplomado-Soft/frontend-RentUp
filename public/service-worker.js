@@ -9,28 +9,37 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('push', (event) => {
   if (!event.data) return;
 
-  try {
-    const data = event.data.json();
-    const { title, body, icon, badge, data: payload } = data;
+  let notificationData;
 
-    event.waitUntil(
-      self.registration.showNotification(title || 'RentUp', {
-        body: body || '',
-        icon: icon || '/favicon.ico',
-        badge: badge || '/favicon.ico',
-        vibrate: [200, 100, 200],
-        tag: payload?.url || 'rentup-default',
-        data: payload || {},
-        requireInteraction: true,
-        actions: [
-          { action: 'open', title: 'Abrir' },
-          { action: 'close', title: 'Cerrar' },
-        ],
-      })
-    );
-  } catch (e) {
-    console.error('Error processing push event:', e);
+  try {
+    notificationData = event.data.json();
+  } catch {
+    const text = event.data.text();
+    notificationData = {
+      title: 'RentUp',
+      body: text,
+      tag: `rentup-raw-${Date.now()}`,
+      data: { url: '/' },
+    };
   }
+
+  const { title, body, icon, badge, tag, data: payload } = notificationData;
+
+  event.waitUntil(
+    self.registration.showNotification(title || 'RentUp', {
+      body: body || '',
+      icon: icon || '/favicon.ico',
+      badge: badge || '/favicon.ico',
+      vibrate: [200, 100, 200],
+      tag: tag || `rentup-${Date.now()}`,
+      data: payload || {},
+      requireInteraction: true,
+      actions: [
+        { action: 'open', title: 'Abrir' },
+        { action: 'close', title: 'Cerrar' },
+      ],
+    })
+  );
 });
 
 self.addEventListener('notificationclick', (event) => {
