@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Route, Routes, useLocation, useSearchParams } from 'react-router-dom';
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import Home from './pages/Home';
@@ -23,6 +23,8 @@ import TenantMaintenance from './components/TenantMaintenance';
 import LandlordMaintenance from './components/LandlordMaintenance';
 import TenantDashboard from './pages/TenantDashboard';
 import OnboardingTour from './components/OnboardingTour';
+import axiosInstance from './contexts/axiosInstance';
+import { initSocket } from './utils/socket';
 import './App.css';
 
 function ListingsPage({ goToJoin, listingSearch, setListingSearch, listingFilters }) {
@@ -79,6 +81,71 @@ function AppContent() {
   const [navbarHeight, setNavbarHeight] = useState(56);
   const location = useLocation();
 
+  // Notifications
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notifRef = useRef(null);
+  const userData = JSON.parse(localStorage.getItem('user') || '{}');
+  const userId = userData?.id;
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await axiosInstance.get('/admin/notifications');
+      setNotifications(res.data.notifications || []);
+      setUnreadCount((res.data.notifications || []).filter(n => !n.read_at).length);
+    } catch (e) { console.error('Error cargando notificaciones:', e); }
+  };
+
+  const markNotificationRead = async (id) => {
+    try {
+      await axiosInstance.put(`/admin/notifications/${id}/read`);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read_at: new Date() } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (e) { console.error(e); }
+  };
+
+  const markAllRead = async () => {
+    try {
+      await axiosInstance.put('/admin/notifications/read-all');
+      setNotifications(prev => prev.map(n => ({ ...n, read_at: new Date() })));
+      setUnreadCount(0);
+    } catch (e) { console.error(e); }
+  };
+
+  const deleteNotification = async (id, e) => {
+    e.stopPropagation();
+    try {
+      await axiosInstance.delete(`/admin/notifications/${id}`);
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      setUnreadCount(prev => Math.max(0, prev - (notifications.find(n => n.id === id)?.read_at ? 0 : 1)));
+    } catch (e) { console.error(e); }
+  };
+
+  // Socket para notificaciones en vivo
+  useEffect(() => {
+    if (userId && userData?.rol_id === 3) {
+      const socket = initSocket(userId);
+      socket.emit("register_admin");
+      socket.on("admin_notification", () => { fetchNotifications(); });
+      return () => { socket.off("admin_notification"); };
+    }
+  }, [userId, userData?.rol_id]);
+
+  // Click outside para cerrar dropdown
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (notifRef.current && !notifRef.current.contains(e.target)) setShowNotifications(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const notificationProps = {
+    notifications, unreadCount, showNotifications, setShowNotifications,
+    notifRef, fetchNotifications, markNotificationRead, markAllRead, deleteNotification,
+  };
+
   const toggleJoin = () => setShowJoin(prev => !prev);
   const toggleAccount = () => setShowAccount(prev => !prev);
   const handleLogoutSuccess = () => {
@@ -110,6 +177,7 @@ function AppContent() {
           listingFilters={listingFilters}
           setListingFilters={setListingFilters}
           onHeightChange={setNavbarHeight}
+          {...notificationProps}
         />
       )}
 
@@ -126,7 +194,7 @@ function AppContent() {
 
       <OnboardingTour />
 
-      <div style={{ paddingTop: isAuthPage ? 0 : (location.pathname === '/listings' ? navbarHeight : 56) }}>
+      <div style={{ paddingTop: isAuthPage ? 0 : navbarHeight, '--navbar-h': `${navbarHeight}px` }}>
         <Routes>
           <Route path='/' element={<Home />} />
           <Route path='/role-selection' element={<RoleSelection />} />

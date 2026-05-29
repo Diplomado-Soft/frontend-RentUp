@@ -4,7 +4,8 @@ import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import FilterPanel from './FilterPanel';
 import MessagesPanel from './MessagesPanel';
 
-function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, listingFilters, setListingFilters, onHeightChange }) {
+function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, listingFilters, setListingFilters, onHeightChange,
+  notifications, unreadCount, showNotifications, setShowNotifications, notifRef, fetchNotifications, markNotificationRead, markAllRead, deleteNotification }) {
   const { user } = useContext(UserContext);
   const navigate = useNavigate();
   const location = useLocation();
@@ -188,6 +189,63 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
                       <span className="material-symbols-outlined text-sm">shield</span>
                       <span>Admin</span>
                     </button>
+                )}
+                {userRole === 3 && (
+                  <div className="relative" ref={notifRef}>
+                    <button
+                      onClick={() => { setShowNotifications(!showNotifications); if (!showNotifications) fetchNotifications(); }}
+                      className="relative w-10 h-10 rounded-full flex items-center justify-center text-ink-soft hover:bg-brand-500/5 hover:text-brand-500 transition-all"
+                    >
+                      <span className="material-symbols-outlined text-xl">notifications</span>
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 bg-danger-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-0.5 shadow-sm">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </button>
+                    {showNotifications && (
+                      <div className="absolute right-0 top-full mt-2 w-[380px] bg-white rounded-xl shadow-2xl border border-line z-50 animate-fade-in overflow-hidden">
+                        <div className="p-4 border-b border-line flex items-center justify-between">
+                          <span className="font-bold text-ink text-sm">Notificaciones</span>
+                          {unreadCount > 0 && (
+                            <button onClick={markAllRead} className="text-xs font-medium text-brand-500 hover:text-brand-600 transition-colors">
+                              Marcar todas como leídas
+                            </button>
+                          )}
+                        </div>
+                        <div className="max-h-[350px] overflow-y-auto custom-scrollbar">
+                          {notifications.length === 0 ? (
+                            <div className="p-8 text-center text-outline text-sm">Sin notificaciones</div>
+                          ) : (
+                            notifications.map(n => (
+                              <div
+                                key={n.id}
+                                onClick={() => markNotificationRead(n.id)}
+                                className={`px-4 py-3.5 cursor-pointer transition-colors flex gap-3 items-start ${
+                                  n.read_at ? 'bg-white hover:bg-brand-500/5' : 'bg-brand-500/5 hover:bg-brand-500/10'
+                                }`}
+                              >
+                                <span className="text-lg mt-0.5 flex-shrink-0">
+                                  {n.type === 'review_flagged' ? <span className="material-symbols-outlined text-danger-500" style={{fontVariationSettings: "'FILL' 1"}}>flag</span> :
+                                   n.type === 'new_review' ? <span className="material-symbols-outlined text-warning-400" style={{fontVariationSettings: "'FILL' 1"}}>star</span> :
+                                   <span className="material-symbols-outlined text-brand-500">notifications</span>}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  <p className={`text-sm ${n.read_at ? 'text-ink' : 'font-semibold text-ink'}`}>{n.title}</p>
+                                  <p className="text-xs text-outline mt-0.5 line-clamp-2">{n.message}</p>
+                                  <p className="text-[11px] text-outline/60 mt-1">{new Date(n.created_at).toLocaleString('es-CO')}</p>
+                                </div>
+                                {!n.read_at && <span className="w-2 h-2 rounded-full bg-brand-500 flex-shrink-0 mt-2" />}
+                                <button onClick={(e) => deleteNotification(n.id, e)} className="p-1 hover:bg-line/30 rounded text-outline hover:text-danger-500 transition-colors flex-shrink-0 mt-0.5" title="Eliminar">
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
                 <button onClick={handleUserClick} className="w-9 h-9 rounded-full bg-brand-500 text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95" title="Mi cuenta">
                   <span className="material-symbols-outlined text-sm">person</span>
