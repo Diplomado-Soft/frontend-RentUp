@@ -32,24 +32,18 @@ function ContractManager() {
     monthly_rent: "",
     deposit_amount: ""
   });
-  const [durationDays, setDurationDays] = useState(30);
-
   useEffect(() => {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    if (formData.start_date) {
-      const start = new Date(formData.start_date);
-      const months = durationDays / 30;
-      start.setMonth(start.getMonth() + months);
-      const endStr = start.toISOString().split('T')[0];
-      setFormData(prev => ({ ...prev, end_date: endStr }));
-    }
-  }, [formData.start_date, durationDays]);
-
-  const totalContractValue = formData.monthly_rent && durationDays
-    ? (durationDays / 30) * parseFloat(formData.monthly_rent)
+  const totalContractValue = formData.monthly_rent && formData.start_date && formData.end_date
+    ? (() => {
+        const start = new Date(formData.start_date + 'T12:00:00');
+        const end = new Date(formData.end_date + 'T12:00:00');
+        const diffDays = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)));
+        const months = Math.max(1, Math.round(diffDays / 30));
+        return months * parseFloat(formData.monthly_rent);
+      })()
     : 0;
 
   useEffect(() => {
@@ -156,7 +150,9 @@ function ContractManager() {
         fetchData();
       }
     } catch (error) {
-      showToast(error.response?.data?.error || 'Error al crear arriendo', 'error');
+      const data = error.response?.data;
+      const msg = data?.errors?.length ? data.errors.join('. ') : data?.error || 'Error al crear arriendo';
+      showToast(msg, 'error');
     }
   };
 
@@ -211,7 +207,6 @@ function ContractManager() {
 
   const resetForm = () => {
     setFormData({ id_apt: "", tenant_id: "", start_date: "", end_date: "", monthly_rent: "", deposit_amount: "" });
-    setDurationDays(30);
     setSelectedTenant(null);
     setSearchQuery("");
     setTenantResults([]);
@@ -345,24 +340,8 @@ function ContractManager() {
               <input type="date" name="start_date" value={formData.start_date} onChange={handleInputChange} required className={inputClass} />
             </div>
             <div>
-              <label className={labelClass}>Duración</label>
-              <div className="flex gap-2">
-                {[30, 60, 90, 120].map(d => (
-                  <button key={d} type="button" onClick={() => setDurationDays(d)}
-                    className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                      durationDays === d
-                        ? 'bg-brand-500 text-white shadow-sm'
-                        : 'bg-paper-sunk text-ink hover:bg-line/30'
-                    }`}>
-                    {d / 30} {d === 30 ? 'Mes' : 'Meses'}
-                  </button>
-                ))}
-              </div>
-              {formData.start_date && (
-                <p className="text-label-md text-ink-muted mt-1">
-                  Fin estimado: <strong>{new Date(formData.end_date).toLocaleDateString('es-CO')}</strong>
-                </p>
-              )}
+              <label className={labelClass}>Fecha Fin</label>
+              <input type="date" name="end_date" value={formData.end_date} onChange={handleInputChange} required className={inputClass} />
             </div>
             <div>
               <label className={labelClass}>Canon Mensual (COP)</label>
@@ -378,13 +357,21 @@ function ContractManager() {
                 <input type="number" name="deposit_amount" value={formData.deposit_amount} onChange={handleInputChange} min="0" placeholder="0" className={`${inputClass} pl-8`} />
               </div>
             </div>
-            {formData.monthly_rent && durationDays > 30 && (
+            {formData.monthly_rent && formData.start_date && formData.end_date && formData.end_date > formData.start_date && (
               <div className="md:col-span-2 p-3 rounded-lg bg-brand-50 border border-brand-200">
                 <p className="text-label-md text-brand-700">
                   Valor total del contrato: <strong className="text-lg">
                     ${(totalContractValue).toLocaleString('es-CO')} COP
                   </strong>
-                  <span className="text-brand-500 ml-1">({durationDays / 30} meses × {parseFloat(formData.monthly_rent).toLocaleString('es-CO')}/mes)</span>
+                  {(() => {
+                    const start = new Date(formData.start_date + 'T12:00:00');
+                    const end = new Date(formData.end_date + 'T12:00:00');
+                    const diffDays = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)));
+                    const months = Math.max(1, Math.round(diffDays / 30));
+                    return (
+                      <span className="text-brand-500 ml-1">({months} meses × {parseFloat(formData.monthly_rent).toLocaleString('es-CO')}/mes)</span>
+                    );
+                  })()}
                 </p>
               </div>
             )}
