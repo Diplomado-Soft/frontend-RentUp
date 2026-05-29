@@ -11,10 +11,24 @@ console.log('API_URL configurada en signupController:', API_URL);
  */
 export const signupUser = async (userData, login) => {
     try {
-        console.log('Datos enviados al backend:', userData);
-        console.log('URL completa:', `${API_URL}/users/signup`);
-        
-        const response = await Axios.post(`${API_URL}/users/signup`, userData);
+        let response;
+
+        if (userData.id_document instanceof File) {
+            const formData = new FormData();
+            formData.append('nombre', userData.nombre);
+            formData.append('apellido', userData.apellido);
+            formData.append('email', userData.email);
+            formData.append('telefono', userData.telefono);
+            formData.append('password', userData.password);
+            formData.append('rolId', userData.rolId);
+            formData.append('id_document', userData.id_document);
+
+            response = await Axios.post(`${API_URL}/users/signup`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+        } else {
+            response = await Axios.post(`${API_URL}/users/signup`, userData);
+        }
         
         console.log('Respuesta exitosa del servidor:', response.data);
         

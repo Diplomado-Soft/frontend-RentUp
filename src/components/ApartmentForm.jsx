@@ -1,8 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { UserContext } from '../contexts/UserContext';
 import { submitApartment } from '../apis/apartmentformController';
-import KycUploadPanel from './KycUploadPanel';
-import KycUploadSection from './KycUploadSection';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -25,25 +23,25 @@ const amenitiesList = [
 ];
 
 function ApartmentForm({ onApartmentAdded, onSuccess, onClose }) {
-  const handleSuccess = onApartmentAdded || onSuccess;
-const { user } = useContext(UserContext);
+    const handleSuccess = onApartmentAdded || onSuccess;
+    const { user } = useContext(UserContext);
+    const [barrio, setBarrio] = useState('');
+    const [direccion, setDireccion] = useState('');
+    const [latitud, setLatitud] = useState('1.157037');
+    const [longitud, setLongitud] = useState('-76.651443');
+    const [addInfo, setAddInfo] = useState('');
+    const [charCount, setCharCount] = useState(0);
+    const [message, setMessage] = useState('');
+    const [imageFiles, setImageFiles] = useState([]);
+    const [price, setPrice] = useState('');
+    const [bedrooms, setBedrooms] = useState(1);
+    const [bathrooms, setBathrooms] = useState(1);
+    const [area_m2, setAreaM2] = useState('');
+    const [amenities, setAmenities] = useState([]);
+    const [currentStep, setCurrentStep] = useState(1);
 
-const [barrio, setBarrio] = useState('');
-const [direccion, setDireccion] = useState('');
-const [latitud, setLatitud] = useState('1.157037');
-const [longitud, setLongitud] = useState('-76.651443');
-const [addInfo, setAddInfo] = useState('');
-const [charCount, setCharCount] = useState(0);
-const [message, setMessage] = useState('');
-const [imageFiles, setImageFiles] = useState([]);
-const [price, setPrice] = useState('');
-const [bedrooms, setBedrooms] = useState(1);
-const [bathrooms, setBathrooms] = useState(1);
-const [area_m2, setAreaM2] = useState('');
-const [amenities, setAmenities] = useState([]);
-const [kycFiles, setKycFiles] = useState({ id_document: null, property_certificate: null });
-const [createdApartmentId, setCreatedApartmentId] = useState(null);
-const [currentStep, setCurrentStep] = useState(1);
+    // Verificar si el usuario es arrendador y su estado de verificación
+    const isUnverifiedLandlord = user && user.rol_id === 2 && user.estadoVerificacion !== 'aprobado';
 
 const handleFileChange = (e) => {
     if (e.target.files) setImageFiles(prev => [...prev, ...Array.from(e.target.files)]);
@@ -71,12 +69,6 @@ const toggleAmenity = (amenity) => {
 };
 
 const handleSubmit = async () => {
-    // 🛡️ VALIDACIÓN ESTRICTA KYC ANTIFRAUDE
-    if (!kycFiles.id_document || !kycFiles.property_certificate) {
-        alert("❌ Error: Para publicar un inmueble en RentUp es obligatorio subir tu Documento de Identidad y el Certificado de Tradición y Libertad. Esto asegura la veracidad de la propiedad.");
-        return;
-    }
-
     if (imageFiles.length === 0) return setMessage('Por favor, cargue al menos una imagen');
     if (!price || parseFloat(price) <= 0) return setMessage('El precio es requerido y debe ser mayor a 0');
 
@@ -93,24 +85,17 @@ const handleSubmit = async () => {
     formData.append('amenities', amenities.join(', '));
     formData.append('user_email', user.email);
     imageFiles.forEach(file => formData.append('images', file));
-    if (kycFiles.id_document) formData.append('id_document', kycFiles.id_document);
-    if (kycFiles.property_certificate) formData.append('property_certificate', kycFiles.property_certificate);
 
     console.log('📤 FormData enviado:', {
       barrio: formData.get('barrio'),
       direccion: formData.get('direccion'),
       price: formData.get('price'),
-      imagesCount: imageFiles.length,
-      id_document: kycFiles.id_document?.name || 'none',
-      property_certificate: kycFiles.property_certificate?.name || 'none'
+      imagesCount: imageFiles.length
     });
 
     try {
         const response = await submitApartment(formData);
     const aptId = response?.data?.apartmentId;
-    if (aptId) {
-      setCreatedApartmentId(aptId);
-    }
     setMessage(typeof response === 'string' ? response : (response?.message || 'Apartamento añadido exitosamente'));
     setBarrio('');
     setDireccion('');
@@ -177,43 +162,62 @@ function MapClickHandler({ onSelect }) {
 }
 
 const steps = [
-  { num: 1, label: "Ubicación" },
-  { num: 2, label: "Detalles" },
-  { num: 3, label: "Fotos" },
-  { num: 4, label: "Precio" },
-  { num: 5, label: "Verificación" },
-  { num: 6, label: "Publicar" },
+   { num: 1, label: "Ubicación" },
+   { num: 2, label: "Detalles" },
+   { num: 3, label: "Fotos" },
+   { num: 4, label: "Publicar" },
 ];
 
 return (
-    <div className="flex-1 min-h-0 flex flex-col">
+   <div className="flex-1 min-h-0 flex flex-col">
 
-      {/* Header: Logo + Salir + Progress */}
-      <div className="border-b border-line bg-paper flex-shrink-0">
+     {/* Header: Logo + Salir + Progress */}
+     <div className="border-b border-line bg-paper flex-shrink-0">
         <div className="px-8 py-3 flex items-center justify-between">
-          <div className="font-display text-xl leading-none text-ink">Rent<span className="italic-serif text-brand-500">UP</span></div>
-          <button onClick={onClose} className="text-sm text-ink-muted hover:text-ink transition-all font-medium">Salir</button>
+           <div className="font-display text-xl leading-none text-ink">Rent<span className="italic-serif text-brand-500">UP</span></div>
+           <button onClick={onClose} className="text-sm text-ink-muted hover:text-ink transition-all font-medium">Salir</button>
         </div>
         <div className="px-8 pb-3">
-          <div className="flex items-center gap-2">
-            {steps.map((s, i) => (
-              <div key={s.num} className="flex-1 flex items-center gap-2">
-                <div className={`flex-1 h-1.5 rounded-full transition-all ${s.num <= currentStep ? 'bg-brand-500' : 'bg-paper-sunk'}`} />
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between mt-2 text-xs">
-            {steps.map(s => (
-              <div key={s.num} className={`font-medium transition-all ${s.num === currentStep ? 'text-ink' : 'text-ink-muted'}`}>
-                <span className="font-mono">{String(s.num).padStart(2,'0')}</span> · {s.label}
-              </div>
-            ))}
-          </div>
+           <div className="flex items-center gap-2">
+              {steps.map((s, i) => (
+                 <div key={s.num} className="flex-1 flex items-center gap-2">
+                    <div className={`flex-1 h-1.5 rounded-full transition-all ${s.num <= currentStep ? 'bg-brand-500' : 'bg-paper-sunk'}`} />
+                 </div>
+              ))}
+           </div>
+           <div className="flex justify-between mt-2 text-xs">
+              {steps.map(s => (
+                 <div key={s.num} className={`font-medium transition-all ${s.num === currentStep ? 'text-ink' : 'text-ink-muted'}`}>
+                    <span className="font-mono">{String(s.num).padStart(2,'0')}</span> · {s.label}
+                 </div>
+              ))}
+           </div>
         </div>
-      </div>
+     </div>
 
-      {/* Scrollable Content */}
-      <div className="flex-1 min-h-0 max-w-[1100px] mx-auto px-8 py-12 w-full overflow-y-auto">
+     {/* Conditional rendering for unverified landlords */}
+      <>
+      {isUnverifiedLandlord && (
+         <div className="flex-1 min-h-0 max-w-[1100px] mx-auto px-8 py-12 w-full overflow-y-auto">
+            <div className="alert alert-warning p-6 mb-6">
+               <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-2xl text-warning">error</span>
+                  <div>
+                     <h3 className="font-semibold text-ink mb-2">Cuenta pendiente de verificación</h3>
+                     <p className="text-ink-muted">
+                        Tu cuenta está en proceso de revisión por un administrador. 
+                        Debes esperar a que aprueben tu cédula de identidad antes de poder publicar propiedades.
+                     </p>
+                  </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+      {!isUnverifiedLandlord && (
+          <>
+            {/* Scrollable Content */}
+            <div className="flex-1 min-h-0 max-w-[1100px] mx-auto px-8 py-12 w-full overflow-y-auto">
 
     {message && (
         <div className={`p-4 rounded-xl flex items-start gap-3 ${
@@ -236,7 +240,7 @@ return (
     {/* Step 1: Ubicación */}
     {currentStep === 1 && (
       <div className="screen-enter">
-        <div className="text-xs uppercase tracking-[0.18em] text-ink-muted font-medium mb-3">Paso 1 de 5</div>
+        <div className="text-xs uppercase tracking-[0.18em] text-ink-muted font-medium mb-3">Paso 1 de 4</div>
         <h1 className="font-display text-5xl leading-tight text-ink mb-10">¿Dónde queda tu <span className="italic-serif text-brand-500">propiedad?</span></h1>
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
           {/* Mapa inline — izquierda (2 cols) */}
@@ -300,7 +304,7 @@ return (
     {/* Step 2: Detalles */}
     {currentStep === 2 && (
       <div className="screen-enter">
-        <div className="text-xs uppercase tracking-[0.18em] text-ink-muted font-medium mb-3">Paso 2 de 5</div>
+        <div className="text-xs uppercase tracking-[0.18em] text-ink-muted font-medium mb-3">Paso 2 de 4</div>
         <h1 className="font-display text-5xl leading-tight text-ink mb-10">Contanos los <span className="italic-serif text-brand-500">detalles.</span></h1>
 
         {/* 3-column counter cards — prototype style */}
@@ -390,7 +394,7 @@ return (
     {/* Step 3: Fotos */}
     {currentStep === 3 && (
       <div className="screen-enter">
-        <div className="text-xs uppercase tracking-[0.18em] text-ink-muted font-medium mb-3">Paso 3 de 5</div>
+        <div className="text-xs uppercase tracking-[0.18em] text-ink-muted font-medium mb-3">Paso 3 de 4</div>
         <h1 className="font-display text-5xl leading-tight text-ink mb-10">Mostrá tu apartamento con <span className="italic-serif text-brand-500">buenas fotos.</span></h1>
 
         {/* Upload zone */}
@@ -445,7 +449,7 @@ return (
     {/* Step 4: Precio */}
     {currentStep === 4 && (
       <div className="screen-enter">
-        <div className="text-xs uppercase tracking-[0.18em] text-ink-muted font-medium mb-3">Paso 4 de 5</div>
+        <div className="text-xs uppercase tracking-[0.18em] text-ink-muted font-medium mb-3">Paso 4 de 4</div>
         <h1 className="font-display text-5xl leading-tight text-ink mb-2">Definí el <span className="italic-serif text-brand-500">precio.</span></h1>
         <p className="text-sm text-ink-muted mb-10">Establecé el valor del arriendo mensual</p>
 
@@ -464,32 +468,20 @@ return (
       </div>
     )}
 
-    {/* Step 5: Verificación */}
+    {/* Step 5: Publicar — Revisá y publicá */}
     {currentStep === 5 && (
       <div className="screen-enter">
-        <div className="text-xs uppercase tracking-[0.18em] text-ink-muted font-medium mb-3">Paso 5 de 6</div>
-        <h1 className="font-display text-5xl leading-tight text-ink mb-2">Casi listo, solo una <span className="italic-serif text-brand-500">verificación.</span></h1>
-        <p className="text-sm text-ink-muted mb-10">Asegurate de tener todo en orden para publicar</p>
+        {/* Eyebrow + Heading */}
+        <div className="text-xs uppercase tracking-[0.18em] text-ink-muted font-medium mb-3">Paso 5 de 5</div>
+        <h1 className="font-display text-5xl leading-tight text-ink mb-2">Revisá y <span className="italic-serif text-brand-500">publicá.</span></h1>
 
         {/* Verification notice */}
-        <div className="rcard p-5 flex gap-3 items-start" style={{ backgroundColor: '#eef3f9', border: '1px solid transparent', boxShadow: 'none' }}>
+        <div className="rcard p-5 flex gap-3 items-start mb-10" style={{ backgroundColor: '#eef3f9', border: '1px solid transparent', boxShadow: 'none' }}>
           <span className="material-symbols-outlined text-brand-500 text-lg flex-shrink-0 mt-0.5">verified_user</span>
           <div className="text-sm text-ink">
             <strong className="font-semibold">Verificación:</strong> Tu publicación será revisada por nuestro equipo en menos de 24 horas. Te avisamos por correo cuando esté activa.
           </div>
         </div>
-
-        {/* KYC */}
-        <KycUploadSection kycFiles={kycFiles} setKycFiles={setKycFiles} />
-      </div>
-    )}
-
-    {/* Step 6: Publicar — Revisá y publicá */}
-    {currentStep === 6 && (
-      <div className="screen-enter">
-        {/* Eyebrow + Heading */}
-        <div className="text-xs uppercase tracking-[0.18em] text-ink-muted font-medium mb-3">Paso 6 de 6</div>
-        <h1 className="font-display text-5xl leading-tight text-ink mb-10">Revisá y <span className="italic-serif text-brand-500">publicá.</span></h1>
 
         {/* Grid: summary (7) + preview (5) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -573,22 +565,14 @@ return (
                 {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(Number(price) || 0)}
                 <span className="text-xs text-ink-muted font-sans ml-1">/mes</span>
               </div>
-            </div>
+             </div>
+           </div>
           </div>
-        </div>
-
-      </div>
-    )}
-
-    {createdApartmentId && (
-      <div className="border-t border-line pt-6">
-        <KycUploadPanel apartmentId={createdApartmentId} />
-      </div>
-    )}
-      </div>{/* end Scrollable Content */}
-
-      {/* Footer */}
-      <div className="border-t border-line bg-paper flex-shrink-0">
+         </div>
+       )}
+ 
+       {/* Footer */}
+       <div className="border-t border-line bg-paper flex-shrink-0">
         <div className="px-8 py-4 flex items-center justify-between">
           <div>
             {currentStep > 1 ? (
@@ -603,10 +587,10 @@ return (
           </div>
           <div className="text-xs text-ink-muted font-medium">Paso {currentStep} de {steps.length}</div>
           <div>
-            {currentStep < 6 ? (
+            {currentStep < 5 ? (
               <button type="button" onClick={() => setCurrentStep(currentStep + 1)}
                 className="flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold bg-brand-500 text-white hover:bg-brand-600 transition-all shadow-sm">
-                {currentStep === 5 ? 'Revisar y Publicar' : 'Continuar'}
+                {currentStep === 4 ? 'Revisar y Publicar' : 'Continuar'}
                 <span className="material-symbols-outlined text-sm">arrow_forward</span>
               </button>
             ) : (
@@ -618,9 +602,13 @@ return (
             )}
           </div>
         </div>
-      </div>
-    </div>
-);
-}
+       </div>
+       </div>
+        </>    
+      )}    
+      </>    
+    </div>    
+  );    
+}    
 
 export default ApartmentForm;
