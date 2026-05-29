@@ -20,6 +20,7 @@ function Signup() {
     const [error, setError] = useState(false);
     const {login} = useContext(UserContext);
     const [userType, setUserType] = useState("");
+    const [idDocument, setIdDocument] = useState(null);
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -67,7 +68,7 @@ function Signup() {
             return;
         }
 
-        const result = await signupUser({ nombre, apellido, email, telefono, password, rolId }, login);
+        const result = await signupUser({ nombre, apellido, email, telefono, password, rolId, id_document: idDocument }, login);
         if (result.success) {
             setShowSucess(true);
         } else {
@@ -262,6 +263,21 @@ function Signup() {
                                 </label>
                             </div>
                         </div>
+
+                        {userType === 'arrendador' && (
+                          <div className="space-y-1">
+                            <label className="font-label text-label-xs text-on-surface-variant uppercase tracking-wider">Foto de la cédula *</label>
+                            <div className="relative">
+                              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">badge</span>
+                              <input
+                                type="file"
+                                accept="image/*,.pdf"
+                                onChange={(e) => setIdDocument(e.target.files[0] || null)}
+                                className="w-full pl-9 bg-surface-container-low rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-brand-navy/30 transition-all text-body-md text-on-surface file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:bg-brand-navy/10 file:text-brand-navy file:text-xs file:font-semibold hover:file:bg-brand-navy/20"
+                              />
+                            </div>
+                          </div>
+                        )}
 
                         {/* Name Grid */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

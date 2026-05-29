@@ -369,6 +369,7 @@ function SignupForm() {
   const [whatsapp, setWhatsapp] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [idDocumentFile, setIdDocumentFile] = useState(null);
   const [mensaje, setMessage] = useState("");
   const [showSucess, setShowSucess] = useState(false);
   const [showPhoneModal, setShowPhoneModal] = useState(false);
@@ -422,7 +423,13 @@ function SignupForm() {
       return;
     }
 
-    const result = await signupUser({ nombre, apellido, email, telefono, password, rolId }, login);
+    if (rolId === 2 && !idDocumentFile) {
+      setError(true);
+      setMessage("Para registrarte como arrendador debes subir una foto de tu cédula de identidad.");
+      return;
+    }
+
+    const result = await signupUser({ nombre, apellido, email, telefono, password, rolId, id_document: idDocumentFile }, login);
     if (result.success) {
       setShowSucess(true);
     } else {
@@ -652,6 +659,33 @@ function SignupForm() {
             </div>
           </div>
         </div>
+
+        {/* Cédula upload — solo para arrendador */}
+        {userType === "arrendador" && (
+          <div>
+            <label className="text-xs text-ink-muted font-medium mb-1.5 block">Cédula de Identidad *</label>
+            <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 hover:border-[#5849E4]/40 transition relative text-center">
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                onChange={(e) => setIdDocumentFile(e.target.files[0])}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+              {idDocumentFile ? (
+                <div className="flex items-center justify-center gap-2">
+                  <span className="material-symbols-outlined text-[#5849E4]">description</span>
+                  <span className="text-sm font-medium text-ink truncate max-w-[200px]">{idDocumentFile.name}</span>
+                  <button type="button" onClick={(e) => { e.preventDefault(); setIdDocumentFile(null); }} className="text-red-500 text-xs hover:underline">Quitar</button>
+                </div>
+              ) : (
+                <div>
+                  <span className="material-symbols-outlined text-2xl text-gray-400">upload</span>
+                  <p className="text-xs text-gray-400 mt-1">Sube tu cédula (JPG, PNG o PDF)</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="bg-error-container/50 rounded-full px-5 py-2.5 flex items-center gap-2 text-sm">

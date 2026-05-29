@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import useManageController from "../apis/manageController";
 import MapModal from './MapModal';
 import Toast from './Toast';
-import KycUploadSection from './KycUploadSection';
 import ConfirmModal from './ConfirmModal';
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -20,8 +19,6 @@ const {
     handleDelete,
     handleUpdate,
     handleCancelEdit,
-    kycFiles,
-    setKycFiles,
     toast,
     closeToast,
 } = useManageController();
@@ -273,29 +270,17 @@ return (
                         )}
                     </div>
 
-                    {/* Existing documents badge */}
-                    {(apt.id_document_url || apt.property_certificate_url) && (
+                    {apt.id_document_url && (
                       <div className="flex items-center gap-2 bg-brand-500/10 border border-brand-500/20 rounded-lg px-4 py-2">
                         <span className="text-brand-500 font-medium text-sm flex items-center gap-1.5">
                           <span className="material-symbols-outlined text-sm">check_circle</span>
-                          <span>Documentos cargados previamente</span>
+                          <span>Cédula cargada previamente</span>
                         </span>
-                        {apt.kyc_status === 'approved' && (
-                          <span className="ml-auto px-2 py-0.5 rounded-full bg-tertiary/10 text-tertiary text-label-md font-medium">Aprobado</span>
-                        )}
-                        {apt.kyc_status === 'rejected' && (
-                          <span className="ml-auto px-2 py-0.5 rounded-full bg-error/10 text-error text-label-md font-medium">Rechazado</span>
-                        )}
-                        {(!apt.kyc_status || apt.kyc_status === 'pending') && (
-                          <span className="ml-auto px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-label-md font-medium">En revisión</span>
-                        )}
                       </div>
                     )}
-                    
-                    <KycUploadSection kycFiles={kycFiles} setKycFiles={setKycFiles} />
 
                     <div className="flex gap-3 pt-4 border-t border-line">
-                        <button onClick={() => { handleUpdate(apt.id_apt, newImageFiles, primaryImageIdx); setNewImageFiles([]); setKycFiles({ id_document: null, property_certificate: null }); }} className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-brand-500 text-white font-bold rounded-lg hover:bg-brand-600 transition-all">
+                        <button onClick={() => { handleUpdate(apt.id_apt, newImageFiles, primaryImageIdx); setNewImageFiles([]); }} className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-brand-500 text-white font-bold rounded-lg hover:bg-brand-600 transition-all">
                             <span className="material-symbols-outlined text-sm">save</span> Guardar Cambios
                         </button>
                         <button onClick={handleCancelEdit} className="flex items-center gap-2 px-6 py-3 bg-paper-sunk border border-line text-ink font-semibold rounded-lg hover:bg-line/30 transition-all">

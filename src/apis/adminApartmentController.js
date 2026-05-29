@@ -62,6 +62,20 @@ const adminApartmentController = {
             console.error('Error rejecting apartment:', error);
             throw error;
         }
+    },
+
+    // Verificar usuario (aprobar/rechazar estado de verificación)
+    verifyUser: async (userId, estado, notas = '') => {
+        try {
+            const response = await axiosInstance.put(
+                `/admin/users/${userId}/verificar`,
+                { estado, notas }
+            );
+            return response.data;
+        } catch (error) {
+            console.error('Error verifying user:', error);
+            throw error;
+        }
     }
 };
 

@@ -65,6 +65,16 @@ const kycController = {
             console.error('Error rejecting verification:', error);
             throw error;
         }
+    },
+
+    refreshDocumentUrl: async (key) => {
+        try {
+            const response = await axiosInstance.post('/kyc/refresh-url', { key });
+            return response.data;
+        } catch (error) {
+            console.error('Error refreshing document URL:', error);
+            throw error;
+        }
     }
 };
 

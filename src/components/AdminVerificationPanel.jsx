@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import {
   FaShieldAlt, FaCheckCircle, FaTimesCircle, FaSpinner, FaIdCard,
-  FaFileAlt, FaMapMarkerAlt, FaUser, FaMoneyBill, FaChevronLeft,
-  FaChevronRight, FaExternalLinkAlt, FaBuilding, FaSearch, FaImage,
-  FaTimes, FaChevronCircleLeft, FaChevronCircleRight
+  FaChevronLeft, FaChevronRight, FaExternalLinkAlt, FaBuilding, FaImage,
+  FaTimes, FaChevronCircleLeft, FaChevronCircleRight, FaUserCheck, FaUsers
 } from 'react-icons/fa';
 import kycController from '../apis/kycController';
+import adminApartmentController from '../apis/adminApartmentController';
 import axiosInstance from '../contexts/axiosInstance';
 import Toast from './Toast';
+import DocumentViewer from './DocumentViewer';
 
 function AdminVerificationPanel() {
+  const [subTab, setSubTab] = useState('kyc');
   const [verifications, setVerifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ offset: 0, limit: 50, total: 0 });
@@ -24,6 +26,15 @@ function AdminVerificationPanel() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // User verification state
+  const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersPagination, setUsersPagination] = useState({ offset: 0, limit: 50, total: 0 });
+  const [userFilter, setUserFilter] = useState('');
+  const [showUserRejectModal, setShowUserRejectModal] = useState(false);
+  const [userRejectTarget, setUserRejectTarget] = useState(null);
+  const [userRejectReason, setUserRejectReason] = useState('');
 
   const openDetailModal = async (verification) => {
     setSelectedVerification(verification);
@@ -67,9 +78,71 @@ function AdminVerificationPanel() {
     }
   };
 
+  const fetchUsersForVerification = async (offset = 0) => {
+    try {
+      setUsersLoading(true);
+      const params = { limit: usersPagination.limit, offset, role: 2 };
+      if (userFilter) params.estado = userFilter;
+      const res = await axiosInstance.get('/admin/users', { params });
+      if (res.data?.users) {
+        setUsers(res.data.users);
+        setUsersPagination({ offset, limit: usersPagination.limit, total: res.data.total });
+      }
+    } catch (error) {
+      setToast({ message: error.response?.data?.error || 'Error al cargar usuarios', type: 'error' });
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  const handleUserApprove = async (userId) => {
+    try {
+      setActionLoading(`approve-${userId}`);
+      await adminApartmentController.verifyUser(userId, 'aprobado', '');
+      setToast({ message: 'Usuario aprobado correctamente', type: 'success' });
+      setUsers(users.filter(u => u.user_id !== userId));
+      setUsersPagination(prev => ({ ...prev, total: prev.total - 1 }));
+    } catch (error) {
+      setToast({ message: error.response?.data?.error || 'Error al aprobar usuario', type: 'error' });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const openUserRejectModal = (user) => {
+    setUserRejectTarget(user);
+    setUserRejectReason('');
+    setShowUserRejectModal(true);
+  };
+
+  const confirmUserReject = async () => {
+    if (!userRejectReason.trim()) {
+      setToast({ message: 'Ingresa un motivo para el rechazo', type: 'warning' });
+      return;
+    }
+    try {
+      setActionLoading(`reject-${userRejectTarget.user_id}`);
+      await adminApartmentController.verifyUser(userRejectTarget.user_id, 'rechazado', userRejectReason);
+      setToast({ message: 'Usuario rechazado correctamente', type: 'success' });
+      setUsers(users.filter(u => u.user_id !== userRejectTarget.user_id));
+      setUsersPagination(prev => ({ ...prev, total: prev.total - 1 }));
+      setShowUserRejectModal(false);
+      setUserRejectReason('');
+      setUserRejectTarget(null);
+    } catch (error) {
+      setToast({ message: error.response?.data?.error || 'Error al rechazar usuario', type: 'error' });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   useEffect(() => {
-    fetchVerifications(0);
-  }, [filter]);
+    if (subTab === 'kyc') {
+      fetchVerifications(0);
+    } else {
+      fetchUsersForVerification(0);
+    }
+  }, [subTab, filter, userFilter]);
 
   const handleApprove = async (id) => {
     try {
@@ -117,11 +190,37 @@ function AdminVerificationPanel() {
       <div className="mb-6">
         <h2 className="text-headline-sm text-[#0B1C30] flex items-center gap-2">
           <FaShieldAlt className="text-[#5849E4]" />
-          Solicitudes de Verificación Pendientes
+          Verificación de Arrendadores
         </h2>
-        <p className="text-on-surface-variant text-sm mt-1">Revisa los documentos de identidad y propiedad de los arrendadores.</p>
+        <p className="text-on-surface-variant text-sm mt-1">Revisa documentos KYC o verifica usuarios directamente.</p>
       </div>
 
+      {/* Sub-tab Navigation */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <button
+          onClick={() => setSubTab('kyc')}
+          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
+            subTab === 'kyc'
+              ? 'bg-[#5849E4] text-white shadow-ambient-sm'
+              : 'bg-white text-on-surface-variant border border-gray-200 hover:bg-gray-50'
+          }`}
+        >
+          <FaIdCard /> KYC
+        </button>
+        <button
+          onClick={() => setSubTab('users')}
+          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
+            subTab === 'users'
+              ? 'bg-[#5849E4] text-white shadow-ambient-sm'
+              : 'bg-white text-on-surface-variant border border-gray-200 hover:bg-gray-50'
+          }`}
+        >
+          <FaUserCheck /> Verificación Directa
+        </button>
+      </div>
+
+      {subTab === 'kyc' && (
+      <>
       <div className="mb-4 flex flex-wrap gap-2">
         {['pending', 'approved', 'rejected'].map(f => (
           <button
@@ -172,13 +271,24 @@ function AdminVerificationPanel() {
                         {v.user_phonenumber && <p className="text-xs text-outline">{v.user_phonenumber}</p>}
                       </div>
                     </div>
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                      v.status === 'pending' ? 'bg-warning-50 text-warning-700' :
-                      v.status === 'approved' ? 'bg-[#DCFCE7] text-[#15803D]' :
-                      'bg-danger-50 text-danger-700'
-                    }`}>
-                      {v.status === 'pending' ? 'Pendiente' : v.status === 'approved' ? 'Aprobado' : 'Rechazado'}
-                    </span>
+                     <div className="space-y-1">
+                       <span className="text-xs font-medium text-gray-500">Estado KYC:</span>
+                       <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                         v.status === 'pending' ? 'bg-warning-50 text-warning-700' :
+                         v.status === 'approved' ? 'bg-[#DCFCE7] text-[#15803D]' :
+                         'bg-danger-50 text-danger-700'
+                       }`}>
+                         {v.status === 'pending' ? 'Pendiente' : v.status === 'approved' ? 'Aprobado' : 'Rechazado'}
+                       </span>
+                       <span className="text-xs font-medium text-gray-500">Verificación:</span>
+                       <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                         v.estadoVerificacion === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
+                         v.estadoVerificacion === 'aprobado' ? 'bg-green-100 text-green-800' :
+                         'bg-red-100 text-red-800'
+                       }`}>
+                         {v.estadoVerificacion === 'pendiente' ? 'Pendiente' : v.estadoVerificacion === 'aprobado' ? 'Aprobado' : 'Rechazado'}
+                       </span>
+                     </div>
                   </div>
 
                   {v.direccion_apt && (
@@ -190,17 +300,13 @@ function AdminVerificationPanel() {
                   )}
 
                   <div className="flex flex-wrap gap-3">
-                    {v.id_document_url && (
-                      <a href={v.id_document_url} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#F5F3FF] text-[#5849E4] text-xs font-medium hover:bg-[#EDE9FE] transition">
-                        <FaIdCard /> Ver cédula <FaExternalLinkAlt className="text-[10px]" />
-                      </a>
-                    )}
-                    {v.property_certificate_url && (
-                      <a href={v.property_certificate_url} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#F5F3FF] text-[#5849E4] text-xs font-medium hover:bg-[#EDE9FE] transition">
-                        <FaFileAlt /> Ver certificado <FaExternalLinkAlt className="text-[10px]" />
-                      </a>
+                    {v.id_document_key && (
+                      <DocumentViewer
+                        documentKey={v.id_document_key}
+                        documentUrl={v.id_document_url}
+                        icon={FaIdCard}
+                        label="Ver cédula"
+                      />
                     )}
                   </div>
 
@@ -353,37 +459,18 @@ function AdminVerificationPanel() {
                 <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
                   <span>🛡️</span> Documentos de Verificación (KYC)
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500 mb-1">Documento de Identidad (Cédula)</p>
-                    {selectedVerification.id_document_url ? (
-                      <a
-                        href={selectedVerification.id_document_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg border border-blue-200 hover:bg-blue-100 transition text-sm font-medium"
-                      >
-                        📄 Ver Documento de Identidad
-                      </a>
-                    ) : (
-                      <span className="text-sm text-red-500 font-medium">⚠️ No cargado o no disponible</span>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500 mb-1">Certificado de Tradición y Libertad</p>
-                    {selectedVerification.property_certificate_url ? (
-                      <a
-                        href={selectedVerification.property_certificate_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg border border-blue-200 hover:bg-blue-100 transition text-sm font-medium"
-                      >
-                        📜 Ver Certificado de Libertad
-                      </a>
-                    ) : (
-                      <span className="text-sm text-red-500 font-medium">⚠️ No cargado o no disponible</span>
-                    )}
-                  </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500 mb-1">Documento de Identidad (Cédula)</p>
+                  {selectedVerification.id_document_key ? (
+                    <DocumentViewer
+                      documentKey={selectedVerification.id_document_key}
+                      documentUrl={selectedVerification.id_document_url}
+                      icon={FaIdCard}
+                      label="Ver Documento de Identidad"
+                    />
+                  ) : (
+                    <span className="text-sm text-red-500 font-medium">⚠️ No cargado o no disponible</span>
+                  )}
                 </div>
               </div>
 
@@ -422,6 +509,167 @@ function AdminVerificationPanel() {
             </div>
           </div>
         </div>
+      )}
+
+      </>
+      )}
+
+      {subTab === 'users' && (
+      <>
+      <div className="mb-4 flex flex-wrap gap-2">
+        {['', 'pendiente', 'aprobado', 'rechazado'].map(f => (
+          <button
+            key={f}
+            onClick={() => {
+              setUserFilter(f);
+              setUsersPagination(prev => ({ ...prev, offset: 0 }));
+            }}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+              userFilter === f
+                ? 'bg-gradient-to-r from-[#0A79BB] to-[#1E3A8A] text-white shadow-md'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            {f === '' ? 'Todos' : f === 'pendiente' ? 'Pendientes' : f === 'aprobado' ? 'Aprobados' : 'Rechazados'}
+          </button>
+        ))}
+      </div>
+
+      {usersLoading ? (
+        <div className="flex items-center justify-center py-16">
+          <FaSpinner className="animate-spin text-3xl text-[#5849E4]" />
+          <span className="ml-3 text-on-surface-variant">Cargando arrendadores...</span>
+        </div>
+      ) : users.length === 0 ? (
+        <div className="bg-white rounded-xl p-8 shadow-ambient-sm text-center">
+          <FaUserCheck className="text-5xl text-success mx-auto mb-4" />
+          <h3 className="text-headline-sm text-[#0B1C30] mb-2">
+            {userFilter === 'pendiente' ? 'No hay arrendadores pendientes' : 'No hay arrendadores ' + userFilter}
+          </h3>
+          <p className="text-on-surface-variant">Todos los arrendadores han sido procesados</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {users.map(u => (
+            <div key={u.user_id}
+              className="bg-white rounded-xl p-5 shadow-ambient-sm border border-gray-200/60 hover:shadow-ambient-md transition-all">
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex-1 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-[#5849E4]/10 flex items-center justify-center text-[#5849E4] font-bold text-sm">
+                        {(u.user_name || 'U').charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-[#0B1C30] text-sm flex items-center gap-2">
+                          {u.user_name} {u.user_lastname}
+                          {u.estadoVerificacion === 'aprobado' && <FaCheckCircle className="text-[#15803D] text-xs" />}
+                        </h4>
+                        <p className="text-xs text-outline">{u.user_email}</p>
+                        {u.user_phonenumber && <p className="text-xs text-outline">{u.user_phonenumber}</p>}
+                      </div>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                      u.estadoVerificacion === 'pendiente' || !u.estadoVerificacion ? 'bg-yellow-100 text-yellow-800' :
+                      u.estadoVerificacion === 'aprobado' ? 'bg-green-100 text-green-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {u.estadoVerificacion === 'pendiente' || !u.estadoVerificacion ? 'Pendiente' :
+                       u.estadoVerificacion === 'aprobado' ? 'Aprobado' : 'Rechazado'}
+                    </span>
+                  </div>
+
+                  {u.notasRevision && (
+                    <div className="bg-[#F8FAFC] rounded-lg px-3 py-2 text-xs text-on-surface-variant">
+                      <span className="font-semibold">Notas:</span> {u.notasRevision}
+                    </div>
+                  )}
+                  {u.id_document_url && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <DocumentViewer
+                        documentKey={u.id_document_key}
+                        documentUrl={u.id_document_url}
+                        icon={FaIdCard}
+                        label="Ver cédula"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {(u.estadoVerificacion === 'pendiente' || !u.estadoVerificacion) && (
+                  <div className="flex lg:flex-col gap-2 lg:min-w-[140px]">
+                    <button
+                      onClick={() => handleUserApprove(u.user_id)}
+                      disabled={actionLoading === `approve-${u.user_id}`}
+                      className="flex-1 lg:w-full px-4 py-2.5 rounded-lg bg-[#DCFCE7] text-[#15803D] text-xs font-semibold hover:brightness-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+                    >
+                      {actionLoading === `approve-${u.user_id}` ? <FaSpinner className="animate-spin" /> : <FaCheckCircle />}
+                      Aprobar
+                    </button>
+                    <button
+                      onClick={() => openUserRejectModal(u)}
+                      disabled={actionLoading === `reject-${u.user_id}`}
+                      className="flex-1 lg:w-full px-4 py-2.5 rounded-lg bg-[#FFDAD6] text-[#93000A] text-xs font-semibold hover:brightness-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+                    >
+                      <FaTimesCircle /> Rechazar
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {users.length > 0 && (
+        <div className="flex items-center justify-center gap-4 mt-8">
+          <button
+            disabled={usersPagination.offset === 0}
+            onClick={() => fetchUsersForVerification(Math.max(0, usersPagination.offset - usersPagination.limit))}
+            className="px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm font-medium text-on-surface hover:bg-gray-50 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
+          >
+            <FaChevronLeft className="text-xs" /> Anterior
+          </button>
+          <span className="text-sm text-on-surface-variant">
+            {usersPagination.offset + 1}-{Math.min(usersPagination.offset + usersPagination.limit, usersPagination.total)} de {usersPagination.total}
+          </span>
+          <button
+            disabled={usersPagination.offset + usersPagination.limit >= usersPagination.total}
+            onClick={() => fetchUsersForVerification(usersPagination.offset + usersPagination.limit)}
+            className="px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm font-medium text-on-surface hover:bg-gray-50 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
+          >
+            Siguiente <FaChevronRight className="text-xs" />
+          </button>
+        </div>
+      )}
+
+      {showUserRejectModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowUserRejectModal(false)}>
+          <div className="bg-white rounded-xl p-6 shadow-ambient-lg max-w-md w-full animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-headline-sm text-[#0B1C30] mb-4 flex items-center gap-2 text-danger"><FaTimesCircle /> Rechazar Verificación</h3>
+            <div className="bg-[#F8FAFC] rounded-lg p-4 mb-4 space-y-1">
+              <p className="text-sm"><span className="font-semibold">Arrendador:</span> {userRejectTarget?.user_name} {userRejectTarget?.user_lastname}</p>
+              <p className="text-sm"><span className="font-semibold">Email:</span> {userRejectTarget?.user_email}</p>
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-on-surface mb-2">Motivo del rechazo:</label>
+              <textarea value={userRejectReason} onChange={(e) => setUserRejectReason(e.target.value)}
+                placeholder="Ingresa el motivo del rechazo..."
+                className="w-full px-4 py-3 rounded-lg border border-gray-200 text-sm focus:border-danger focus:ring-2 focus:ring-danger/10 transition-all resize-none min-h-[100px]" rows={4} />
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button onClick={confirmUserReject} disabled={!userRejectReason.trim() || actionLoading === `reject-${userRejectTarget?.user_id}`}
+                className="px-5 py-2.5 rounded-lg bg-danger text-white font-semibold text-sm hover:bg-danger-600 transition-all flex items-center gap-2 disabled:opacity-50">
+                {actionLoading === `reject-${userRejectTarget?.user_id}` ? <FaSpinner className="animate-spin" /> : <FaTimesCircle />} Rechazar
+              </button>
+              <button onClick={() => { setShowUserRejectModal(false); setUserRejectReason(''); setUserRejectTarget(null); }}
+                className="px-5 py-2.5 rounded-lg bg-gray-100 text-on-surface font-semibold text-sm hover:bg-gray-200 transition-all">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      </>
       )}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
