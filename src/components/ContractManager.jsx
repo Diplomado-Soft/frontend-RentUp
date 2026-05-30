@@ -7,6 +7,19 @@ import SignaturePad from "./SignaturePad";
 const inputClass = "w-full px-4 py-3 rounded-lg bg-paper-sunk text-ink focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition text-body-md placeholder:text-ink-muted";
 const labelClass = "text-label-md uppercase tracking-wider text-ink-muted mb-1.5 block";
 
+/** Calcula fecha de fin por meses calendario (misma lógica que el backend) */
+function calculateEndDate(startDate, months) {
+  const end = new Date(startDate);
+  const startDay = startDate.getDate();
+  end.setMonth(end.getMonth() + months);
+  if (end.getDate() !== startDay) {
+    end.setDate(0);
+  } else {
+    end.setDate(end.getDate() - 1);
+  }
+  return end;
+}
+
 function ContractManager() {
   const [contracts, setContracts] = useState([]);
   const [availableApartments, setAvailableApartments] = useState([]);
@@ -29,6 +42,7 @@ function ContractManager() {
     tenant_id: "",
     start_date: "",
     end_date: "",
+    duration_months: "",
     monthly_rent: "",
     deposit_amount: ""
   });
@@ -36,14 +50,8 @@ function ContractManager() {
     fetchData();
   }, []);
 
-  const totalContractValue = formData.monthly_rent && formData.start_date && formData.end_date
-    ? (() => {
-        const start = new Date(formData.start_date + 'T12:00:00');
-        const end = new Date(formData.end_date + 'T12:00:00');
-        const diffDays = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)));
-        const months = Math.max(1, Math.round(diffDays / 30));
-        return months * parseFloat(formData.monthly_rent);
-      })()
+  const totalContractValue = formData.monthly_rent && formData.duration_months
+    ? parseInt(formData.duration_months) * parseFloat(formData.monthly_rent)
     : 0;
 
   useEffect(() => {
@@ -55,6 +63,20 @@ function ContractManager() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Auto-sugerir 1 mes al elegir fecha de inicio
+  useEffect(() => {
+    if (formData.start_date && !formData.end_date && !formData.duration_months) {
+      const end = calculateEndDate(
+        new Date(formData.start_date + 'T12:00:00'), 1
+      );
+      setFormData(prev => ({
+        ...prev,
+        end_date: end.toISOString().split('T')[0],
+        duration_months: "1"
+      }));
+    }
+  }, [formData.start_date]);
 
   const fetchData = async () => {
     try {
@@ -125,6 +147,47 @@ function ContractManager() {
       ...prev, id_apt,
       monthly_rent: apt ? apt.price?.toString() || "" : prev.monthly_rent
     }));
+  };
+
+  /** Sincroniza duration_months → calcula y setea end_date */
+  const handleDurationChange = (e) => {
+    const months = e.target.value;
+    setFormData(prev => {
+      const updated = { ...prev, duration_months: months };
+      if (updated.start_date && months) {
+        const end = calculateEndDate(
+          new Date(updated.start_date + 'T12:00:00'),
+          parseInt(months)
+        );
+        updated.end_date = end.toISOString().split('T')[0];
+      }
+      return updated;
+    });
+  };
+
+  /** Sincroniza end_date → estima meses y setea duration_months */
+  const handleEndDateChange = (e) => {
+    const endDate = e.target.value;
+    setFormData(prev => {
+      const updated = { ...prev, end_date: endDate };
+      if (updated.start_date && endDate) {
+        const start = new Date(updated.start_date + 'T12:00:00');
+        const end = new Date(endDate + 'T12:00:00');
+        if (end > start) {
+          // Probar meses 1..24 hasta encontrar match exacto
+          let matched = '';
+          for (let m = 1; m <= 24; m++) {
+            const expected = calculateEndDate(start, m);
+            if (expected.toISOString().split('T')[0] === endDate) {
+              matched = m.toString();
+              break;
+            }
+          }
+          updated.duration_months = matched;
+        }
+      }
+      return updated;
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -206,7 +269,7 @@ function ContractManager() {
   };
 
   const resetForm = () => {
-    setFormData({ id_apt: "", tenant_id: "", start_date: "", end_date: "", monthly_rent: "", deposit_amount: "" });
+    setFormData({ id_apt: "", tenant_id: "", start_date: "", end_date: "", duration_months: "", monthly_rent: "", deposit_amount: "" });
     setSelectedTenant(null);
     setSearchQuery("");
     setTenantResults([]);
@@ -340,8 +403,17 @@ function ContractManager() {
               <input type="date" name="start_date" value={formData.start_date} onChange={handleInputChange} required className={inputClass} />
             </div>
             <div>
-              <label className={labelClass}>Fecha Fin</label>
-              <input type="date" name="end_date" value={formData.end_date} onChange={handleInputChange} required className={inputClass} />
+              <label className={labelClass}>Duración</label>
+              <select name="duration_months" value={formData.duration_months} onChange={handleDurationChange} className={inputClass}>
+                <option value="">Seleccionar...</option>
+                {Array.from({ length: 24 }, (_, i) => i + 1).map(m => (
+                  <option key={m} value={m}>{m} {m === 1 ? 'mes' : 'meses'}</option>
+                ))}
+              </select>
+            </div>
+            <div className="md:col-span-2">
+              <p className="text-xs text-ink-muted mb-2 border-t border-line/30 pt-3">O ingresá la fecha exacta de fin:</p>
+              <input type="date" name="end_date" value={formData.end_date} onChange={handleEndDateChange} required className={`${inputClass} md:max-w-xs`} />
             </div>
             <div>
               <label className={labelClass}>Canon Mensual (COP)</label>
@@ -357,21 +429,15 @@ function ContractManager() {
                 <input type="number" name="deposit_amount" value={formData.deposit_amount} onChange={handleInputChange} min="0" placeholder="0" className={`${inputClass} pl-8`} />
               </div>
             </div>
-            {formData.monthly_rent && formData.start_date && formData.end_date && formData.end_date > formData.start_date && (
+            {formData.monthly_rent && formData.start_date && formData.duration_months && (
               <div className="md:col-span-2 p-3 rounded-lg bg-brand-50 border border-brand-200">
                 <p className="text-label-md text-brand-700">
                   Valor total del contrato: <strong className="text-lg">
                     ${(totalContractValue).toLocaleString('es-CO')} COP
                   </strong>
-                  {(() => {
-                    const start = new Date(formData.start_date + 'T12:00:00');
-                    const end = new Date(formData.end_date + 'T12:00:00');
-                    const diffDays = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)));
-                    const months = Math.max(1, Math.round(diffDays / 30));
-                    return (
-                      <span className="text-brand-500 ml-1">({months} meses × {parseFloat(formData.monthly_rent).toLocaleString('es-CO')}/mes)</span>
-                    );
-                  })()}
+                  <span className="text-brand-500 ml-1">
+                    ({formData.duration_months} {parseInt(formData.duration_months) === 1 ? 'mes' : 'meses'} × {parseFloat(formData.monthly_rent).toLocaleString('es-CO')}/mes)
+                  </span>
                 </p>
               </div>
             )}

@@ -21,6 +21,7 @@ function AdminVerificationPanel() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [imgError, setImgError] = useState(false);
 
   // User verification state
   const [users, setUsers] = useState([]);
@@ -36,6 +37,7 @@ function AdminVerificationPanel() {
     setDetailApartment(null);
     setDetailError(null);
     setCurrentImageIndex(0);
+    setImgError(false);
     if (verification.apartment_id) {
       setDetailLoading(true);
       try {
@@ -53,6 +55,7 @@ function AdminVerificationPanel() {
     setSelectedVerification(null);
     setDetailApartment(null);
     setDetailError(null);
+    setImgError(false);
   };
 
   const fetchVerifications = async (offset = 0) => {
@@ -414,21 +417,28 @@ function AdminVerificationPanel() {
                   </div>
                 ) : detailApartment?.images?.length > 0 ? (
                   <div className="relative bg-paper-sunk rounded-xl overflow-hidden">
-                    <img
-                      src={detailApartment.images[currentImageIndex]?.url}
-                      alt={`Foto ${currentImageIndex + 1}`}
-                      className="w-full h-64 object-cover"
-                    />
+                    {!imgError ? (
+                      <img
+                        src={detailApartment.images[currentImageIndex]?.url}
+                        alt={`Foto ${currentImageIndex + 1}`}
+                        onError={() => setImgError(true)}
+                        className="w-full h-64 object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-64 flex items-center justify-center bg-paper-sunk">
+                        <span className="material-symbols-outlined text-4xl text-ink-muted">broken_image</span>
+                      </div>
+                    )}
                     {detailApartment.images.length > 1 && (
                       <>
                         <button
-                          onClick={() => setCurrentImageIndex(prev => (prev === 0 ? detailApartment.images.length - 1 : prev - 1))}
+                          onClick={() => { setImgError(false); setCurrentImageIndex(prev => (prev === 0 ? detailApartment.images.length - 1 : prev - 1)); }}
                           className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 hover:bg-white shadow flex items-center justify-center transition"
                         >
                           <span className="material-symbols-outlined text-brand-500">chevron_left</span>
                         </button>
                         <button
-                          onClick={() => setCurrentImageIndex(prev => (prev === detailApartment.images.length - 1 ? 0 : prev + 1))}
+                          onClick={() => { setImgError(false); setCurrentImageIndex(prev => (prev === detailApartment.images.length - 1 ? 0 : prev + 1)); }}
                           className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 hover:bg-white shadow flex items-center justify-center transition"
                         >
                           <span className="material-symbols-outlined text-brand-500">chevron_right</span>

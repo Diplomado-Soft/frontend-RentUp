@@ -44,7 +44,14 @@ function ApartmentForm({ onApartmentAdded, onSuccess, onClose }) {
     const isUnverifiedLandlord = user && user.rol_id === 2 && user.estadoVerificacion !== 'aprobado';
 
 const handleFileChange = (e) => {
-    if (e.target.files) setImageFiles(prev => [...prev, ...Array.from(e.target.files)]);
+    if (e.target.files) {
+        const totalAfterAdd = imageFiles.length + e.target.files.length;
+        if (totalAfterAdd > 15) {
+            setMessage('Máximo 15 fotos permitidas');
+            return;
+        }
+        setImageFiles(prev => [...prev, ...Array.from(e.target.files)]);
+    }
 };
 
 const removeImage = (index) => {
@@ -68,8 +75,35 @@ const toggleAmenity = (amenity) => {
     );
 };
 
+const validateStep = (step) => {
+    if (step === 1) {
+        if (!barrio?.trim()) { setMessage('El barrio es obligatorio'); return false; }
+        if (!direccion?.trim()) { setMessage('La dirección es obligatoria'); return false; }
+        if (!latitud || !longitud) { setMessage('Debés seleccionar una ubicación en el mapa'); return false; }
+    }
+    if (step === 2) {
+        if (!area_m2 || parseFloat(area_m2) <= 0) { setMessage('El área es obligatoria'); return false; }
+        if (!addInfo?.trim()) { setMessage('La descripción es obligatoria'); return false; }
+    }
+    if (step === 3) {
+        if (imageFiles.length < 5) { setMessage('Debés cargar al menos 5 fotos'); return false; }
+        if (imageFiles.length > 15) { setMessage('Máximo 15 fotos permitidas'); return false; }
+    }
+    if (step === 4 && (!price || parseFloat(price) <= 0)) {
+        setMessage('El precio debe ser mayor a 0');
+        return false;
+    }
+    return true;
+};
+
+const handleContinue = () => {
+    if (!validateStep(currentStep)) return;
+    setCurrentStep(currentStep + 1);
+    setMessage('');
+};
+
 const handleSubmit = async () => {
-    if (imageFiles.length === 0) return setMessage('Por favor, cargue al menos una imagen');
+    if (imageFiles.length < 5) return setMessage('Debés cargar al menos 5 fotos');
     if (!price || parseFloat(price) <= 0) return setMessage('El precio es requerido y debe ser mayor a 0');
 
     const formData = new FormData();
@@ -165,7 +199,8 @@ const steps = [
    { num: 1, label: "Ubicación" },
    { num: 2, label: "Detalles" },
    { num: 3, label: "Fotos" },
-   { num: 4, label: "Publicar" },
+   { num: 4, label: "Precio" },
+   { num: 5, label: "Publicar" },
 ];
 
 return (
@@ -217,7 +252,7 @@ return (
       {!isUnverifiedLandlord && (
           <>
             {/* Scrollable Content */}
-            <div className="flex-1 min-h-0 max-w-[1100px] mx-auto px-8 py-12 w-full overflow-y-auto">
+            <div className="flex-1 min-h-0 max-w-[1100px] mx-auto px-8 py-12 w-full overflow-y-auto pb-20">
 
     {message && (
         <div className={`p-4 rounded-xl flex items-start gap-3 ${
@@ -240,13 +275,13 @@ return (
     {/* Step 1: Ubicación */}
     {currentStep === 1 && (
       <div className="screen-enter">
-        <div className="text-xs uppercase tracking-[0.18em] text-ink-muted font-medium mb-3">Paso 1 de 4</div>
+        <div className="text-xs uppercase tracking-[0.18em] text-ink-muted font-medium mb-3">Paso 1 de {steps.length}</div>
         <h1 className="font-display text-5xl leading-tight text-ink mb-10">¿Dónde queda tu <span className="italic-serif text-brand-500">propiedad?</span></h1>
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-          {/* Mapa inline — izquierda (2 cols) */}
-          <div className="lg:col-span-2">
+          {/* Mapa inline — izquierda (3 cols) */}
+          <div className="lg:col-span-3">
             <label className="text-xs uppercase tracking-wider text-ink-muted font-medium mb-1.5 block">Ubicación en el Mapa</label>
-            <div className="rcard overflow-hidden" style={{ height: '260px' }}>
+            <div className="rcard overflow-hidden" style={{ height: '340px' }}>
               {(latitud && longitud) ? (
                 <MapContainer
                   center={[parseFloat(latitud), parseFloat(longitud)]}
@@ -276,11 +311,16 @@ return (
             </div>
           </div>
 
-          {/* Campos — derecha (3 cols) */}
-          <div className="lg:col-span-3 space-y-4">
+          {/* Campos — derecha (2 cols) */}
+          <div className="lg:col-span-2 space-y-4">
             <div>
               <label className="text-xs uppercase tracking-wider text-ink-muted font-medium">Barrio / Sector</label>
               <input type="text" placeholder="Ej: Prado Norte" value={barrio} onChange={(e) => setBarrio(e.target.value)} className={`${inputClass} mt-1.5`} />
+            </div>
+
+            <div>
+              <label className="text-xs uppercase tracking-wider text-ink-muted font-medium">Dirección</label>
+              <input type="text" placeholder="Ej: Cra 5 # 10-20" value={direccion} onChange={(e) => setDireccion(e.target.value)} className={`${inputClass} mt-1.5`} />
             </div>
 
             <div>
@@ -289,11 +329,6 @@ return (
                 <input type="text" placeholder="Latitud" value={latitud || ''} readOnly className={`${inputClass} bg-paper-sunk opacity-70`} />
                 <input type="text" placeholder="Longitud" value={longitud || ''} readOnly className={`${inputClass} bg-paper-sunk opacity-70`} />
               </div>
-            </div>
-
-            <div>
-              <label className="text-xs uppercase tracking-wider text-ink-muted font-medium">Dirección</label>
-              <input type="text" placeholder="Ej: Cra 5 # 10-20" value={direccion} onChange={(e) => setDireccion(e.target.value)} className={`${inputClass} mt-1.5`} />
             </div>
           </div>
         </div>
@@ -304,7 +339,7 @@ return (
     {/* Step 2: Detalles */}
     {currentStep === 2 && (
       <div className="screen-enter">
-        <div className="text-xs uppercase tracking-[0.18em] text-ink-muted font-medium mb-3">Paso 2 de 4</div>
+        <div className="text-xs uppercase tracking-[0.18em] text-ink-muted font-medium mb-3">Paso 2 de {steps.length}</div>
         <h1 className="font-display text-5xl leading-tight text-ink mb-10">Contanos los <span className="italic-serif text-brand-500">detalles.</span></h1>
 
         {/* 3-column counter cards — prototype style */}
@@ -394,7 +429,7 @@ return (
     {/* Step 3: Fotos */}
     {currentStep === 3 && (
       <div className="screen-enter">
-        <div className="text-xs uppercase tracking-[0.18em] text-ink-muted font-medium mb-3">Paso 3 de 4</div>
+        <div className="text-xs uppercase tracking-[0.18em] text-ink-muted font-medium mb-3">Paso 3 de {steps.length}</div>
         <h1 className="font-display text-5xl leading-tight text-ink mb-10">Mostrá tu apartamento con <span className="italic-serif text-brand-500">buenas fotos.</span></h1>
 
         {/* Upload zone */}
@@ -403,7 +438,7 @@ return (
           <span className="material-symbols-outlined text-5xl text-brand-500">add_photo_alternate</span>
           <div>
             <p className="text-body-md text-ink font-medium">Agregá fotos de tu propiedad</p>
-            <p className="text-label-md text-ink-muted mt-0.5">JPG, PNG · Max 10MB</p>
+            <p className="text-label-md text-ink-muted mt-0.5">JPG, PNG · Max 10MB · Mín. 5 fotos</p>
           </div>
         </label>
 
@@ -434,13 +469,13 @@ return (
                 </div>
               ))}
             </div>
-            <p className="text-label-md text-ink-muted mt-3">{imageFiles.length} {imageFiles.length === 1 ? 'foto seleccionada' : 'fotos seleccionadas'}</p>
+            <p className="text-label-md text-ink-muted mt-3">{imageFiles.length} de 15 · {imageFiles.length >= 5 ? '✓ mínimo cumplido' : `faltan ${5 - imageFiles.length} más`}</p>
           </div>
         )}
 
         {/* Empty state */}
         {imageFiles.length === 0 && (
-          <p className="text-body-md text-ink-muted text-center mt-6">Todavía no hay fotos seleccionadas</p>
+          <p className="text-body-md text-ink-muted text-center mt-6">Seleccioná al menos 5 fotos para publicar</p>
         )}
 
       </div>
@@ -449,7 +484,7 @@ return (
     {/* Step 4: Precio */}
     {currentStep === 4 && (
       <div className="screen-enter">
-        <div className="text-xs uppercase tracking-[0.18em] text-ink-muted font-medium mb-3">Paso 4 de 4</div>
+        <div className="text-xs uppercase tracking-[0.18em] text-ink-muted font-medium mb-3">Paso 4 de {steps.length}</div>
         <h1 className="font-display text-5xl leading-tight text-ink mb-2">Definí el <span className="italic-serif text-brand-500">precio.</span></h1>
         <p className="text-sm text-ink-muted mb-10">Establecé el valor del arriendo mensual</p>
 
@@ -472,7 +507,7 @@ return (
     {currentStep === 5 && (
       <div className="screen-enter">
         {/* Eyebrow + Heading */}
-        <div className="text-xs uppercase tracking-[0.18em] text-ink-muted font-medium mb-3">Paso 5 de 5</div>
+        <div className="text-xs uppercase tracking-[0.18em] text-ink-muted font-medium mb-3">Paso 5 de {steps.length}</div>
         <h1 className="font-display text-5xl leading-tight text-ink mb-2">Revisá y <span className="italic-serif text-brand-500">publicá.</span></h1>
 
         {/* Verification notice */}
@@ -571,12 +606,12 @@ return (
          </div>
        )}
  
-       {/* Footer */}
-       <div className="border-t border-line bg-paper flex-shrink-0">
-        <div className="px-8 py-4 flex items-center justify-between">
+        {/* Bottom nav */}
+        <div className="fixed bottom-0 left-0 right-0 z-[60] border-t border-line bg-paper shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
+         <div className="px-8 py-4 flex items-center justify-between max-w-none">
           <div>
             {currentStep > 1 ? (
-              <button type="button" onClick={() => setCurrentStep(currentStep - 1)}
+              <button type="button" onClick={() => { setCurrentStep(currentStep - 1); setMessage(''); }}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold text-ink hover:bg-paper-sunk transition-all">
                 <span className="material-symbols-outlined text-sm">arrow_back</span>
                 Atrás
@@ -588,7 +623,7 @@ return (
           <div className="text-xs text-ink-muted font-medium">Paso {currentStep} de {steps.length}</div>
           <div>
             {currentStep < 5 ? (
-              <button type="button" onClick={() => setCurrentStep(currentStep + 1)}
+              <button type="button" onClick={handleContinue}
                 className="flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold bg-brand-500 text-white hover:bg-brand-600 transition-all shadow-sm">
                 {currentStep === 4 ? 'Revisar y Publicar' : 'Continuar'}
                 <span className="material-symbols-outlined text-sm">arrow_forward</span>

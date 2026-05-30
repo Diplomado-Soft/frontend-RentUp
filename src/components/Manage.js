@@ -314,6 +314,15 @@ return (
                                     {getStatusBadge(apt.status)}
                                 </div>
                             </div>
+                            {apt.publication_status === 'rejected' && apt.publicationInfo?.notes && (
+                              <div className="mt-2 p-2.5 bg-error-container/10 border border-error/20 rounded-lg">
+                                <p className="text-xs font-semibold text-error flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-xs">block</span>
+                                  Motivo del rechazo:
+                                </p>
+                                <p className="text-xs text-ink-muted mt-0.5">{apt.publicationInfo.notes}</p>
+                              </div>
+                            )}
                             <div className="flex items-center justify-between mt-3">
                                 <div>
                                     <span className="font-display text-2xl font-bold text-brand-500">

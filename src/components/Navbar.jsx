@@ -57,6 +57,7 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
   const dashboardNavItems = [
     { id: 'list', label: 'Mis Apartamentos', icon: 'domain', path: '/dashboard' },
     { id: 'contracts', label: 'Contratos', icon: 'description', path: '/dashboard?tab=contracts' },
+    { id: 'visits', label: 'Visitas', icon: 'calendar_month', path: '/dashboard?tab=visits' },
     { id: 'mantenimiento', label: 'Mantenimiento', icon: 'build', path: '/mantenimiento-panel' },
   ];
 
