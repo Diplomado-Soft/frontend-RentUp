@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faStar, faStar as faStarRegular, faCheckCircle, faPencilAlt, faTimes, faTrash } from "@fortawesome/free-solid-svg-icons";
 import axiosInstance from "../contexts/axiosInstance";
 
 function ReviewSection({ propertyId, isOwner }) {
@@ -130,19 +128,16 @@ function ReviewSection({ propertyId, isOwner }) {
             onClick={() => onChange(i)}
             className="focus:outline-none"
           >
-            <FontAwesomeIcon
-              icon={i <= rating ? faStar : faStarRegular}
-              className={`text-lg ${i <= rating ? "text-amber-400" : "text-slate-300"}`}
-            />
+            <span key={i} className={`material-symbols-outlined ${i <= rating ? "text-amber-400 text-lg" : "text-line-strong text-lg"}`}>
+              {i <= rating ? "star" : "star"}
+            </span>
           </button>
         );
       } else {
         stars.push(
-          <FontAwesomeIcon
-            key={i}
-            icon={i <= rating ? faStar : faStarRegular}
-            className={`text-sm ${i <= rating ? "text-amber-400" : "text-slate-300"}`}
-          />
+          <span key={i} className={`material-symbols-outlined text-sm ${i <= rating ? "text-amber-400" : "text-line-strong"}`}>
+            {i <= rating ? "star" : "star"}
+          </span>
         );
       }
     }
@@ -151,25 +146,25 @@ function ReviewSection({ propertyId, isOwner }) {
 
   if (loading) {
     return (
-      <div className="mt-4 p-4 bg-slate-50 rounded-lg">
+      <div className="mt-4 p-4 bg-paper rounded-lg">
         <div className="animate-pulse flex items-center gap-2">
-          <div className="h-4 w-4 bg-slate-300 rounded"></div>
-          <div className="h-4 w-32 bg-slate-300 rounded"></div>
+          <div className="h-4 w-4 bg-ink-muted/20 rounded"></div>
+          <div className="h-4 w-32 bg-ink-muted/20 rounded"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mt-4 border-t border-slate-200 pt-4">
+    <div className="mt-4 border-t border-line pt-4">
       {/* Header con estadísticas */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <span className="text-lg font-bold text-slate-800">
+          <span className="text-lg font-bold text-ink">
             {stats?.average_rating ? parseFloat(stats.average_rating).toFixed(1) : "0.0"}
           </span>
           <div className="flex">{renderStars(Math.round(stats?.average_rating || 0))}</div>
-          <span className="text-sm text-slate-500">
+          <span className="text-sm text-ink-muted">
             ({stats?.total_reviews || 0} reseñas)
           </span>
         </div>
@@ -177,9 +172,9 @@ function ReviewSection({ propertyId, isOwner }) {
         {userReview && !isOwner && (
           <button
             onClick={() => openEditForm(userReview)}
-            className="px-4 py-2 bg-slate-800 text-white text-sm rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-ink text-white text-sm rounded-lg hover:bg-ink-muted transition-colors flex items-center gap-2"
           >
-            <FontAwesomeIcon icon={faPencilAlt} className="text-xs" />
+            <span className="material-symbols-outlined text-sm">edit</span>
             Editar reseña
           </button>
         )}
@@ -187,21 +182,21 @@ function ReviewSection({ propertyId, isOwner }) {
         {!userReview && canReview && !isOwner && (
           <button
             onClick={openCreateForm}
-            className="px-4 py-2 bg-slate-800 text-white text-sm rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-ink text-white text-sm rounded-lg hover:bg-ink-muted transition-colors flex items-center gap-2"
           >
-            <FontAwesomeIcon icon={faPencilAlt} className="text-xs" />
+            <span className="material-symbols-outlined text-sm">edit</span>
             Escribir reseña
           </button>
         )}
 
         {!userReview && !canReview && !isOwner && user.id && (
-          <span className="text-xs text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
+          <span className="text-xs text-ink-muted bg-paper-sunk px-3 py-1 rounded-full">
             Solo clientes con contrato pueden reseñar
           </span>
         )}
 
         {!user.id && (
-          <span className="text-xs text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
+          <span className="text-xs text-ink-muted bg-paper-sunk px-3 py-1 rounded-full">
             Inicia sesión para reseñar
           </span>
         )}
@@ -209,27 +204,27 @@ function ReviewSection({ propertyId, isOwner }) {
 
       {/* Formulario de reseña */}
       {showForm && (
-        <div className="bg-slate-50 p-4 rounded-lg mb-4 border border-slate-200">
+        <div className="bg-paper p-4 rounded-lg mb-4 border border-line">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="font-medium text-slate-700">{editingReviewId ? "Editar reseña" : "Tu reseña"}</h4>
-            <button onClick={() => { setShowForm(false); setEditingReviewId(null); }} className="text-slate-400 hover:text-slate-600">
-              <FontAwesomeIcon icon={faTimes} />
+            <h4 className="font-medium text-ink">{editingReviewId ? "Editar reseña" : "Tu reseña"}</h4>
+            <button onClick={() => { setShowForm(false); setEditingReviewId(null); }} className="text-ink-muted hover:text-ink-muted">
+              <span className="material-symbols-outlined text-sm">close</span>
             </button>
           </div>
           
           <form onSubmit={submitReview}>
             <div className="mb-3">
-              <label className="block text-sm text-slate-600 mb-2">Calificación</label>
+              <label className="block text-sm text-ink-muted mb-2">Calificación</label>
               <div className="flex gap-1">{renderStars(formData.rating, true, (val) => setFormData(p => ({ ...p, rating: val })))}</div>
             </div>
             
             <div className="mb-3">
-              <label className="block text-sm text-slate-600 mb-2">Tu experiencia</label>
+              <label className="block text-sm text-ink-muted mb-2">Tu experiencia</label>
               <textarea
                 value={formData.comment}
                 onChange={(e) => setFormData(p => ({ ...p, comment: e.target.value }))}
                 placeholder="Comparte tu experiencia con esta propiedad..."
-                className="w-full p-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-slate-400 focus:border-transparent outline-none resize-none"
+                className="w-full p-3 border border-line rounded-lg text-sm focus:ring-2 focus:ring-brand-300 focus:border-transparent outline-none resize-none"
                 rows={3}
               />
             </div>
@@ -240,7 +235,7 @@ function ReviewSection({ propertyId, isOwner }) {
             <button
               type="submit"
               disabled={submitting}
-              className="px-4 py-2 bg-slate-800 text-white text-sm rounded-lg hover:bg-slate-700 disabled:opacity-50 transition-colors"
+              className="px-4 py-2 bg-ink text-white text-sm rounded-lg hover:bg-ink-muted disabled:opacity-50 transition-colors"
             >
               {submitting ? "Guardando..." : editingReviewId ? "Guardar cambios" : "Publicar reseña"}
             </button>
@@ -250,48 +245,48 @@ function ReviewSection({ propertyId, isOwner }) {
 
       {/* Lista de reseñas */}
       {reviews.length === 0 ? (
-        <p className="text-slate-500 text-sm text-center py-4">
+        <p className="text-ink-muted text-sm text-center py-4">
           No hay reseñas todavía. ¡Sé el primero en compartir tu experiencia!
         </p>
       ) : (
         <div className="space-y-3">
           {reviews.map((review) => (
-            <div key={review.review_id} className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+            <div key={review.review_id} className="bg-paper p-3 rounded-lg border border-line">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-slate-400 rounded-full flex items-center justify-center text-white text-xs font-medium">
+                  <div className="w-8 h-8 bg-brand-500 rounded-full flex items-center justify-center text-white text-xs font-medium">
                     {(review.user_name || "U").charAt(0)}
                   </div>
-                  <span className="font-medium text-sm text-slate-700">
+                  <span className="font-medium text-sm text-ink">
                     {review.user_name ? `${review.user_name} ${review.user_lastname || ""}`.trim() : "Usuario"}
                   </span>
                   {review.verified_booking && (
                     <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                      <FontAwesomeIcon icon={faCheckCircle} className="text-xs" />
+                      <span className="material-symbols-outlined text-xs">verified</span>
                       Verificado
                     </span>
                   )}
                 </div>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-ink-muted">
                   {new Date(review.created_at).toLocaleDateString("es-CO")}
                 </span>
               </div>
               <div className="flex mb-2">{renderStars(review.rating)}</div>
-              <p className="text-sm text-slate-600">{review.comment}</p>
+              <p className="text-sm text-ink-muted">{review.comment}</p>
               {review.reviewer_id === user.id && (
-                <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-200">
+                <div className="flex items-center gap-2 mt-2 pt-2 border-t border-line">
                   <button
                     onClick={() => openEditForm(review)}
-                    className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 transition-colors"
+                    className="flex items-center gap-1 text-xs text-ink-muted hover:text-ink transition-colors"
                   >
-                    <FontAwesomeIcon icon={faPencilAlt} className="text-xs" />
+                    <span className="material-symbols-outlined text-xs">edit</span>
                     Editar
                   </button>
                   <button
                     onClick={() => handleDeleteReview(review.review_id)}
                     className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 transition-colors"
                   >
-                    <FontAwesomeIcon icon={faTrash} className="text-xs" />
+                    <span className="material-symbols-outlined text-xs">delete</span>
                     Eliminar
                   </button>
                 </div>

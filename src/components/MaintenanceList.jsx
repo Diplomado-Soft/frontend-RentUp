@@ -104,6 +104,7 @@ export default function MaintenanceList({ refreshKey }) {
                 title="¿Eliminar reporte?"
                 message="El reporte se ocultará de tu vista."
                 confirmLabel="Eliminar"
+                variant="danger"
                 onConfirm={handleDeleteConfirm}
                 onCancel={() => setDeleteTarget(null)}
             />

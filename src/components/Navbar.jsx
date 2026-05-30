@@ -139,13 +139,6 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
                 <span className="material-symbols-outlined text-sm">space_dashboard</span>
                 <span>Mi Espacio</span>
               </button>
-              <button
-                onClick={() => setShowMessages(v => !v)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors"
-              >
-                <span className="material-symbols-outlined text-sm">forum</span>
-                <span>Mensajes</span>
-              </button>
             </div>
           )}
           {/* Desktop: user actions */}

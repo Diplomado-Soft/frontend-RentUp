@@ -12,6 +12,7 @@ import { hideEntity } from "../apis/visibilityController";
 import PaymentModal from "../components/Payment/PaymentModal";
 import SignaturePad from "../components/SignaturePad";
 import ConfirmModal from "../components/ConfirmModal";
+import ReviewSection from "../components/ReviewSection";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
@@ -51,6 +52,7 @@ function TenantDashboard() {
   const [hideTarget, setHideTarget] = useState(null);
   const [hideType, setHideType] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
+  const [reviewContractId, setReviewContractId] = useState(null);
 
   const handleCancelRentConfirm = async () => {
     try {
@@ -129,6 +131,26 @@ function TenantDashboard() {
   const totalMonthlyRent = activeContracts.reduce((sum, c) => sum + (c.monthly_rent || 0), 0);
   const pendingReports = reports.filter((r) => r.status === "pending" || r.status === "in_progress");
 
+  const getNextPaymentDate = (startDate) => {
+    if (!startDate) return null;
+    const paymentDay = new Date(startDate).getDate();
+    const today = new Date();
+    const next = new Date(today.getFullYear(), today.getMonth(), paymentDay);
+    if (next < today) next.setMonth(next.getMonth() + 1);
+    return next;
+  };
+
+  const nextPayment = activeContracts.length > 0
+    ? activeContracts
+        .map((c) => {
+          const dueDate = getNextPaymentDate(c.start_date);
+          if (!dueDate) return null;
+          return { amount: c.monthly_rent || 0, dueDate, contract: c };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.dueDate - b.dueDate)[0] || null
+    : null;
+
   const landlords = activeContracts.reduce((acc, c) => {
     if (c.landlord_id && !acc.some((l) => l.id === c.landlord_id)) {
       acc.push({
@@ -157,6 +179,10 @@ function TenantDashboard() {
           c.end_date ? Math.ceil((new Date(c.end_date) - new Date()) / (1000 * 60 * 60 * 24)) : 999
         )
       )
+      : null;
+
+  const daysToNextPayment = nextPayment
+    ? Math.ceil((nextPayment.dueDate - new Date()) / (1000 * 60 * 60 * 24))
     : null;
 
   const formatPrice = (price) =>
@@ -192,6 +218,17 @@ function TenantDashboard() {
     return Math.ceil((new Date(endDate) - new Date()) / (1000 * 60 * 60 * 24));
   };
 
+  const getContractProgress = (endDate, startDate) => {
+    if (!endDate || !startDate) return null;
+    const now = new Date();
+    const end = new Date(endDate);
+    const start = new Date(startDate);
+    const total = end - start;
+    const remaining = end - now;
+    if (total <= 0 || remaining <= 0) return 0;
+    return Math.max(5, Math.min(100, Math.round((remaining / total) * 100)));
+  };
+
   const firstName = (user?.nombre || user?.user_name || "").split(" ")[0] || "Usuario";
   const initials = `${(user?.nombre || user?.user_name || "").charAt(0)}${(user?.apellido || user?.user_lastname || "").charAt(0)}`.toUpperCase() || "?";
 
@@ -211,8 +248,8 @@ function TenantDashboard() {
       type: "contracts",
     },
     {
-      label: "Pagos Mensuales",
-      value: formatPrice(totalMonthlyRent),
+      label: "Próximo Pago",
+      value: nextPayment ? formatPrice(nextPayment.amount) : formatPrice(0),
       type: "payments",
     },
     {
@@ -221,11 +258,11 @@ function TenantDashboard() {
       type: "reports",
     },
     {
-      label: daysToNearestEnd !== null && daysToNearestEnd > 0 ? "Días Restantes" : "Sin contrato activo",
-      value: daysToNearestEnd !== null && daysToNearestEnd > 0 ? daysToNearestEnd : "-",
+      label: daysToNextPayment !== null && daysToNextPayment > 0 ? "Días al Pago" : "Sin pagos",
+      value: daysToNextPayment !== null && daysToNextPayment > 0 ? daysToNextPayment : "-",
       type: "days",
-      circleValue: daysToNearestEnd !== null && daysToNearestEnd > 0
-        ? Math.max(5, Math.min(100, Math.round((daysToNearestEnd / 365) * 100)))
+      circleValue: daysToNextPayment !== null && daysToNextPayment > 0
+        ? Math.max(5, Math.min(100, Math.round((daysToNextPayment / 30) * 100)))
         : null,
     },
   ];
@@ -233,7 +270,7 @@ function TenantDashboard() {
   return (
     <div className="min-h-screen bg-paper">
       <div className="flex">
-        <aside className="fixed left-0 top-0 h-screen pt-14 w-60 bg-paper-sunk border-r border-line z-30">
+        <aside className="fixed left-0 top-[var(--navbar-h)] bottom-0 w-60 bg-paper-sunk border-r border-line z-30">
           <div className="flex flex-col h-full p-3">
             <nav className="flex-1 space-y-1">
               {navItems.map((item) => (
@@ -314,161 +351,189 @@ function TenantDashboard() {
                       {activeContracts.map((rent) => {
                         const daysRemaining = getDaysRemaining(rent.end_date);
                         return (
-                          <div key={rent.agreement_id} className="bg-paper-card rounded-xl shadow-ambient-sm hover:shadow-ambient-md transition-shadow overflow-hidden">
-                            <div className="flex flex-col md:flex-row">
-                              <div className="flex-1 min-w-0 p-5 flex flex-col gap-3">
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="min-w-0">
-                                    <h3 className="font-headline text-headline-md text-ink">
-                                      {rent.barrio_name || rent.barrio || "Sin barrio"}
-                                    </h3>
-                                    <p className="flex items-center gap-1.5 text-body-md text-ink-muted mt-0.5">
-                                      <span className="material-symbols-outlined text-[16px]">location_on</span>
-                                      {rent.direccion_apt || ""}
-                                    </p>
-                                  </div>
-                                  {getStatusBadge(rent.status)}
-                                </div>
+                          <React.Fragment key={rent.agreement_id}>
+                            <div className="bg-paper-card rounded-xl shadow-ambient-sm hover:shadow-ambient-md transition-shadow overflow-hidden">
+                              <div className="flex flex-col md:flex-row">
+                                <div className="flex-1 min-w-0 p-5 flex flex-col">
 
-                                <div className="grid grid-cols-2 gap-3">
-                                  <div className="bg-paper-sunk rounded-lg p-3">
-                                    <p className="flex items-center gap-1.5 text-label-sm text-ink-muted mb-1">
-                                      <span className="material-symbols-outlined text-[14px]">calendar_today</span>
-                                      Inicio
-                                    </p>
-                                    <p className="text-label-md font-medium text-ink">{formatDate(rent.start_date)}</p>
-                                  </div>
-                                  <div className="bg-paper-sunk rounded-lg p-3">
-                                    <p className="flex items-center gap-1.5 text-label-sm text-ink-muted mb-1">
-                                      <span className="material-symbols-outlined text-[14px]">event</span>
-                                      Fin
-                                    </p>
-                                    <p className="text-label-md font-medium text-ink">{formatDate(rent.end_date)}</p>
-                                  </div>
-                                </div>
-
-                                {daysRemaining !== null && daysRemaining > 0 && (
-                                  <div>
-                                    <div className="flex items-center justify-between mb-1.5">
-                                      <span className="text-label-sm text-ink-muted">Tiempo restante</span>
-                                      <span className={`text-label-sm font-medium ${
-                                        daysRemaining <= 30 ? 'text-error' : 'text-ink-muted'
-                                      }`}>
-                                        {daysRemaining} días
-                                      </span>
+                                  {/* ZONE 1: Header — title + address + status */}
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                      <h3 className="font-headline text-headline-md text-ink">
+                                        {rent.barrio_name || rent.barrio || "Sin barrio"}
+                                      </h3>
+                                      <p className="flex items-center gap-1.5 text-body-md text-ink-muted mt-0.5">
+                                        <span className="material-symbols-outlined text-[16px]">location_on</span>
+                                        {rent.direccion_apt || ""}
+                                      </p>
                                     </div>
-                                    <div className="h-2 bg-line rounded-full overflow-hidden">
-                                      <div
-                                        className={`h-full rounded-full transition-all ${
-                                          daysRemaining <= 30
-                                            ? 'bg-error'
-                                            : daysRemaining <= 90
-                                              ? 'bg-ember'
-                                              : 'bg-tertiary'
-                                        }`}
-                                        style={{ width: `${Math.max(5, Math.min(100, (daysRemaining / 365) * 100))}%` }}
-                                      />
+                                    {getStatusBadge(rent.status)}
+                                  </div>
+
+                                  {/* ZONE 2: Price + Time remaining */}
+                                  <div className="mt-3 pt-3 border-t border-line">
+                                    <div className="flex items-start justify-between gap-4">
+                                      <div className="min-w-0">
+                                        <p className="text-label-sm text-ink-muted mb-0.5">Valor del arriendo</p>
+                                        <div className="flex items-baseline gap-1.5">
+                                          <span className="material-symbols-outlined text-brand-500 text-lg">payments</span>
+                                          <span className="font-headline font-bold text-headline-md text-brand-500">
+                                            {formatPrice(rent.monthly_rent)}
+                                          </span>
+                                          <span className="text-ink-muted text-sm"> /mes</span>
+                                        </div>
+                                      </div>
+                                      {daysRemaining !== null && daysRemaining > 0 && (
+                                        <div className="text-right min-w-[140px]">
+                                          <span className={`text-label-sm font-medium ${
+                                            daysRemaining <= 30 ? 'text-error' : 'text-ink-muted'
+                                          }`}>
+                                            {daysRemaining} días restantes
+                                          </span>
+                                          <div className="h-2 bg-line rounded-full overflow-hidden mt-1.5">
+                                            <div
+                                              className={`h-full rounded-full transition-all ${
+                                                daysRemaining <= 30
+                                                  ? 'bg-error'
+                                                  : daysRemaining <= 90
+                                                    ? 'bg-ember'
+                                                    : 'bg-tertiary'
+                                              }`}
+                                              style={{ width: `${getContractProgress(rent.end_date, rent.start_date)}%` }}
+                                            />
+                                          </div>
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
-                                )}
 
-                                <div>
-                                  <p className="text-label-sm text-ink-muted mb-0.5">Valor del arriendo</p>
-                                  <div className="flex items-baseline gap-1.5">
-                                    <span className="material-symbols-outlined text-brand-500 text-lg">payments</span>
-                                    <span className="font-headline font-bold text-headline-md text-brand-500">
-                                      {formatPrice(rent.monthly_rent)}
-                                    </span>
-                                    <span className="text-ink-muted text-sm"> /mes</span>
+                                  {/* ZONE 3: Dates */}
+                                  <div className="mt-3 pt-3 border-t border-line">
+                                    <div className="grid grid-cols-2 gap-3">
+                                      <div className="bg-paper-sunk rounded-lg p-3">
+                                        <p className="flex items-center gap-1.5 text-label-sm text-ink-muted mb-1">
+                                          <span className="material-symbols-outlined text-[14px]">calendar_today</span>
+                                          Inicio
+                                        </p>
+                                        <p className="text-label-md font-medium text-ink">{formatDate(rent.start_date)}</p>
+                                      </div>
+                                      <div className="bg-paper-sunk rounded-lg p-3">
+                                        <p className="flex items-center gap-1.5 text-label-sm text-ink-muted mb-1">
+                                          <span className="material-symbols-outlined text-[14px]">event</span>
+                                          Fin
+                                        </p>
+                                        <p className="text-label-md font-medium text-ink">{formatDate(rent.end_date)}</p>
+                                      </div>
+                                    </div>
                                   </div>
+
+                                  {/* ZONE 4: Arrendador + Signature */}
+                                  <div className="mt-3 pt-3 border-t border-line">
+                                    <div className="flex items-center justify-between gap-3">
+                                      {rent.landlord_name && (
+                                        <div className="flex items-center gap-1.5 text-sm text-ink-muted min-w-0">
+                                          <span className="material-symbols-outlined text-[16px] flex-shrink-0">person</span>
+                                          <span className="truncate">Arrendador: <strong className="text-ink">{rent.landlord_name} {rent.landlord_lastname || ""}</strong></span>
+                                        </div>
+                                      )}
+                                      {rent.signature_status && (
+                                        <span className={`inline-flex items-center gap-1 text-label-md px-2 py-0.5 rounded-full flex-shrink-0 ${
+                                          rent.signature_status === 'fully_signed' ? 'bg-tertiary/10 text-tertiary' :
+                                          rent.signature_status === 'signed_by_tenant' ? 'bg-secondary/10 text-secondary' :
+                                          rent.signature_status === 'signed_by_landlord' ? 'bg-secondary/10 text-secondary' :
+                                          'bg-warning/10 text-warning'
+                                        }`}>
+                                          <span className="material-symbols-outlined text-[14px]">
+                                            {rent.signature_status === 'fully_signed' ? 'verified' :
+                                             rent.signature_status === 'signed_by_tenant' ? 'draw' :
+                                             rent.signature_status === 'signed_by_landlord' ? 'draw' :
+                                             'pending'}
+                                          </span>
+                                          {rent.signature_status === 'fully_signed' ? 'Ambos firmaron' :
+                                           rent.signature_status === 'signed_by_tenant' ? 'Esperando firma del arrendador' :
+                                           rent.signature_status === 'signed_by_landlord' ? 'Esperando tu firma' :
+                                           'Pendiente de firmas'}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* ZONE 5: Actions */}
+                                  <div className="mt-3 pt-3 border-t border-line">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <button
+                                        onClick={() => {
+                                          const url = previewContractPdf(rent.agreement_id, rent.signed_pdf_url);
+                                          if (url) window.open(url, '_blank');
+                                        }}
+                                        className="flex items-center gap-1 text-label-md text-ink-muted hover:text-ink transition-all px-2 py-1 rounded-lg hover:bg-line/30"
+                                      >
+                                        <span className="material-symbols-outlined text-sm">visibility</span>
+                                        Vista previa PDF
+                                      </button>
+                                      {canSignContract(rent) && (
+                                        <button
+                                          onClick={() => {
+                                            setSigningContract(rent);
+                                            setShowSignaturePad(true);
+                                          }}
+                                          className="flex items-center gap-1 text-label-md text-brand-500 hover:text-brand-600 transition-all px-2 py-1 rounded-lg hover:bg-brand-500/10"
+                                        >
+                                          <span className="material-symbols-outlined text-sm">draw</span>
+                                          Firmar contrato
+                                        </button>
+                                      )}
+                                      {rent.status === 'active' && (
+                                        <button
+                                          onClick={() => setCancelTarget(rent.agreement_id)}
+                                          className="flex items-center gap-1 text-label-md text-warning hover:text-warning transition-all px-2 py-1 rounded-lg hover:bg-warning/10"
+                                        >
+                                          <span className="material-symbols-outlined text-sm">cancel</span>
+                                          Cancelar arriendo
+                                        </button>
+                                      )}
+                                      <button
+                                        onClick={() => { setHideTarget(rent.agreement_id); setHideType('contract'); }}
+                                        className="flex items-center gap-1 text-label-md text-error hover:text-error transition-all px-2 py-1 rounded-lg hover:bg-error/10"
+                                      >
+                                        <span className="material-symbols-outlined text-sm">delete</span>
+                                        Eliminar
+                                      </button>
+                                      <button
+                                        onClick={() => setReviewContractId(reviewContractId === rent.agreement_id ? null : rent.agreement_id)}
+                                        className="flex items-center gap-1 text-label-md text-brand-500 hover:text-brand-600 transition-all px-2 py-1 rounded-lg hover:bg-brand-500/10 ml-auto"
+                                      >
+                                        <span className="material-symbols-outlined text-sm">star</span>
+                                        {reviewContractId === rent.agreement_id ? 'Cerrar reseñas' : 'Dejar una reseña'}
+                                      </button>
+                                    </div>
+                                  </div>
+
                                 </div>
 
-                                {rent.landlord_name && (
-                                  <div className="flex items-center gap-1.5 text-sm text-ink-muted pt-1">
-                                    <span className="material-symbols-outlined text-[16px]">person</span>
-                                    <span>Arrendador: <strong className="text-ink">{rent.landlord_name} {rent.landlord_lastname || ""}</strong></span>
-                                  </div>
-                                )}
-
-                                {rent.signature_status && (
-                                  <div className="pt-1">
-                                    <span className={`inline-flex items-center gap-1 text-label-md px-2 py-0.5 rounded-full ${
-                                      rent.signature_status === 'fully_signed' ? 'bg-tertiary/10 text-tertiary' :
-                                      rent.signature_status === 'signed_by_tenant' ? 'bg-secondary/10 text-secondary' :
-                                      rent.signature_status === 'signed_by_landlord' ? 'bg-secondary/10 text-secondary' :
-                                      'bg-warning/10 text-warning'
-                                    }`}>
-                                      <span className="material-symbols-outlined text-[14px]">
-                                        {rent.signature_status === 'fully_signed' ? 'verified' :
-                                         rent.signature_status === 'signed_by_tenant' ? 'draw' :
-                                         rent.signature_status === 'signed_by_landlord' ? 'draw' :
-                                         'pending'}
-                                      </span>
-                                      {rent.signature_status === 'fully_signed' ? 'Ambos firmaron' :
-                                       rent.signature_status === 'signed_by_tenant' ? 'Esperando firma del arrendador' :
-                                       rent.signature_status === 'signed_by_landlord' ? 'Esperando tu firma' :
-                                       'Pendiente de firmas'}
-                                    </span>
-                                  </div>
-                                )}
-
-                                <div className="flex items-center gap-2 pt-2">
-                                  <button
-                                    onClick={() => {
-                                      const url = previewContractPdf(rent.agreement_id, rent.signed_pdf_url);
-                                      if (url) window.open(url, '_blank');
-                                    }}
-                                    className="flex items-center gap-1 text-label-md text-ink-muted hover:text-ink transition-all px-2 py-1 rounded-lg hover:bg-line/30"
-                                  >
-                                    <span className="material-symbols-outlined text-sm">visibility</span>
-                                    Vista previa PDF
-                                  </button>
-                                  {canSignContract(rent) && (
-                                    <button
-                                      onClick={() => {
-                                        setSigningContract(rent);
-                                        setShowSignaturePad(true);
-                                      }}
-                                      className="flex items-center gap-1 text-label-md text-brand-500 hover:text-brand-600 transition-all px-2 py-1 rounded-lg hover:bg-brand-500/10"
-                                    >
-                                      <span className="material-symbols-outlined text-sm">draw</span>
-                                      Firmar contrato
-                                    </button>
+                                <div className="w-full md:w-1/2 h-48 md:h-auto md:max-h-[500px] bg-paper-sunk overflow-hidden">
+                                  {rent.images && rent.images.length > 0 && rent.images[0]?.url ? (
+                                    <img
+                                      src={rent.images[0].url}
+                                      alt="Vivienda"
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                      <span className="material-symbols-outlined text-3xl text-outline">image</span>
+                                    </div>
                                   )}
-                                  {rent.status === 'active' && (
-                                    <button
-                                      onClick={() => setCancelTarget(rent.agreement_id)}
-                                      className="flex items-center gap-1 text-label-md text-warning hover:text-warning transition-all px-2 py-1 rounded-lg hover:bg-warning/10"
-                                    >
-                                      <span className="material-symbols-outlined text-sm">cancel</span>
-                                      Cancelar arriendo
-                                    </button>
-                                  )}
-                                  <button
-                                    onClick={() => { setHideTarget(rent.agreement_id); setHideType('contract'); }}
-                                    className="flex items-center gap-1 text-label-md text-error hover:text-error transition-all px-2 py-1 rounded-lg hover:bg-error/10"
-                                  >
-                                    <span className="material-symbols-outlined text-sm">delete</span>
-                                    Eliminar
-                                  </button>
                                 </div>
-                              </div>
-
-                              <div className="w-full md:w-1/2 h-48 md:h-auto bg-paper-sunk overflow-hidden">
-                                {rent.images && rent.images.length > 0 && rent.images[0]?.url ? (
-                                  <img
-                                    src={rent.images[0].url}
-                                    alt="Vivienda"
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-3xl text-outline">image</span>
-                                  </div>
-                                )}
                               </div>
                             </div>
-                          </div>
+
+                            {/* SECTION 6: Reviews — outside the card */}
+                            {reviewContractId === rent.agreement_id && (
+                              <div className="-mt-3 bg-paper-card rounded-b-xl border border-t-0 border-line px-5 py-4">
+                                <ReviewSection propertyId={rent.id_apt} isOwner={false} />
+                              </div>
+                            )}
+                          </React.Fragment>
                         );
                       })}
 
@@ -548,8 +613,11 @@ function TenantDashboard() {
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="bg-surface-container-low rounded-xl p-5">
-                          <p className="text-label-md text-ink-muted uppercase tracking-wider mb-1">Total mensual</p>
-                          <p className="font-headline text-headline-md text-ink">{formatPrice(totalMonthlyRent)}</p>
+                          <p className="text-label-md text-ink-muted uppercase tracking-wider mb-1">Próximo pago</p>
+                          <p className="font-headline text-headline-md text-ink">{formatPrice(nextPayment?.amount || 0)}</p>
+                          <p className="text-label-sm text-outline mt-1">
+                            {nextPayment ? `Vence el ${formatDate(nextPayment.dueDate)}` : "Sin pagos pendientes"}
+                          </p>
                         </div>
                         <div className="bg-surface-container-low rounded-xl p-5">
                           <p className="text-label-md text-ink-muted uppercase tracking-wider mb-1">Contratos activos</p>
@@ -1096,10 +1164,10 @@ function TenantDashboard() {
                 ) : card.type === "payments" ? (
                   <div className="flex flex-col items-center">
                     <div className="w-full border-2 border-dashed border-line/30 rounded-lg p-3 text-center">
-                      <p className="font-headline text-headline-lg font-bold text-ink leading-none">{formatPrice(totalMonthlyRent)}</p>
+                      <p className="font-headline text-headline-lg font-bold text-ink leading-none">{card.value}</p>
                       <p className="text-label-sm text-ink-muted mt-1">
-                        {daysToNearestEnd !== null && daysToNearestEnd > 0
-                          ? `Próximo: ${new Date(Date.now() + daysToNearestEnd * 86400000).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}`
+                        {nextPayment
+                          ? `Vence: ${formatDate(nextPayment.dueDate)}`
                           : "Sin contratos activos"}
                       </p>
                     </div>
@@ -1293,6 +1361,7 @@ function TenantDashboard() {
         title="¿Eliminar?"
         message="Este elemento se ocultará de tu vista."
         confirmLabel="Eliminar"
+        variant="danger"
         onConfirm={handleHideConfirm}
         onCancel={() => { setHideTarget(null); setHideType(null); }}
       />

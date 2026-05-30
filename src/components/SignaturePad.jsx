@@ -17,7 +17,7 @@ function SignaturePad({ contract, onSigned, onClose }) {
     const ctx = canvas.getContext("2d");
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = "#1e40af";
+    ctx.strokeStyle = "#2e5a88";
     ctx.lineWidth = 2;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -187,6 +187,7 @@ function SignaturePad({ contract, onSigned, onClose }) {
           title="¿Confirmar firma?"
           message="Al confirmar, estarás firmando digitalmente este contrato de arrendamiento. Esta acción no se puede deshacer."
           confirmLabel={signing ? "Firmando..." : "Sí, firmar"}
+          variant="confirm"
           onConfirm={handleConfirmSign}
           onCancel={() => { if (!signing) setShowConfirm(false); }}
           loading={signing}

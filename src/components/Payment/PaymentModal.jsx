@@ -165,74 +165,68 @@ function PaymentModal({ contract, onClose, onSuccess }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="w-full max-w-[672px]">
-        <div className="bg-white rounded-2xl shadow-xl border border-[#e5dfd2] overflow-hidden">
-          <div className="bg-[#0e1a2b] px-6 py-6 flex items-center justify-between">
+        <div className="bg-white rounded-2xl shadow-xl border border-line overflow-hidden">
+          <div className="bg-ink px-6 py-6 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-white/10 border border-white/20 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xl">R</span>
               </div>
               <div>
                 <p className="text-white font-bold text-2xl">RentUp</p>
-                <p className="text-[#cdc6b3] text-sm">Pago de arriendo</p>
+                <p className="text-ink-muted text-sm">Pago de arriendo</p>
               </div>
             </div>
-            <button onClick={onClose} className="text-[#cdc6b3] hover:text-white transition-colors">
-              <svg width="17" height="17" viewBox="0 0 17 17" fill="none">
-                <path d="M1 1L16 16M16 1L1 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
+            <button onClick={onClose} className="text-ink-muted hover:text-white transition-colors">
+              <span className="material-symbols-outlined text-lg">close</span>
             </button>
           </div>
 
           {step === "form" && (
-            <div className="bg-[#faf8f3] p-6 space-y-4">
+            <div className="bg-paper p-6 space-y-4">
               <div className="flex gap-4">
-                <div className="flex-1 bg-white border border-[#e5dfd2] rounded-xl p-4 space-y-3">
-                  <p className="text-[#536379] font-bold text-xs tracking-[1.2px] uppercase">Cliente</p>
+                <div className="flex-1 bg-white border border-line rounded-xl p-4 space-y-3">
+                  <p className="text-ink-muted font-bold text-xs tracking-[1.2px] uppercase">Cliente</p>
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-[#f1ede4] rounded-lg flex items-center justify-center">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                        <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="#536379"/>
-                      </svg>
+                    <div className="w-8 h-8 bg-paper-sunk rounded-lg flex items-center justify-center">
+                      <span className="material-symbols-outlined text-ink-muted text-sm">person</span>
                     </div>
-                    <p className="text-[#0e1a2b] font-medium text-base">{tenantFull}</p>
+                    <p className="text-ink font-medium text-base">{tenantFull}</p>
                   </div>
-                  <div className="border-t border-[#e5dfd2] pt-3 space-y-1">
-                    <p className="text-[#536379] font-bold text-xs tracking-[1.2px] uppercase">Dirección</p>
+                  <div className="border-t border-line pt-3 space-y-1">
+                    <p className="text-ink-muted font-bold text-xs tracking-[1.2px] uppercase">Dirección</p>
                     <div className="flex items-center gap-1">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                        <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z" fill="#2e5a88"/>
-                      </svg>
-                      <p className="text-[#0e1a2b] text-base">{contract.direccion_apt || contract.barrio || "Vivienda"}</p>
+                      <span className="material-symbols-outlined text-sm text-brand-500">location_on</span>
+                      <p className="text-ink text-base">{contract.direccion_apt || contract.barrio || "Vivienda"}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex-1 bg-white border border-[#e5dfd2] rounded-xl p-4 space-y-4">
-                  <p className="text-[#536379] font-bold text-xs tracking-[1.2px] uppercase">Resumen</p>
+                <div className="flex-1 bg-white border border-line rounded-xl p-4 space-y-4">
+                  <p className="text-ink-muted font-bold text-xs tracking-[1.2px] uppercase">Resumen</p>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-[#536379]">Arriendo mensual</span>
-                      <span className="text-[#0e1a2b] font-semibold">{formatPrice(contract.monthly_rent)}</span>
+                      <span className="text-ink-muted">Arriendo mensual</span>
+                      <span className="text-ink font-semibold">{formatPrice(contract.monthly_rent)}</span>
                     </div>
                     {depositApplies && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-[#2e5a88]">Descuento depósito</span>
-                        <span className="text-[#2e5a88] font-semibold">-{formatPrice(contract.deposit_amount)}</span>
+                        <span className="text-brand-500">Descuento depósito</span>
+                        <span className="text-brand-500 font-semibold">-{formatPrice(contract.deposit_amount)}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-sm">
-                      <span className="text-[#536379]">Cargos</span>
-                      <span className="text-[#0e1a2b]">$0</span>
+                      <span className="text-ink-muted">Cargos</span>
+                      <span className="text-ink">$0</span>
                     </div>
-                    <div className="border-t border-[#e5dfd2] pt-2 flex justify-between">
-                      <span className="text-[#0e1a2b] font-bold">Total</span>
-                      <span className="text-[#2e5a88] font-bold text-lg">{formatPrice(totalAmount)}</span>
+                    <div className="border-t border-line pt-2 flex justify-between">
+                      <span className="text-ink font-bold">Total</span>
+                      <span className="text-brand-500 font-bold text-lg">{formatPrice(totalAmount)}</span>
                     </div>
                   </div>
                   <button
                     onClick={handlePay}
                     disabled={loading || (!stripe && paymentMethod === 'card' && HAS_STRIPE)}
-                    className={`w-full bg-[#2e5a88] text-white font-bold text-sm rounded-lg px-4 py-2.5 hover:bg-[#264c74] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
+                    className={`w-full bg-brand-500 text-white font-bold text-sm rounded-lg px-4 py-2.5 hover:bg-brand-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
                       paymentMethod === "paypal" ? "hidden" : ""
                     }`}
                   >
@@ -245,68 +239,63 @@ function PaymentModal({ contract, onClose, onSuccess }) {
                 </div>
               </div>
 
-              <div className="bg-white border border-[#e5dfd2] rounded-xl overflow-hidden">
-                <div className="bg-[#f1ede4] border-b border-[#e5dfd2] flex">
+              <div className="bg-white border border-line rounded-xl overflow-hidden">
+                <div className="bg-paper-sunk border-b border-line flex">
                   <div className="flex-1 px-4 py-2.5">
-                    <p className="text-[#536379] font-bold text-xs tracking-[1.2px]">Producto</p>
+                    <p className="text-ink-muted font-bold text-xs tracking-[1.2px]">Producto</p>
                   </div>
                   <div className="w-24 px-4 py-2.5 text-center">
-                    <p className="text-[#536379] font-bold text-xs tracking-[1.2px]">Cant.</p>
+                    <p className="text-ink-muted font-bold text-xs tracking-[1.2px]">Cant.</p>
                   </div>
                   <div className="w-24 px-4 py-2.5 text-right">
-                    <p className="text-[#536379] font-bold text-xs tracking-[1.2px]">Precio</p>
+                    <p className="text-ink-muted font-bold text-xs tracking-[1.2px]">Precio</p>
                   </div>
                   <div className="w-24 px-4 py-2.5 text-right">
-                    <p className="text-[#536379] font-bold text-xs tracking-[1.2px]">Total</p>
+                    <p className="text-ink-muted font-bold text-xs tracking-[1.2px]">Total</p>
                   </div>
                 </div>
-                <div className="border-b border-[#e5dfd2] flex">
+                <div className="border-b border-line flex">
                   <div className="flex-1 flex items-center gap-3 px-4 py-3">
-                    <div className="w-10 h-10 bg-[#faf8f3] border border-[#e5dfd2] rounded-lg flex items-center justify-center">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M19 9.3V4H16.7L12 0L7.3 4H5V9.3C2.3 11.4 1 14.5 1 18C1 20.8 2.1 23.2 3.7 24H20.3C21.9 23.2 23 20.8 23 18C23 14.5 21.7 11.4 19 9.3ZM12 3.1L14.9 6H9.1L12 3.1ZM12 20C9.8 20 8 18.2 8 16C8 13.8 9.8 12 12 12C14.2 12 16 13.8 16 16C16 18.2 14.2 20 12 20Z" fill="#536379"/>
-                      </svg>
+                    <div className="w-10 h-10 bg-paper border border-line rounded-lg flex items-center justify-center">
+                      <span className="material-symbols-outlined text-lg text-ink-muted">home</span>
                     </div>
                     <div>
-                      <p className="text-[#0e1a2b] font-medium text-sm">Arriendo mensual</p>
-                      <p className="text-[#536379] text-xs">{contract.barrio_name || contract.barrio || "Vivienda"}</p>
+                      <p className="text-ink font-medium text-sm">Arriendo mensual</p>
+                      <p className="text-ink-muted text-xs">{contract.barrio_name || contract.barrio || "Vivienda"}</p>
                     </div>
                   </div>
                   <div className="w-24 flex items-center justify-center">
-                    <p className="text-[#0e1a2b] text-sm">1</p>
+                    <p className="text-ink text-sm">1</p>
                   </div>
                   <div className="w-24 flex items-center justify-end px-4">
-                    <p className="text-[#536379] text-sm">{formatPrice(contract.monthly_rent)}</p>
+                    <p className="text-ink-muted text-sm">{formatPrice(contract.monthly_rent)}</p>
                   </div>
                   <div className="w-24 flex items-center justify-end px-4">
-                    <p className="text-[#0e1a2b] text-sm font-bold">{formatPrice(contract.monthly_rent)}</p>
+                    <p className="text-ink text-sm font-bold">{formatPrice(contract.monthly_rent)}</p>
                   </div>
                 </div>
                 <div className="flex">
                   <div className="flex-1 flex items-center gap-3 px-4 py-3">
-                    <div className="w-10 h-10 bg-[#faf8f3] border border-[#e5dfd2] rounded-lg flex items-center justify-center">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <rect x="1" y="4" width="22" height="16" rx="2" stroke="#536379" strokeWidth="2"/>
-                        <line x1="1" y1="10" x2="23" y2="10" stroke="#536379" strokeWidth="2"/>
-                      </svg>
+                    <div className="w-10 h-10 bg-paper border border-line rounded-lg flex items-center justify-center">
+                      <span className="material-symbols-outlined text-lg text-ink-muted">credit_card</span>
                     </div>
                     <div>
-                      <p className="text-[#0e1a2b] font-medium text-sm">
+                      <p className="text-ink font-medium text-sm">
                         {paymentMethod === "card" ? "Tarjeta de crédito/débito" :
                          paymentMethod === "paypal" ? "PayPal" : "Transferencia bancaria"}
                       </p>
-                      <p className="text-[#536379] text-xs">Método de pago</p>
+                      <p className="text-ink-muted text-xs">Método de pago</p>
                     </div>
                   </div>
-                  <div className="w-24 flex items-center justify-center text-[#536379] text-sm">1</div>
-                  <div className="w-24 flex items-center justify-end px-4 text-[#536379] text-sm">$0</div>
-                  <div className="w-24 flex items-center justify-end px-4 text-[#0e1a2b] text-sm font-bold">$0</div>
+                  <div className="w-24 flex items-center justify-center text-ink-muted text-sm">1</div>
+                  <div className="w-24 flex items-center justify-end px-4 text-ink-muted text-sm">$0</div>
+                  <div className="w-24 flex items-center justify-end px-4 text-ink text-sm font-bold">$0</div>
                 </div>
               </div>
 
               <div className="flex gap-4">
                 <div className="w-48 space-y-2">
-                  <p className="text-[#536379] font-bold text-xs tracking-[1.2px] uppercase">Método</p>
+                  <p className="text-ink-muted font-bold text-xs tracking-[1.2px] uppercase">Método</p>
                     {[
                       ...(totalAmount >= 3500 ? [{ id: "card", label: "Tarjeta" }] : []),
                       ...(HAS_PAYPAL && totalAmount >= 3500 ? [{ id: "paypal", label: "PayPal" }] : []),
@@ -317,16 +306,16 @@ function PaymentModal({ contract, onClose, onSuccess }) {
                       onClick={() => setPaymentMethod(m.id)}
                       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all ${
                         paymentMethod === m.id
-                          ? "border-[#2e5a88] bg-[#eef3f9]"
-                          : "border-[#e5dfd2] bg-white hover:bg-[#faf8f3]"
+                          ? "border-brand-500 bg-brand-50"
+                          : "border-line bg-white hover:bg-paper"
                       }`}
                     >
                       <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                        paymentMethod === m.id ? "border-[#2e5a88]" : "border-[#cdc6b3]"
+                        paymentMethod === m.id ? "border-brand-500" : "border-outline"
                       }`}>
-                        {paymentMethod === m.id && <div className="w-2 h-2 rounded-full bg-[#2e5a88]" />}
+                        {paymentMethod === m.id && <div className="w-2 h-2 rounded-full bg-brand-500" />}
                       </div>
-                      <span className="text-sm text-[#0e1a2b]">{m.label}</span>
+                      <span className="text-sm text-ink">{m.label}</span>
                     </button>
                   ))}
                 </div>
@@ -334,31 +323,25 @@ function PaymentModal({ contract, onClose, onSuccess }) {
                 <div className="flex-1 space-y-2">
                   {paymentMethod === "card" && (
                     <>
-                      <p className="text-[#536379] font-bold text-xs tracking-[1.2px] uppercase">Datos de tarjeta</p>
-                      <div className="bg-white border border-[#e5dfd2] rounded-lg px-3 py-2.5">
+                      <p className="text-ink-muted font-bold text-xs tracking-[1.2px] uppercase">Datos de tarjeta</p>
+                      <div className="bg-white border border-line rounded-lg px-3 py-2.5">
                         <CardElement options={cardElementOptions} />
                       </div>
                       {HAS_STRIPE ? (
-                        <p className="text-xs text-[#2e5a88] flex items-center gap-1">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                            <path d="M9 16.2L4.8 12L3.4 13.4L9 19L21 7L19.6 5.6L9 16.2Z" fill="#2e5a88"/>
-                          </svg>
+                        <p className="text-xs text-brand-500 flex items-center gap-1">
+                          <span className="material-symbols-outlined text-sm text-brand-500">check_circle</span>
                           Stripe — pago seguro con tarjeta
                         </p>
                       ) : (
-                        <p className="text-xs text-[#536379] flex items-center gap-1">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                            <circle cx="12" cy="12" r="10" stroke="#536379" strokeWidth="2"/>
-                            <line x1="12" y1="8" x2="12" y2="14" stroke="#536379" strokeWidth="2" strokeLinecap="round"/>
-                            <circle cx="12" cy="17" r="1" fill="#536379"/>
-                          </svg>
+                        <p className="text-xs text-ink-muted flex items-center gap-1">
+                          <span className="material-symbols-outlined text-sm text-ink-muted">info</span>
                           Modo simulado — no se realizará un cobro real
                         </p>
                       )}
                     </>
                   )}
                   {paymentMethod === "paypal" && (
-                    <div className="bg-white border border-[#e5dfd2] rounded-xl p-4">
+                    <div className="bg-white border border-line rounded-xl p-4">
                       {(totalAmount || 0) >= 3500 ? (
                         <PayPalOrderButton
                           agreement_id={contract.agreement_id}
@@ -375,15 +358,15 @@ function PaymentModal({ contract, onClose, onSuccess }) {
                           <p className="text-lg font-bold">
                             <span className="text-[#003087]">Pay</span><span className="text-[#009cde]">Pal</span>
                           </p>
-                          <p className="text-[#536379] text-xs mt-2">Monto mínimo: $3,500 COP</p>
+                          <p className="text-ink-muted text-xs mt-2">Monto mínimo: $3,500 COP</p>
                         </div>
                       )}
                     </div>
                   )}
                   {paymentMethod === "simulated" && (
-                    <div className="bg-white border border-[#e5dfd2] rounded-xl p-4 text-center">
-                      <p className="text-base font-bold text-[#0e1a2b]">Pago simulado</p>
-                      <p className="text-xs text-[#536379] mt-2">
+                    <div className="bg-white border border-line rounded-xl p-4 text-center">
+                      <p className="text-base font-bold text-ink">Pago simulado</p>
+                      <p className="text-xs text-ink-muted mt-2">
                         No se realizará un cobro real. Usá este método para montos pequeños o pruebas.
                       </p>
                     </div>
@@ -395,33 +378,29 @@ function PaymentModal({ contract, onClose, onSuccess }) {
           )}
 
           {step === "success" && (
-            <div className="bg-[#faf8f3] p-8 text-center space-y-4">
-              <div className="w-16 h-16 bg-[#eef3f9] rounded-full flex items-center justify-center mx-auto">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                  <path d="M9 16.2L4.8 12L3.4 13.4L9 19L21 7L19.6 5.6L9 16.2Z" fill="#2e5a88"/>
-                </svg>
+            <div className="bg-paper p-8 text-center space-y-4">
+              <div className="w-16 h-16 bg-brand-50 rounded-full flex items-center justify-center mx-auto">
+                <span className="material-symbols-outlined text-3xl text-brand-500">check_circle</span>
               </div>
-              <p className="text-[#0e1a2b] font-bold text-xl">¡Pago exitoso!</p>
-              <p className="text-[#536379] text-sm">
+              <p className="text-ink font-bold text-xl">¡Pago exitoso!</p>
+              <p className="text-ink-muted text-sm">
                 Tu pago de {formatPrice(paymentResult?.amount || contract.monthly_rent)} ha sido procesado.
               </p>
-              <div className="bg-white border border-[#e5dfd2] rounded-xl p-3 inline-block">
-                <p className="text-[#536379] text-xs">Recibo N°</p>
-                <p className="text-[#0e1a2b] text-sm font-mono font-bold">{paymentResult?.payment_id}</p>
+              <div className="bg-white border border-line rounded-xl p-3 inline-block">
+                <p className="text-ink-muted text-xs">Recibo N°</p>
+                <p className="text-ink text-sm font-mono font-bold">{paymentResult?.payment_id}</p>
               </div>
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={() => downloadReceipt(paymentResult?.payment_id)}
-                  className="bg-[#2e5a88] rounded-lg px-4 py-2.5 text-white font-bold text-sm hover:bg-[#264c74] transition-all flex items-center gap-2"
+                  className="bg-brand-500 rounded-lg px-4 py-2.5 text-white font-bold text-sm hover:bg-brand-600 transition-all flex items-center gap-2"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path d="M19 9H15V3H9V9H5L12 16L19 9ZM5 18V20H19V18H5Z" fill="white"/>
-                  </svg>
+                  <span className="material-symbols-outlined text-sm">download</span>
                   Descargar Recibo
                 </button>
                 <button
                   onClick={onClose}
-                  className="bg-white border border-[#e5dfd2] rounded-lg px-4 py-2.5 text-[#0e1a2b] font-bold text-sm hover:bg-[#faf8f3] transition-all"
+                  className="bg-white border border-line rounded-lg px-4 py-2.5 text-ink font-bold text-sm hover:bg-paper transition-all"
                 >
                   Cerrar
                 </button>
@@ -429,10 +408,10 @@ function PaymentModal({ contract, onClose, onSuccess }) {
             </div>
           )}
 
-          <div className="bg-white border-t border-[#e5dfd2] px-6 py-4 flex items-center justify-between">
-            <p className="text-[#536379] text-xs">Pago seguro · No compartimos tus datos</p>
+          <div className="bg-white border-t border-line px-6 py-4 flex items-center justify-between">
+            <p className="text-ink-muted text-xs">Pago seguro · No compartimos tus datos</p>
             <div className="text-right">
-              <p className="text-[#2e5a88] font-bold text-xl">
+              <p className="text-brand-500 font-bold text-xl">
                 Total: {formatPrice(totalAmount)}
               </p>
             </div>
