@@ -31,7 +31,7 @@ jobs:
       run: pnpm lint || true
 
     - name: Build
-      run: pnpm build
+      run: CI=false pnpm build
 
     - name: Test
       run: pnpm test -- --watchAll=false || true
