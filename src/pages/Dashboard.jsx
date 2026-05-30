@@ -174,29 +174,6 @@ function Dashboard() {
             </div>
             )}
 
-            {/* Tab Navigation */}
-            <div className="flex items-center gap-1 mb-6 bg-paper-sunk p-1 rounded-xl w-fit">
-              {[
-                { key: 'list', label: 'Mis Propiedades', icon: 'apartment' },
-                { key: 'contracts', label: 'Contratos', icon: 'description' },
-                { key: 'visits', label: 'Visitas', icon: 'calendar_month' },
-                { key: 'reviews', label: 'Reseñas', icon: 'star' },
-              ].map(tab => (
-                <button
-                  key={tab.key}
-                  onClick={() => navigate(`/dashboard?tab=${tab.key}`, { replace: true })}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-label-md font-semibold transition-all ${
-                    activeTab === tab.key
-                      ? 'bg-white text-ink shadow-sm'
-                      : 'text-ink-muted hover:text-ink hover:bg-white/50'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-sm">{tab.icon}</span>
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
             {/* KPI row — prototype style */}
             {activeTab === 'list' && (
             <div className="grid grid-cols-12 gap-4 mb-8">

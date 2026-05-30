@@ -1,6 +1,7 @@
 import React, { useContext, useState } from "react";
 import { UserContext } from "../../contexts/UserContext";
 import { updateUserData, fetchUserData } from "../../apis/myAccountController";
+import Toast from '../Toast';
 
 function User() {
     const { user, login } = useContext(UserContext);
@@ -13,13 +14,14 @@ function User() {
         telefono: telefono || '',
         password: ''
     });
+    const [toast, setToast] = useState(null);
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     }
     const createNewUserData = async (e) => {
         e.preventDefault();
         if (!token) {
-            alert("El usuario no ha iniciado sesión.");
+            setToast({ message: "El usuario no ha iniciado sesión.", type: "error" });
             return;
         }
         const updatedData = await updateUserData(token, formData);
@@ -42,12 +44,12 @@ function User() {
                     telefono: freshUserData.user_phonenumber,
                     password: ''
                 });
-                alert("Datos actualizados correctamente.");
+                setToast({ message: "Datos actualizados correctamente.", type: "success" });
             } else {
-                alert("Error al obtener los datos actualizados.");
+                setToast({ message: "Error al obtener los datos actualizados.", type: "error" });
             }
         } else {
-            alert("Error al actualizar los datos.");
+            setToast({ message: "Error al actualizar los datos.", type: "error" });
         }
     }
     return (
@@ -131,6 +133,9 @@ function User() {
                     </button>
                 </div>
             </form>
+            {toast && (
+                <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} duration={3000} />
+            )}
         </div>
     );
 }

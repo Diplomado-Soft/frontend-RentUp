@@ -139,6 +139,10 @@ const useManageController = () => {
           newImagesCount: newImageFiles.length
         });
 
+        // Detectar si el apto estaba rechazado (auto-resubmit)
+        const previousApt = apartmentList.find(a => a.id_apt === id_apt);
+        const wasRejected = previousApt?.publication_status === 'rejected';
+
         // ✅ Usar axiosInstance que incluye automáticamente el token
         axiosInstance.put(`/apartments/update/${id_apt}`, formData, {
             headers: { 
@@ -146,7 +150,10 @@ const useManageController = () => {
             },
         })
         .then(() => {
-            showToast("Apartamento actualizado exitosamente", "success");
+            showToast(
+                wasRejected ? "Apartamento reenviado para revisión" : "Apartamento actualizado exitosamente",
+                "success"
+            );
             fetchApartments();
             setEditApartmentId(null);
         })
