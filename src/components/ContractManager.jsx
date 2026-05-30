@@ -623,6 +623,7 @@ function ContractManager() {
         title="¿Renovar contrato?"
         message={`Se renovará el contrato por 12 meses adicionales a partir de la fecha actual.${renewTarget?.status === 'expired' ? ' El contrato está vencido, se reactivará automáticamente.' : ''}`}
         confirmLabel="Renovar"
+        variant="confirm"
         onConfirm={handleRenewContract}
         onCancel={() => setRenewTarget(null)}
       />
@@ -632,6 +633,7 @@ function ContractManager() {
         title="¿Eliminar contrato?"
         message="El contrato se ocultará de tu vista."
         confirmLabel="Eliminar"
+        variant="danger"
         onConfirm={handleHideConfirm}
         onCancel={() => setHideTarget(null)}
       />

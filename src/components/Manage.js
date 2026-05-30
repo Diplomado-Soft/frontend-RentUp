@@ -4,6 +4,17 @@ import MapModal from './MapModal';
 import Toast from './Toast';
 import ConfirmModal from './ConfirmModal';
 
+const amenitiesList = [
+  { label: 'Wifi Alta Vel.', icon: 'wifi' },
+  { label: 'Lavandería', icon: 'local_laundry_service' },
+  { label: 'Cocina Equipada', icon: 'kitchen' },
+  { label: 'Aire Acond.', icon: 'ac_unit' },
+  { label: 'Seguridad 24/7', icon: 'security' },
+  { label: 'Gimnasio', icon: 'fitness_center' },
+  { label: 'Mascotas', icon: 'pets' },
+  { label: 'Balcón', icon: 'balcony' },
+];
+
 const API_URL = process.env.REACT_APP_API_URL;
 
 function Manage({ totalIncome = 0, activeProps = 0, activeContracts = 0 }) {
@@ -14,6 +25,8 @@ const {
     editApartmentId,
     editFormData,
     setEditFormData,
+    editAmenities,
+    setEditAmenities,
     handleEditClick,
     handleInputChange,
     handleDelete,
@@ -203,6 +216,47 @@ return (
                         />
                     </div>
 
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-label-md uppercase tracking-wider text-ink-muted mb-2 block">Precio (COP)</label>
+                            <input type="number" min="0" name="price" value={editFormData.price} onChange={handleInputChange} placeholder="Ej: 1500000" className="w-full px-4 py-3 rounded-lg bg-paper-sunk text-ink focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition text-body-md" />
+                        </div>
+                        <div>
+                            <label className="text-label-md uppercase tracking-wider text-ink-muted mb-2 block">Área (m²)</label>
+                            <input type="number" min="0" step="0.1" name="area_m2" value={editFormData.area_m2} onChange={handleInputChange} placeholder="Ej: 75" className="w-full px-4 py-3 rounded-lg bg-paper-sunk text-ink focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition text-body-md" />
+                        </div>
+                        <div>
+                            <label className="text-label-md uppercase tracking-wider text-ink-muted mb-2 block">Habitaciones</label>
+                            <input type="number" min="0" name="bedrooms" value={editFormData.bedrooms} onChange={handleInputChange} placeholder="Ej: 3" className="w-full px-4 py-3 rounded-lg bg-paper-sunk text-ink focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition text-body-md" />
+                        </div>
+                        <div>
+                            <label className="text-label-md uppercase tracking-wider text-ink-muted mb-2 block">Baños</label>
+                            <input type="number" min="0" name="bathrooms" value={editFormData.bathrooms} onChange={handleInputChange} placeholder="Ej: 2" className="w-full px-4 py-3 rounded-lg bg-paper-sunk text-ink focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition text-body-md" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <p className="font-display text-lg text-ink mb-3">Comodidades</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            {amenitiesList.map(amenity => (
+                            <button key={amenity.label} type="button" onClick={() =>
+                                setEditAmenities(prev =>
+                                prev.includes(amenity.label) ? prev.filter(a => a !== amenity.label) : [...prev, amenity.label]
+                                )
+                            }
+                                className={`p-3 rounded-xl flex flex-col items-center gap-2 transition-all border-2 ${
+                                editAmenities.includes(amenity.label)
+                                    ? 'border-brand-500 bg-brand-50 text-brand-700'
+                                    : 'border-transparent bg-paper-sunk text-ink-muted hover:border-line'
+                                }`}
+                            >
+                                <span className="material-symbols-outlined text-xl">{amenity.icon}</span>
+                                <span className="text-xs font-medium text-center leading-tight">{amenity.label}</span>
+                            </button>
+                            ))}
+                        </div>
+                    </div>
+
                     <div className="bg-paper-card rounded-xl p-5 border border-line/50">
                         <div className="flex items-center gap-2 mb-3">
                             <span className="material-symbols-outlined text-brand-500 text-lg">image</span>
@@ -331,9 +385,11 @@ return (
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
+                                    {apt.status !== 'rented' && (
                                     <button onClick={() => { handleEditClick(apt); setPrimaryImageIdx(0); }} className="w-9 h-9 rounded-lg bg-brand-500/10 text-brand-500 flex items-center justify-center hover:bg-brand-500/20 transition" title="Editar">
                                         <span className="material-symbols-outlined text-sm">edit</span>
                                     </button>
+                                    )}
                                     <button onClick={() => setDeleteTarget(apt.id_apt)} className="w-9 h-9 rounded-lg bg-error/10 text-error flex items-center justify-center hover:bg-error/20 transition" title="Eliminar">
                                         <span className="material-symbols-outlined text-sm">delete</span>
                                     </button>

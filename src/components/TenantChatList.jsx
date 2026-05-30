@@ -127,7 +127,7 @@ export default function TenantChatList({ tenant_id }) {
         <div className="chat-activo-container">
           <div className="chat-header">
             <button className="btn-volver" onClick={cerrarChat}>
-              ← Volver a conversaciones
+              ← Volver
             </button>
             <div className="chat-user-info">
               <div className="avatar-small">

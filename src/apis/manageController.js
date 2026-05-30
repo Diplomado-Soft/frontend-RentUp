@@ -13,8 +13,14 @@ const useManageController = () => {
         latitud_apt: "",
         longitud_apt: "",
         info_add_apt: "",
+        price: "",
+        bedrooms: "",
+        bathrooms: "",
+        area_m2: "",
+        comodidades: "",
         images: []
     });
+    const [editAmenities, setEditAmenities] = useState([]);
     const [toast, setToast] = useState(null);
 
     const showToast = (message, type = 'success') => {
@@ -54,8 +60,16 @@ const useManageController = () => {
             latitud_apt: apartment.latitud_apt,
             longitud_apt: apartment.longitud_apt,
             info_add_apt: apartment.info_add_apt,
+            price: apartment.precio_apt ?? apartment.price ?? '',
+            bedrooms: apartment.habitaciones ?? apartment.bedrooms ?? '',
+            bathrooms: apartment.banos ?? apartment.bathrooms ?? '',
+            area_m2: apartment.metros_apt ?? apartment.area_m2 ?? '',
+            comodidades: apartment.comodidades ?? '',
             images: Array.isArray(apartment.images) ? apartment.images : [] 
         });
+        setEditAmenities(
+            (apartment.comodidades || '').split(',').map(s => s.trim()).filter(Boolean)
+        );
     };
 
     const handleInputChange = (e) => {
@@ -84,6 +98,10 @@ const useManageController = () => {
         if (!editFormData.latitud_apt) missingFields.push("Latitud");
         if (!editFormData.longitud_apt) missingFields.push("Longitud");
         if (!editFormData.info_add_apt) missingFields.push("Información adicional");
+        if (!editFormData.price || parseFloat(editFormData.price) <= 0) missingFields.push("Precio");
+        if (!editFormData.bedrooms) missingFields.push("Habitaciones");
+        if (!editFormData.bathrooms) missingFields.push("Baños");
+        if (!editFormData.area_m2 || parseFloat(editFormData.area_m2) <= 0) missingFields.push("Área");
 
         if (missingFields.length > 0) {
             showToast(`Por favor rellena los siguientes campos: ${missingFields.join(", ")}`, "warning");
@@ -123,6 +141,11 @@ const useManageController = () => {
         formData.append("latitud_apt", editFormData.latitud_apt);
         formData.append("longitud_apt", editFormData.longitud_apt);
         formData.append("info_add_apt", editFormData.info_add_apt);
+        formData.append("price", editFormData.price);
+        formData.append("bedrooms", editFormData.bedrooms);
+        formData.append("bathrooms", editFormData.bathrooms);
+        formData.append("area_m2", editFormData.area_m2);
+        formData.append("comodidades", editAmenities.join(', '));
         formData.append("existing_images", JSON.stringify(existingImages));
 
         // Enviar el índice de la imagen principal (0 = primera, que es la que reordenamos)
@@ -136,12 +159,16 @@ const useManageController = () => {
           id_apt,
           direccion_apt: editFormData.direccion_apt,
           barrio: editFormData.barrio,
+          price: editFormData.price,
+          bedrooms: editFormData.bedrooms,
+          bathrooms: editFormData.bathrooms,
+          area_m2: editFormData.area_m2,
           newImagesCount: newImageFiles.length
         });
 
-        // Detectar si el apto estaba rechazado (auto-resubmit)
+        // Detectar si el apto estaba rechazado o aprobado (auto-resubmit)
         const previousApt = apartmentList.find(a => a.id_apt === id_apt);
-        const wasRejected = previousApt?.publication_status === 'rejected';
+        const needsResubmit = previousApt?.publication_status === 'rejected' || previousApt?.publication_status === 'approved';
 
         // ✅ Usar axiosInstance que incluye automáticamente el token
         axiosInstance.put(`/apartments/update/${id_apt}`, formData, {
@@ -151,7 +178,7 @@ const useManageController = () => {
         })
         .then(() => {
             showToast(
-                wasRejected ? "Apartamento reenviado para revisión" : "Apartamento actualizado exitosamente",
+                needsResubmit ? "Apartamento reenviado para revisión" : "Apartamento actualizado exitosamente",
                 "success"
             );
             fetchApartments();
@@ -159,7 +186,8 @@ const useManageController = () => {
         })
         .catch((error) => {
             console.error("Error actualizando apartamento:", error);
-            showToast("Hubo un problema al actualizar el apartamento", "error");
+            const msg = error.response?.data?.error || "Hubo un problema al actualizar el apartamento";
+            showToast(msg, "error");
         });
     };
 
@@ -175,6 +203,8 @@ const useManageController = () => {
         setEditApartmentId,
         editFormData,
         setEditFormData,
+        editAmenities,
+        setEditAmenities,
         handleEditClick,
         handleInputChange,
         handleDelete,

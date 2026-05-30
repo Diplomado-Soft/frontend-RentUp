@@ -3,10 +3,19 @@
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 1rem;
   background: #ffffff;
   border-radius: 0;
   box-shadow: none;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.conversaciones-lista {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .chat-list-header {
@@ -196,23 +205,21 @@
 }
 
 .btn-volver {
-  padding: 0.5rem 0.75rem;
-  background: white;
-  border: 1px solid #e5dfd2;
-  border-radius: 0.5rem;
-  color: #0e1a2b;
-  font-weight: 600;
+  background: none;
+  border: none;
+  color: #536379;
   cursor: pointer;
-  transition: all 0.15s ease;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
+  gap: 0.25rem;
+  white-space: nowrap;
 }
 
 .btn-volver:hover {
-  border-color: #2e5a88;
-  background: #faf8f3;
+  color: #0e1a2b;
 }
 
 .chat-user-info {
@@ -246,6 +253,9 @@
   font-size: 0.8rem;
   color: #536379;
   margin: 0.15rem 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .chat-wrapper {

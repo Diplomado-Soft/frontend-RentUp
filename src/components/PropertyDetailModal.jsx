@@ -29,6 +29,17 @@ function PropertyDetailModal({ apartment, onClose }) {
     return () => window.removeEventListener('storage', checkUser);
   }, [contextUser]);
 
+  // Bloquear scroll del body + compensar gutter de la scrollbar
+  useEffect(() => {
+    const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.overflow = "hidden";
+    document.body.style.paddingRight = `${scrollBarWidth}px`;
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
+    };
+  }, []);
+
   useEffect(() => {
     if (apartment?.images) {
       let urls = [];
@@ -123,6 +134,7 @@ function PropertyDetailModal({ apartment, onClose }) {
   if (!apartment) return null;
 
   return (
+    <>
     <div className="fixed inset-0 z-50 overflow-y-auto bg-paper screen-enter" onClick={onClose}>
       <div className="min-h-full w-full relative" onClick={e => e.stopPropagation()}>
         {/* Breadcrumb + top bar */}
@@ -380,6 +392,7 @@ function PropertyDetailModal({ apartment, onClose }) {
         {/* padding for mobile bottom bar */}
         <div className="h-20 md:hidden" />
       </div>
+    </div>
 
       {showVisitModal && (
         <div className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center p-4" onClick={() => setShowVisitModal(false)}>
@@ -394,7 +407,7 @@ function PropertyDetailModal({ apartment, onClose }) {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 

@@ -170,6 +170,7 @@ export default function LandlordMaintenance() {
                 title="¿Eliminar reporte?"
                 message="El reporte se ocultará de tu vista."
                 confirmLabel="Eliminar"
+                variant="danger"
                 onConfirm={handleDeleteConfirm}
                 onCancel={() => setDeleteTarget(null)}
             />

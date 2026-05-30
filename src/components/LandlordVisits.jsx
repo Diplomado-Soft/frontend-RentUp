@@ -7,6 +7,8 @@ function LandlordVisits() {
   const [visits, setVisits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
+  const [confirmTarget, setConfirmTarget] = useState(null);
+  const [rejectTarget, setRejectTarget] = useState(null);
   const [hideTarget, setHideTarget] = useState(null);
 
   useEffect(() => { fetchVisits(); }, []);
@@ -47,6 +49,16 @@ function LandlordVisits() {
     } catch (error) {
       showToast(error.response?.data?.error || 'Error al rechazar la visita', 'error');
     }
+  };
+
+  const handleConfirmVisit = async () => {
+    await handleConfirm(confirmTarget);
+    setConfirmTarget(null);
+  };
+
+  const handleRejectVisit = async () => {
+    await handleReject(rejectTarget);
+    setRejectTarget(null);
   };
 
   const handleHideConfirm = async () => {
@@ -163,14 +175,14 @@ function LandlordVisits() {
                       </div>
                       <div className="flex flex-col gap-2 flex-shrink-0">
                         <button
-                          onClick={() => handleConfirm(visit.id)}
+                          onClick={() => setConfirmTarget(visit.id)}
                           className="flex items-center justify-center gap-1.5 px-5 py-2.5 bg-tertiary text-white font-semibold rounded-xl hover:bg-tertiary/90 transition-all text-label-md"
                         >
                           <span className="material-symbols-outlined text-sm">check</span>
                           Confirmar
                         </button>
                         <button
-                          onClick={() => handleReject(visit.id)}
+                          onClick={() => setRejectTarget(visit.id)}
                           className="flex items-center justify-center gap-1.5 px-5 py-2.5 bg-error/10 text-error font-semibold rounded-xl hover:bg-error/20 transition-all text-label-md"
                         >
                           <span className="material-symbols-outlined text-sm">close</span>
@@ -248,10 +260,29 @@ function LandlordVisits() {
         </div>
       )}
       <ConfirmModal
+        open={!!confirmTarget}
+        title="¿Confirmar visita?"
+        message="La visita quedará agendada y el inquilino recibirá la confirmación."
+        confirmLabel="Confirmar"
+        variant="confirm"
+        onConfirm={handleConfirmVisit}
+        onCancel={() => setConfirmTarget(null)}
+      />
+      <ConfirmModal
+        open={!!rejectTarget}
+        title="¿Rechazar visita?"
+        message="La visita será cancelada y el inquilino será notificado."
+        confirmLabel="Rechazar"
+        variant="danger"
+        onConfirm={handleRejectVisit}
+        onCancel={() => setRejectTarget(null)}
+      />
+      <ConfirmModal
         open={!!hideTarget}
         title="¿Eliminar visita?"
         message="La visita se ocultará de tu vista."
         confirmLabel="Eliminar"
+        variant="danger"
         onConfirm={handleHideConfirm}
         onCancel={() => setHideTarget(null)}
       />

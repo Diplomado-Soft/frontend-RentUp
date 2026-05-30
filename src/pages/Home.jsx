@@ -43,7 +43,7 @@ function Home() {
         {/* ============ HERO ============ */}
         <section className="relative overflow-hidden">
           <div className="absolute inset-0 gridbg opacity-50 pointer-events-none" />
-          <div className="max-w-[1440px] mx-auto px-8 pt-28 pb-24 grid md:grid-cols-12 gap-8 relative">
+          <div className="max-w-[1440px] mx-auto px-8 pt-5 pb-24 grid md:grid-cols-12 gap-8 relative">
             {/* Left content */}
             <div className="md:col-span-7">
               <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-ink-muted font-medium mb-6">

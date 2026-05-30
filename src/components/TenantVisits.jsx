@@ -125,8 +125,8 @@ function TenantVisits() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <p className="font-headline text-headline-sm text-ink">{visit.barrio || 'Sin barrio'}</p>
+                            <div className="min-w-0">
+                              <p className="font-headline text-headline-sm text-ink truncate">{visit.barrio || 'Sin barrio'}</p>
                               <p className="text-body-sm text-ink-muted truncate">{visit.direccion_apt || 'Sin dirección'}</p>
                             </div>
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-label-md font-medium whitespace-nowrap ${sc.cls}`}>
@@ -219,6 +219,7 @@ function TenantVisits() {
         title="¿Eliminar visita?"
         message="La visita se ocultará de tu vista."
         confirmLabel="Eliminar"
+        variant="danger"
         onConfirm={handleHideConfirm}
         onCancel={() => setHideTarget(null)}
       />
