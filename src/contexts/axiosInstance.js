@@ -36,7 +36,6 @@ axiosInstance.interceptors.request.use(
         
         if (token) {
             config.headers['Authorization'] = `Bearer ${token}`;
-            console.log('Enviando petición a:', config.url, '| Token (primeros 20):', token.substring(0, 20) + '...');
         } else {
             console.warn('No hay token disponible para', config.url);
         }

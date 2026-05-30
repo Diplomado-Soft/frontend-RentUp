@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { getMyVisits, cancelVisit } from "../apis/visitController";
+import { hideEntity } from "../apis/visibilityController";
+import ConfirmModal from "./ConfirmModal";
 
 function TenantVisits() {
   const [visits, setVisits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
+  const [hideTarget, setHideTarget] = useState(null);
 
   useEffect(() => { fetchVisits(); }, []);
 
@@ -33,6 +36,19 @@ function TenantVisits() {
     } catch (error) {
       showToast(error.response?.data?.error || 'Error al cancelar', 'error');
     }
+  };
+
+  const handleHideConfirm = async () => {
+    try {
+      const res = await hideEntity('visit', hideTarget);
+      if (res.success) {
+        showToast('Visita ocultada');
+        fetchVisits();
+      }
+    } catch (error) {
+      showToast(error.response?.data?.error || 'Error al ocultar', 'error');
+    }
+    setHideTarget(null);
   };
 
   const getStatusConfig = (status) => {
@@ -125,13 +141,22 @@ function TenantVisits() {
                           {visit.landlord_name && (
                             <p className="text-label-md text-ink-muted mt-1">Arrendador: {visit.landlord_name}</p>
                           )}
-                          <button
-                            onClick={() => handleCancel(visit.id)}
-                            className="mt-2 flex items-center gap-1 text-label-md text-error hover:text-error/80 transition-colors"
-                          >
-                            <span className="material-symbols-outlined text-[14px]">close</span>
-                            Cancelar solicitud
-                          </button>
+                          <div className="flex items-center gap-2 mt-2">
+                            <button
+                              onClick={() => handleCancel(visit.id)}
+                              className="flex items-center gap-1 text-label-md text-error hover:text-error/80 transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">close</span>
+                              Cancelar solicitud
+                            </button>
+                            <button
+                              onClick={() => setHideTarget(visit.id)}
+                              className="flex items-center gap-1 text-label-md text-ink-muted hover:text-error transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">delete</span>
+                              Eliminar
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -164,6 +189,13 @@ function TenantVisits() {
                           </div>
                           <p className="text-label-md text-ink-muted mt-0.5">{formatDate(visit.visit_date)}</p>
                         </div>
+                        <button
+                          onClick={() => setHideTarget(visit.id)}
+                          className="flex items-center gap-1 text-label-md text-ink-muted hover:text-error transition-colors flex-shrink-0"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">delete</span>
+                          Eliminar
+                        </button>
                       </div>
                     </div>
                   );
@@ -182,6 +214,14 @@ function TenantVisits() {
           {toast.message}
         </div>
       )}
+      <ConfirmModal
+        open={!!hideTarget}
+        title="¿Eliminar visita?"
+        message="La visita se ocultará de tu vista."
+        confirmLabel="Eliminar"
+        onConfirm={handleHideConfirm}
+        onCancel={() => setHideTarget(null)}
+      />
     </div>
   );
 }

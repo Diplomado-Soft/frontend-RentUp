@@ -1,38 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axiosInstance from "../contexts/axiosInstance";
-import { signContract } from "../apis/contractController";
-
-function ConfirmDialog({ message, onConfirm, onCancel }) {
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/60 backdrop-blur-sm" onClick={onCancel}>
-      <div className="bg-paper-card rounded-2xl p-6 max-w-sm w-full mx-4 shadow-ambient-xl border border-line/50" onClick={e => e.stopPropagation()}>
-        <div className="w-12 h-12 rounded-full bg-brand-500/10 flex items-center justify-center mx-auto mb-4">
-          <span className="material-symbols-outlined text-brand-500 text-2xl">contract_edit</span>
-        </div>
-        <h3 className="font-headline text-headline-sm text-ink text-center mb-2">Firmar Contrato</h3>
-        <p className="text-body-md text-ink-muted text-center mb-6">{message}</p>
-        <p className="text-label-md text-ink-muted text-center mb-6 bg-paper-sunk rounded-lg p-3">
-          Una vez firmado, el contrato tendrá validez legal.
-        </p>
-        <div className="flex gap-3">
-          <button onClick={onCancel}
-            className="flex-1 px-4 py-2.5 rounded-lg border border-line text-ink font-semibold bg-paper-card hover:bg-paper-sunk transition-all text-label-md">
-            Cancelar
-          </button>
-          <button onClick={onConfirm}
-            className="flex-1 px-4 py-2.5 rounded-lg bg-brand-500 text-white font-bold hover:bg-brand-600 transition-all text-label-md flex items-center justify-center gap-1.5">
-            <span className="material-symbols-outlined text-sm">draw</span>
-            Firmar
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+import SignaturePad from "./SignaturePad";
 
 function ContractSigner({ contract, onSigned }) {
   const [signing, setSigning] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [showSignaturePad, setShowSignaturePad] = useState(false);
   const [pdfBlobUrl, setPdfBlobUrl] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(true);
   const [pdfError, setPdfError] = useState(false);
@@ -75,31 +47,19 @@ function ContractSigner({ contract, onSigned }) {
   }, [contract?.agreement_id]);
 
   const handleSignClick = () => {
-    setShowConfirm(true);
-  };
-
-  const handleConfirmSign = async () => {
-    setShowConfirm(false);
-    setSigning(true);
-    try {
-      const result = await signContract(contract.agreement_id);
-      if (onSigned) onSigned(result);
-    } catch (error) {
-      alert(
-        error.response?.data?.error || "Error al firmar el contrato. Intenta de nuevo."
-      );
-    } finally {
-      setSigning(false);
-    }
+    setShowSignaturePad(true);
   };
 
   return (
     <>
-      {showConfirm && (
-        <ConfirmDialog
-          message={`¿Estás seguro de firmar el contrato de arrendamiento para "${contract?.direccion_apt || 'esta propiedad'}"?`}
-          onConfirm={handleConfirmSign}
-          onCancel={() => setShowConfirm(false)}
+      {showSignaturePad && (
+        <SignaturePad
+          contract={contract}
+          onSigned={(result) => {
+            setShowSignaturePad(false);
+            if (onSigned) onSigned(result);
+          }}
+          onClose={() => setShowSignaturePad(false)}
         />
       )}
 

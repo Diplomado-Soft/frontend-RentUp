@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { getLandlordVisits, confirmVisit, cancelVisit } from "../apis/visitController";
+import { hideEntity } from "../apis/visibilityController";
+import ConfirmModal from "./ConfirmModal";
 
 function LandlordVisits() {
   const [visits, setVisits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
+  const [hideTarget, setHideTarget] = useState(null);
 
   useEffect(() => { fetchVisits(); }, []);
 
@@ -44,6 +47,19 @@ function LandlordVisits() {
     } catch (error) {
       showToast(error.response?.data?.error || 'Error al rechazar la visita', 'error');
     }
+  };
+
+  const handleHideConfirm = async () => {
+    try {
+      const res = await hideEntity('visit', hideTarget);
+      if (res.success) {
+        showToast('Visita ocultada');
+        fetchVisits();
+      }
+    } catch (error) {
+      showToast(error.response?.data?.error || 'Error al ocultar la visita', 'error');
+    }
+    setHideTarget(null);
   };
 
   const getStatusConfig = (status) => {
@@ -160,6 +176,13 @@ function LandlordVisits() {
                           <span className="material-symbols-outlined text-sm">close</span>
                           Rechazar
                         </button>
+                        <button
+                          onClick={() => setHideTarget(visit.id)}
+                          className="flex items-center justify-center gap-1.5 px-5 py-2.5 bg-surface-container-high text-ink-muted font-semibold rounded-xl hover:bg-error/10 hover:text-error transition-all text-label-md"
+                        >
+                          <span className="material-symbols-outlined text-sm">delete</span>
+                          Eliminar
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -199,6 +222,13 @@ function LandlordVisits() {
                             <p className="text-label-md text-ink-muted">{formatDate(visit.visit_date)}</p>
                           </div>
                         </div>
+                        <button
+                          onClick={() => setHideTarget(visit.id)}
+                          className="flex items-center gap-1 text-label-md text-ink-muted hover:text-error transition-colors flex-shrink-0"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">delete</span>
+                          Eliminar
+                        </button>
                       </div>
                     </div>
                   );
@@ -217,6 +247,14 @@ function LandlordVisits() {
           {toast.message}
         </div>
       )}
+      <ConfirmModal
+        open={!!hideTarget}
+        title="¿Eliminar visita?"
+        message="La visita se ocultará de tu vista."
+        confirmLabel="Eliminar"
+        onConfirm={handleHideConfirm}
+        onCancel={() => setHideTarget(null)}
+      />
     </div>
   );
 }
