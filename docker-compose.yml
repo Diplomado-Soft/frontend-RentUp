@@ -1,0 +1,11 @@
+services:
+  frontend:
+    build: .
+    ports:
+      - "3000:3000"
+    networks:
+      - rentup-network
+
+networks:
+  rentup-network:
+    external: true

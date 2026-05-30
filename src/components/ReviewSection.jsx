@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faStar, faStarHalfAlt, faStar as faStarRegular, faCheckCircle, faPencilAlt, faTimes } from "@fortawesome/free-solid-svg-icons";
+import { faStar, faStar as faStarRegular, faCheckCircle, faPencilAlt, faTimes, faTrash } from "@fortawesome/free-solid-svg-icons";
 import axiosInstance from "../contexts/axiosInstance";
 
 function ReviewSection({ propertyId, isOwner }) {
@@ -10,7 +10,8 @@ function ReviewSection({ propertyId, isOwner }) {
   const [showForm, setShowForm] = useState(false);
   const [canReview, setCanReview] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [newReview, setNewReview] = useState({ rating: 5, comment: "" });
+  const [editingReviewId, setEditingReviewId] = useState(null);
+  const [formData, setFormData] = useState({ rating: 0, comment: "" });
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
@@ -47,12 +48,30 @@ function ReviewSection({ propertyId, isOwner }) {
     }
   };
 
+  const userReview = reviews.find(r => r.reviewer_id === user.id);
+
+  const openCreateForm = () => {
+    setEditingReviewId(null);
+    setFormData({ rating: 0, comment: "" });
+    setShowForm(true);
+  };
+
+  const openEditForm = (review) => {
+    setEditingReviewId(review.review_id);
+    setFormData({ rating: review.rating, comment: review.comment });
+    setShowForm(true);
+  };
+
   const submitReview = async (e) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
 
-    if (!newReview.comment.trim()) {
+    if (!formData.rating) {
+      setError("Debes seleccionar un número de estrellas para calificar");
+      return;
+    }
+    if (!formData.comment.trim()) {
       setError("Por favor escribe un comentario");
       return;
     }
@@ -60,21 +79,28 @@ function ReviewSection({ propertyId, isOwner }) {
     try {
       setSubmitting(true);
       
-      const response = await axiosInstance.post('/reviews', {
-        property_id: propertyId,
-        rating: newReview.rating,
-        comment: newReview.comment
-      });
-      
-      if (response.data.success) {
-        setSuccess("¡Gracias! Tu reseña ha sido publicada");
-        setShowForm(false);
-        setNewReview({ rating: 5, comment: "" });
-        fetchReviews();
-        setCanReview(false);
+      if (editingReviewId) {
+        await axiosInstance.put(`/reviews/${editingReviewId}`, {
+          rating: formData.rating,
+          comment: formData.comment
+        });
+        setSuccess("Tu reseña ha sido actualizada");
       } else {
-        setError(response.data.error || "Error al publicar la reseña");
+        const response = await axiosInstance.post('/reviews', {
+          property_id: propertyId,
+          rating: formData.rating,
+          comment: formData.comment
+        });
+        if (response.data.success) {
+          setSuccess("¡Gracias! Tu reseña ha sido publicada");
+        }
       }
+
+      setShowForm(false);
+      setEditingReviewId(null);
+      setFormData({ rating: 0, comment: "" });
+      fetchReviews();
+      checkCanReview();
     } catch (err) {
       setError(err.response?.data?.error || "Error de conexión");
     } finally {
@@ -82,7 +108,18 @@ function ReviewSection({ propertyId, isOwner }) {
     }
   };
 
-  const renderStars = (rating, interactive = false) => {
+  const handleDeleteReview = async (reviewId) => {
+    if (!window.confirm("¿Eliminar tu reseña?")) return;
+    try {
+      await axiosInstance.delete(`/reviews/${reviewId}`);
+      fetchReviews();
+      checkCanReview();
+    } catch (err) {
+      console.error("Error deleting review:", err);
+    }
+  };
+
+  const renderStars = (rating, interactive = false, onChange) => {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
       if (interactive) {
@@ -90,7 +127,7 @@ function ReviewSection({ propertyId, isOwner }) {
           <button
             key={i}
             type="button"
-            onClick={() => setNewReview({ ...newReview, rating: i })}
+            onClick={() => onChange(i)}
             className="focus:outline-none"
           >
             <FontAwesomeIcon
@@ -137,9 +174,19 @@ function ReviewSection({ propertyId, isOwner }) {
           </span>
         </div>
 
-        {canReview && !isOwner && (
+        {userReview && !isOwner && (
           <button
-            onClick={() => setShowForm(true)}
+            onClick={() => openEditForm(userReview)}
+            className="px-4 py-2 bg-slate-800 text-white text-sm rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2"
+          >
+            <FontAwesomeIcon icon={faPencilAlt} className="text-xs" />
+            Editar reseña
+          </button>
+        )}
+
+        {!userReview && canReview && !isOwner && (
+          <button
+            onClick={openCreateForm}
             className="px-4 py-2 bg-slate-800 text-white text-sm rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2"
           >
             <FontAwesomeIcon icon={faPencilAlt} className="text-xs" />
@@ -147,7 +194,7 @@ function ReviewSection({ propertyId, isOwner }) {
           </button>
         )}
 
-        {!canReview && !isOwner && user.id && (
+        {!userReview && !canReview && !isOwner && user.id && (
           <span className="text-xs text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
             Solo clientes con contrato pueden reseñar
           </span>
@@ -164,8 +211,8 @@ function ReviewSection({ propertyId, isOwner }) {
       {showForm && (
         <div className="bg-slate-50 p-4 rounded-lg mb-4 border border-slate-200">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="font-medium text-slate-700">Tu reseña</h4>
-            <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600">
+            <h4 className="font-medium text-slate-700">{editingReviewId ? "Editar reseña" : "Tu reseña"}</h4>
+            <button onClick={() => { setShowForm(false); setEditingReviewId(null); }} className="text-slate-400 hover:text-slate-600">
               <FontAwesomeIcon icon={faTimes} />
             </button>
           </div>
@@ -173,14 +220,14 @@ function ReviewSection({ propertyId, isOwner }) {
           <form onSubmit={submitReview}>
             <div className="mb-3">
               <label className="block text-sm text-slate-600 mb-2">Calificación</label>
-              <div className="flex gap-1">{renderStars(newReview.rating, true)}</div>
+              <div className="flex gap-1">{renderStars(formData.rating, true, (val) => setFormData(p => ({ ...p, rating: val })))}</div>
             </div>
             
             <div className="mb-3">
               <label className="block text-sm text-slate-600 mb-2">Tu experiencia</label>
               <textarea
-                value={newReview.comment}
-                onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
+                value={formData.comment}
+                onChange={(e) => setFormData(p => ({ ...p, comment: e.target.value }))}
                 placeholder="Comparte tu experiencia con esta propiedad..."
                 className="w-full p-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-slate-400 focus:border-transparent outline-none resize-none"
                 rows={3}
@@ -195,7 +242,7 @@ function ReviewSection({ propertyId, isOwner }) {
               disabled={submitting}
               className="px-4 py-2 bg-slate-800 text-white text-sm rounded-lg hover:bg-slate-700 disabled:opacity-50 transition-colors"
             >
-              {submitting ? "Publicando..." : "Publicar reseña"}
+              {submitting ? "Guardando..." : editingReviewId ? "Guardar cambios" : "Publicar reseña"}
             </button>
           </form>
         </div>
@@ -231,6 +278,24 @@ function ReviewSection({ propertyId, isOwner }) {
               </div>
               <div className="flex mb-2">{renderStars(review.rating)}</div>
               <p className="text-sm text-slate-600">{review.comment}</p>
+              {review.reviewer_id === user.id && (
+                <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-200">
+                  <button
+                    onClick={() => openEditForm(review)}
+                    className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 transition-colors"
+                  >
+                    <FontAwesomeIcon icon={faPencilAlt} className="text-xs" />
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => handleDeleteReview(review.review_id)}
+                    className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 transition-colors"
+                  >
+                    <FontAwesomeIcon icon={faTrash} className="text-xs" />
+                    Eliminar
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

@@ -8,8 +8,10 @@ import TenantVisits from "../components/TenantVisits";
 import { getMyReports, createMaintenanceReport, getMyProperties } from "../apis/maintenanceController";
 import { getPaymentHistory, downloadReceipt } from "../apis/paymentController";
 import { previewContractPdf, downloadContractPdf } from "../apis/contractController";
+import { hideEntity } from "../apis/visibilityController";
 import PaymentModal from "../components/Payment/PaymentModal";
 import SignaturePad from "../components/SignaturePad";
+import ConfirmModal from "../components/ConfirmModal";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
@@ -46,6 +48,36 @@ function TenantDashboard() {
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [showVisitScheduler, setShowVisitScheduler] = useState(true);
+  const [hideTarget, setHideTarget] = useState(null);
+  const [hideType, setHideType] = useState(null);
+  const [cancelTarget, setCancelTarget] = useState(null);
+
+  const handleCancelRentConfirm = async () => {
+    try {
+      const res = await axiosInstance.post(`/contracts/${cancelTarget}/end`);
+      if (res.data) {
+        fetchContracts();
+      }
+    } catch (err) {
+      console.error('Error al cancelar arriendo:', err);
+    }
+    setCancelTarget(null);
+  };
+
+  const handleHideConfirm = async () => {
+    try {
+      const res = await hideEntity(hideType, hideTarget);
+      if (res.success) {
+        if (hideType === 'contract') fetchContracts();
+        if (hideType === 'payment') fetchPayments();
+        if (hideType === 'maintenance') fetchReports();
+      }
+    } catch (err) {
+      console.error('Error al ocultar:', err);
+    }
+    setHideTarget(null);
+    setHideType(null);
+  };
 
   const userId = user?.id || user?.user_id;
 
@@ -403,6 +435,22 @@ function TenantDashboard() {
                                       Firmar contrato
                                     </button>
                                   )}
+                                  {rent.status === 'active' && (
+                                    <button
+                                      onClick={() => setCancelTarget(rent.agreement_id)}
+                                      className="flex items-center gap-1 text-label-md text-warning hover:text-warning transition-all px-2 py-1 rounded-lg hover:bg-warning/10"
+                                    >
+                                      <span className="material-symbols-outlined text-sm">cancel</span>
+                                      Cancelar arriendo
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => { setHideTarget(rent.agreement_id); setHideType('contract'); }}
+                                    className="flex items-center gap-1 text-label-md text-error hover:text-error transition-all px-2 py-1 rounded-lg hover:bg-error/10"
+                                  >
+                                    <span className="material-symbols-outlined text-sm">delete</span>
+                                    Eliminar
+                                  </button>
                                 </div>
                               </div>
 
@@ -462,6 +510,13 @@ function TenantDashboard() {
                       <p className="text-xs text-ink-muted">/mes</p>
                       </div>
                                 </div>
+                                <button
+                                  onClick={() => { setHideTarget(rent.agreement_id); setHideType('contract'); }}
+                                  className="flex items-center gap-1 text-label-md text-error hover:text-error transition-all px-2 py-1 rounded-lg hover:bg-error/10 mt-2"
+                                >
+                                  <span className="material-symbols-outlined text-sm">delete</span>
+                                  Eliminar
+                                </button>
                               </div>
                             ))}
                           </div>
@@ -566,25 +621,32 @@ function TenantDashboard() {
                                     </span>
                                   )}
                                 </div>
-                                <button
-                                  onClick={() => {
-                                    const payment = getContractPayment(contract.agreement_id);
-                                    if (payment) {
-                                      downloadReceipt(payment.payment_id);
-                                    } else {
-                                      setSelectedPaymentContract(contract);
-                                      setShowPaymentModal(true);
-                                    }
-                                  }}
-                                  className="flex items-center gap-1 text-label-md text-primary hover:underline transition-all"
-                                >
-                                  <span className="material-symbols-outlined text-xs">
-                                    {getContractPayment(contract.agreement_id) ? 'download' : 'payments'}
-                                  </span>
-                                  {getContractPayment(contract.agreement_id) ? 'Recibo' : 'Pagar'}
-                                </button>
+                                  <button
+                                    onClick={() => {
+                                      const payment = getContractPayment(contract.agreement_id);
+                                      if (payment) {
+                                        downloadReceipt(payment.payment_id);
+                                      } else {
+                                        setSelectedPaymentContract(contract);
+                                        setShowPaymentModal(true);
+                                      }
+                                    }}
+                                    className="flex items-center gap-1 text-label-md text-primary hover:underline transition-all"
+                                  >
+                                    <span className="material-symbols-outlined text-xs">
+                                      {getContractPayment(contract.agreement_id) ? 'download' : 'payments'}
+                                    </span>
+                                    {getContractPayment(contract.agreement_id) ? 'Recibo' : 'Pagar'}
+                                  </button>
+                                  <button
+                                    onClick={() => { setHideTarget(contract.agreement_id); setHideType('contract'); }}
+                                    className="flex items-center gap-1 text-label-md text-error hover:underline transition-all"
+                                  >
+                                    <span className="material-symbols-outlined text-xs">delete</span>
+                                    Eliminar
+                                  </button>
+                                </div>
                               </div>
-                            </div>
                           );
                         })}
                       </div>
@@ -731,11 +793,13 @@ function TenantDashboard() {
                                   year: "numeric",
                                 })}
                               </span>
-                              {r.landlord_notes && (
-                                <span className="italic truncate ml-2" title={r.landlord_notes}>
-                                  Nota
-                                </span>
-                              )}
+                              <button
+                                onClick={() => { setHideTarget(r.id); setHideType('maintenance'); }}
+                                className="flex items-center gap-1 text-label-md text-error hover:text-error transition-all px-2 py-1 rounded-lg hover:bg-error/10"
+                              >
+                                <span className="material-symbols-outlined text-xs">delete</span>
+                                Eliminar
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -961,6 +1025,11 @@ function TenantDashboard() {
                                 Contrato PDF
                               </button>
                             )}
+                            <button onClick={() => { setHideTarget(contract.agreement_id); setHideType('contract'); }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-error/10 text-error text-label-md hover:bg-error/20 transition-all">
+                              <span className="material-symbols-outlined text-xs">delete</span>
+                              Eliminar
+                            </button>
                             <button
                               onClick={() => {
                                 const payment = getContractPayment(contract.agreement_id);
@@ -1210,6 +1279,23 @@ function TenantDashboard() {
           }}
         />
       )}
+      <ConfirmModal
+        open={!!cancelTarget}
+        title="¿Cancelar arriendo?"
+        message="El contrato se finalizará y la propiedad quedará disponible. Esta acción no se puede deshacer."
+        confirmLabel="Cancelar arriendo"
+        variant="danger"
+        onConfirm={handleCancelRentConfirm}
+        onCancel={() => setCancelTarget(null)}
+      />
+      <ConfirmModal
+        open={!!hideTarget}
+        title="¿Eliminar?"
+        message="Este elemento se ocultará de tu vista."
+        confirmLabel="Eliminar"
+        onConfirm={handleHideConfirm}
+        onCancel={() => { setHideTarget(null); setHideType(null); }}
+      />
     </div>
   );
 }

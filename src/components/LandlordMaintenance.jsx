@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { UserContext } from "../contexts/UserContext";
-import { getLandlordReports, updateReportStatus, deleteReport } from "../apis/maintenanceController";
+import { getLandlordReports, updateReportStatus } from "../apis/maintenanceController";
+import { hideEntity } from "../apis/visibilityController";
 import ConfirmModal from "./ConfirmModal";
 import PromptModal from "./PromptModal";
 import "./MaintenanceList.css";
@@ -66,7 +67,7 @@ export default function LandlordMaintenance() {
 
     const handleDeleteConfirm = async () => {
         try {
-            const res = await deleteReport(deleteTarget);
+            const res = await hideEntity('maintenance', deleteTarget);
             if (res.success) {
                 setToast({ msg: 'Reporte eliminado', type: 'success' });
                 fetchReports();
@@ -167,7 +168,7 @@ export default function LandlordMaintenance() {
             <ConfirmModal
                 open={!!deleteTarget}
                 title="¿Eliminar reporte?"
-                message="Esta acción no se puede deshacer. También se borrará la imagen adjunta."
+                message="El reporte se ocultará de tu vista."
                 confirmLabel="Eliminar"
                 onConfirm={handleDeleteConfirm}
                 onCancel={() => setDeleteTarget(null)}

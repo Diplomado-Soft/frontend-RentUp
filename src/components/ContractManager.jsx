@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import axiosInstance from "../contexts/axiosInstance";
 import ConfirmModal from "./ConfirmModal";
 import { previewContractPdf, downloadContractPdf, renewContract } from "../apis/contractController";
+import { hideEntity } from "../apis/visibilityController";
 import SignaturePad from "./SignaturePad";
 
 const inputClass = "w-full px-4 py-3 rounded-lg bg-paper-sunk text-ink focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition text-body-md placeholder:text-ink-muted";
@@ -33,6 +34,7 @@ function ContractManager() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [terminateTarget, setTerminateTarget] = useState(null);
   const [renewTarget, setRenewTarget] = useState(null);
+  const [hideTarget, setHideTarget] = useState(null);
   const [showSignaturePad, setShowSignaturePad] = useState(false);
   const [signingContract, setSigningContract] = useState(null);
   const searchRef = useRef(null);
@@ -266,6 +268,19 @@ function ContractManager() {
       showToast(error.response?.data?.error || 'Error al renovar contrato', 'error');
       setRenewTarget(null);
     }
+  };
+
+  const handleHideConfirm = async () => {
+    try {
+      const res = await hideEntity('contract', hideTarget);
+      if (res.success) {
+        showToast('Contrato ocultado');
+        fetchData();
+      }
+    } catch (error) {
+      showToast(error.response?.data?.error || 'Error al ocultar contrato', 'error');
+    }
+    setHideTarget(null);
   };
 
   const resetForm = () => {
@@ -568,6 +583,11 @@ function ContractManager() {
                       Finalizar
                     </button>
                   )}
+                  <button onClick={() => setHideTarget(contract.agreement_id)}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg flex-shrink-0 text-label-md font-semibold text-ink-muted hover:bg-error/10 hover:text-error transition-all" title="Eliminar">
+                    <span className="material-symbols-outlined text-sm">delete</span>
+                    Eliminar
+                  </button>
                 </div>
               </div>
             ))}
@@ -605,6 +625,15 @@ function ContractManager() {
         confirmLabel="Renovar"
         onConfirm={handleRenewContract}
         onCancel={() => setRenewTarget(null)}
+      />
+
+      <ConfirmModal
+        open={!!hideTarget}
+        title="¿Eliminar contrato?"
+        message="El contrato se ocultará de tu vista."
+        confirmLabel="Eliminar"
+        onConfirm={handleHideConfirm}
+        onCancel={() => setHideTarget(null)}
       />
 
       {toast && (

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { UserContext } from "../contexts/UserContext";
-import { getMyReports, deleteReport } from "../apis/maintenanceController";
+import { getMyReports } from "../apis/maintenanceController";
+import { hideEntity } from "../apis/visibilityController";
 import ConfirmModal from "./ConfirmModal";
 import "./MaintenanceList.css";
 
@@ -36,7 +37,7 @@ export default function MaintenanceList({ refreshKey }) {
 
     const handleDeleteConfirm = async () => {
         try {
-            const res = await deleteReport(deleteTarget);
+            const res = await hideEntity('maintenance', deleteTarget);
             if (res.success) {
                 setReports(prev => prev.filter(r => r.id !== deleteTarget));
             }
@@ -101,7 +102,7 @@ export default function MaintenanceList({ refreshKey }) {
             <ConfirmModal
                 open={!!deleteTarget}
                 title="¿Eliminar reporte?"
-                message="Esta acción no se puede deshacer. También se borrará la imagen adjunta."
+                message="El reporte se ocultará de tu vista."
                 confirmLabel="Eliminar"
                 onConfirm={handleDeleteConfirm}
                 onCancel={() => setDeleteTarget(null)}
