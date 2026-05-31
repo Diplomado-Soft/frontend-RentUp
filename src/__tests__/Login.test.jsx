@@ -60,7 +60,7 @@ beforeEach(() => {
 describe('Login Component - Renderizado', () => {
   test('renderiza input de email', () => {
     renderLogin();
-    expect(screen.getByPlaceholderText(/correo@ejemplo.com/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/nombre@universidad.edu/i)).toBeInTheDocument();
   });
 
   test('renderiza input de password', () => {
@@ -70,17 +70,18 @@ describe('Login Component - Renderizado', () => {
 
   test('renderiza boton de submit', () => {
     renderLogin();
-    expect(screen.getByRole('button', { name: /iniciar sesión/i })).toBeInTheDocument();
+    const buttons = screen.getAllByRole('button', { name: /iniciar sesión/i });
+    expect(buttons.length).toBe(2);
   });
 
   test('renderiza boton de Google', () => {
     renderLogin();
-    expect(screen.getByRole('button', { name: /continuar con google/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /entrar con google/i })).toBeInTheDocument();
   });
 
-  test('renderiza link de registro', () => {
+  test('renderiza boton de registro', () => {
     renderLogin();
-    expect(screen.getByText(/regístrate aquí/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /registrarse/i })).toBeInTheDocument();
   });
 
   test('renderiza link de olvide contraseña', () => {
@@ -100,9 +101,10 @@ describe('Login Component - Envio de formulario', () => {
     const user = userEvent.setup();
     renderLogin();
 
-    await user.type(screen.getByPlaceholderText(/correo@ejemplo.com/i), 'test@test.com');
+    const submitBtn = screen.getAllByRole('button', { name: /iniciar sesión/i })[1];
+    await user.type(screen.getByPlaceholderText(/nombre@universidad.edu/i), 'test@test.com');
     await user.type(screen.getByPlaceholderText(/••••••••/), 'password123');
-    await user.click(screen.getByRole('button', { name: /iniciar sesión/i }));
+    await user.click(submitBtn);
 
     await waitFor(() => {
       expect(loginUser).toHaveBeenCalledWith({
@@ -118,9 +120,10 @@ describe('Login Component - Envio de formulario', () => {
     const user = userEvent.setup();
     renderLogin();
 
-    await user.type(screen.getByPlaceholderText(/correo@ejemplo.com/i), 'test@test.com');
+    const submitBtn = screen.getAllByRole('button', { name: /iniciar sesión/i })[1];
+    await user.type(screen.getByPlaceholderText(/nombre@universidad.edu/i), 'test@test.com');
     await user.type(screen.getByPlaceholderText(/••••••••/), 'password123');
-    await user.click(screen.getByRole('button', { name: /iniciar sesión/i }));
+    await user.click(submitBtn);
 
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/');
@@ -132,9 +135,10 @@ describe('Login Component - Envio de formulario', () => {
     const user = userEvent.setup();
     renderLogin();
 
-    await user.type(screen.getByPlaceholderText(/correo@ejemplo.com/i), 'test@test.com');
+    const submitBtn = screen.getAllByRole('button', { name: /iniciar sesión/i })[1];
+    await user.type(screen.getByPlaceholderText(/nombre@universidad.edu/i), 'test@test.com');
     await user.type(screen.getByPlaceholderText(/••••••••/), 'wrong');
-    await user.click(screen.getByRole('button', { name: /iniciar sesión/i }));
+    await user.click(submitBtn);
 
     await waitFor(() => {
       expect(screen.getByText('Credenciales inválidas')).toBeInTheDocument();
@@ -148,9 +152,10 @@ describe('Login Component - Envio de formulario', () => {
     const user = userEvent.setup();
     renderLogin();
 
-    await user.type(screen.getByPlaceholderText(/correo@ejemplo.com/i), 'test@test.com');
+    const submitBtn = screen.getAllByRole('button', { name: /iniciar sesión/i })[1];
+    await user.type(screen.getByPlaceholderText(/nombre@universidad.edu/i), 'test@test.com');
     await user.type(screen.getByPlaceholderText(/••••••••/), 'password123');
-    await user.click(screen.getByRole('button', { name: /iniciar sesión/i }));
+    await user.click(submitBtn);
 
     await waitFor(() => {
       expect(localStorage.getItem('openPropertyModal')).toBe('123');
@@ -169,7 +174,7 @@ describe('Login Component - Google Sign-In', () => {
     const user = userEvent.setup();
     renderLogin();
 
-    await user.click(screen.getByRole('button', { name: /continuar con google/i }));
+    await user.click(screen.getByRole('button', { name: /entrar con google/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/selecciona tu tipo de cuenta/i)).toBeInTheDocument();
@@ -186,7 +191,7 @@ describe('Login Component - Google Sign-In', () => {
     const user = userEvent.setup();
     renderLogin();
 
-    await user.click(screen.getByRole('button', { name: /continuar con google/i }));
+    await user.click(screen.getByRole('button', { name: /entrar con google/i }));
 
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith(
@@ -201,7 +206,7 @@ describe('Login Component - Google Sign-In', () => {
     const user = userEvent.setup();
     renderLogin();
 
-    await user.click(screen.getByRole('button', { name: /continuar con google/i }));
+    await user.click(screen.getByRole('button', { name: /entrar con google/i }));
 
     await waitFor(() => {
       expect(screen.getByText('Error de autenticación')).toBeInTheDocument();
@@ -220,7 +225,7 @@ describe('Login Component - Google Sign-In', () => {
     const user = userEvent.setup();
     renderLogin();
 
-    await user.click(screen.getByRole('button', { name: /continuar con google/i }));
+    await user.click(screen.getByRole('button', { name: /entrar con google/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/selecciona tu tipo de cuenta/i)).toBeInTheDocument();
@@ -285,7 +290,7 @@ describe('Login Component - Manejo de errores', () => {
     const user = userEvent.setup();
     renderLogin();
 
-    await user.click(screen.getByRole('button', { name: /continuar con google/i }));
+    await user.click(screen.getByRole('button', { name: /entrar con google/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/selecciona tu tipo de cuenta/i)).toBeInTheDocument();
