@@ -5,6 +5,7 @@ import { UserContext } from '../contexts/UserContext';
 
 jest.mock('react-router-dom', () => ({
   useNavigate: () => jest.fn(),
+  useLocation: () => ({ pathname: '/' }),
   BrowserRouter: ({ children }) => children,
 }));
 
