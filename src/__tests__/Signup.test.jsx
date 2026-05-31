@@ -42,7 +42,7 @@ beforeEach(() => {
 describe('Signup Component - Renderizado', () => {
   test('renderiza el titulo del formulario', () => {
     renderSignup();
-    expect(screen.getByText('Crea tu cuenta')).toBeInTheDocument();
+    expect(screen.getByText('Bienvenido a RentUp')).toBeInTheDocument();
   });
 
   test('renderiza inputs del formulario', () => {

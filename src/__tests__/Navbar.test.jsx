@@ -3,6 +3,12 @@ import { render, screen } from '@testing-library/react';
 import Navbar from '../components/Navbar';
 import { UserContext } from '../contexts/UserContext';
 
+global.ResizeObserver = jest.fn().mockImplementation(() => ({
+  observe: jest.fn(),
+  unobserve: jest.fn(),
+  disconnect: jest.fn(),
+}));
+
 jest.mock('react-router-dom', () => ({
   useNavigate: () => jest.fn(),
   useLocation: () => ({ pathname: '/' }),
