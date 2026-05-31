@@ -42,21 +42,21 @@ beforeEach(() => {
 describe('Signup Component - Renderizado', () => {
   test('renderiza el titulo del formulario', () => {
     renderSignup();
-    expect(screen.getByText('Bienvenido a RentUp')).toBeInTheDocument();
+    expect(screen.getByText('Crear cuenta')).toBeInTheDocument();
   });
 
   test('renderiza inputs del formulario', () => {
     renderSignup();
-    expect(screen.getByPlaceholderText('Tu nombre')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Tu apellido')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/correo@ejemplo.com/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/\(\+57\)/)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Ej. Juan')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Ej. Pérez')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('nombre@universidad.edu')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('+57 300 123 4567')).toBeInTheDocument();
     expect(screen.getAllByPlaceholderText(/••••••••/)).toHaveLength(2);
   });
 
   test('renderiza boton de registro', () => {
     renderSignup();
-    expect(screen.getByRole('button', { name: /registrarse ahora/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /crear cuenta/i })).toBeInTheDocument();
   });
 
   test('renderiza boton de Google', () => {
@@ -64,9 +64,9 @@ describe('Signup Component - Renderizado', () => {
     expect(screen.getByRole('button', { name: /continuar con google/i })).toBeInTheDocument();
   });
 
-  test('renderiza link de inicio de sesion', () => {
+  test('renderiza boton de inicio de sesion', () => {
     renderSignup();
-    expect(screen.getByText(/inicia sesión aquí/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /iniciar sesión/i })).toBeInTheDocument();
   });
 
   test('renderiza selectores de tipo de usuario', () => {
@@ -87,7 +87,8 @@ describe('Signup Component - Seleccion de rol', () => {
     renderSignup();
 
     await user.click(screen.getByText('Usuario'));
-    expect(screen.getByText('Seleccionado')).toBeInTheDocument();
+    const radio = screen.getByDisplayValue('usuario');
+    expect(radio).toBeChecked();
   });
 
   test('selecciona tipo arrendador al hacer clic', async () => {
@@ -95,13 +96,15 @@ describe('Signup Component - Seleccion de rol', () => {
     renderSignup();
 
     await user.click(screen.getByText('Arrendador'));
-    expect(screen.getAllByText('Seleccionado')).toHaveLength(1);
+    const radio = screen.getByDisplayValue('arrendador');
+    expect(radio).toBeChecked();
   });
 
   test('recibe rol desde location state', () => {
     mockUseLocation.mockReturnValue({ state: { role: 'usuario' } });
     renderSignup();
-    expect(screen.getByText('Seleccionado')).toBeInTheDocument();
+    const radio = screen.getByDisplayValue('usuario');
+    expect(radio).toBeChecked();
   });
 });
 
@@ -110,7 +113,7 @@ describe('Signup Component - Validacion de formulario', () => {
     const user = userEvent.setup();
     renderSignup();
 
-    await user.click(screen.getByRole('button', { name: /registrarse ahora/i }));
+    await user.click(screen.getByRole('button', { name: /crear cuenta/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/El número de teléfono es obligatorio/i)).toBeInTheDocument();
@@ -121,8 +124,8 @@ describe('Signup Component - Validacion de formulario', () => {
     const user = userEvent.setup();
     renderSignup();
 
-    await user.type(screen.getByPlaceholderText(/\(\+57\)/), '123');
-    await user.click(screen.getByRole('button', { name: /registrarse ahora/i }));
+    await user.type(screen.getByPlaceholderText('+57 300 123 4567'), '123');
+    await user.click(screen.getByRole('button', { name: /crear cuenta/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/Ingresa un número de teléfono válido/i)).toBeInTheDocument();
@@ -133,11 +136,11 @@ describe('Signup Component - Validacion de formulario', () => {
     const user = userEvent.setup();
     renderSignup();
 
-    await user.type(screen.getByPlaceholderText(/\(\+57\)/), '3001234567');
+    await user.type(screen.getByPlaceholderText('+57 300 123 4567'), '3001234567');
     const passwordInputs = screen.getAllByPlaceholderText(/••••••••/);
     await user.type(passwordInputs[0], 'password123');
     await user.type(passwordInputs[1], 'different');
-    await user.click(screen.getByRole('button', { name: /registrarse ahora/i }));
+    await user.click(screen.getByRole('button', { name: /crear cuenta/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/Las contraseñas no coinciden/i)).toBeInTheDocument();
@@ -148,14 +151,14 @@ describe('Signup Component - Validacion de formulario', () => {
     const user = userEvent.setup();
     renderSignup();
 
-    await user.type(screen.getByPlaceholderText(/\(\+57\)/), '3001234567');
+    await user.type(screen.getByPlaceholderText('+57 300 123 4567'), '3001234567');
     const passwordInputs = screen.getAllByPlaceholderText(/••••••••/);
     await user.type(passwordInputs[0], 'password123');
     await user.type(passwordInputs[1], 'password123');
-    await user.click(screen.getByRole('button', { name: /registrarse ahora/i }));
+    await user.click(screen.getByRole('button', { name: /crear cuenta/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/selecciona un tipo de usuario/i)).toBeInTheDocument();
+      expect(screen.getByText(/Por favor selecciona un tipo de usuario/i)).toBeInTheDocument();
     });
   });
 });
@@ -167,14 +170,14 @@ describe('Signup Component - Envio exitoso', () => {
     mockUseLocation.mockReturnValue({ state: { role: 'usuario' } });
     renderSignup();
 
-    await user.type(screen.getByPlaceholderText('Tu nombre'), 'Juan');
-    await user.type(screen.getByPlaceholderText('Tu apellido'), 'Perez');
-    await user.type(screen.getByPlaceholderText(/correo@ejemplo.com/i), 'juan@test.com');
-    await user.type(screen.getByPlaceholderText(/\(\+57\)/), '3001234567');
+    await user.type(screen.getByPlaceholderText('Ej. Juan'), 'Juan');
+    await user.type(screen.getByPlaceholderText('Ej. Pérez'), 'Perez');
+    await user.type(screen.getByPlaceholderText('nombre@universidad.edu'), 'juan@test.com');
+    await user.type(screen.getByPlaceholderText('+57 300 123 4567'), '3001234567');
     const passwordInputs = screen.getAllByPlaceholderText(/••••••••/);
     await user.type(passwordInputs[0], 'password123');
     await user.type(passwordInputs[1], 'password123');
-    await user.click(screen.getByRole('button', { name: /registrarse ahora/i }));
+    await user.click(screen.getByRole('button', { name: /crear cuenta/i }));
 
     await waitFor(() => {
       expect(signupUser).toHaveBeenCalledWith(
@@ -197,11 +200,11 @@ describe('Signup Component - Envio exitoso', () => {
     mockUseLocation.mockReturnValue({ state: { role: 'usuario' } });
     renderSignup();
 
-    await user.type(screen.getByPlaceholderText(/\(\+57\)/), '3001234567');
+    await user.type(screen.getByPlaceholderText('+57 300 123 4567'), '3001234567');
     const passwordInputs = screen.getAllByPlaceholderText(/••••••••/);
     await user.type(passwordInputs[0], 'password123');
     await user.type(passwordInputs[1], 'password123');
-    await user.click(screen.getByRole('button', { name: /registrarse ahora/i }));
+    await user.click(screen.getByRole('button', { name: /crear cuenta/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/Registro Exitoso/i)).toBeInTheDocument();
@@ -214,11 +217,11 @@ describe('Signup Component - Envio exitoso', () => {
     mockUseLocation.mockReturnValue({ state: { role: 'usuario' } });
     renderSignup();
 
-    await user.type(screen.getByPlaceholderText(/\(\+57\)/), '3001234567');
+    await user.type(screen.getByPlaceholderText('+57 300 123 4567'), '3001234567');
     const passwordInputs = screen.getAllByPlaceholderText(/••••••••/);
     await user.type(passwordInputs[0], 'password123');
     await user.type(passwordInputs[1], 'password123');
-    await user.click(screen.getByRole('button', { name: /registrarse ahora/i }));
+    await user.click(screen.getByRole('button', { name: /crear cuenta/i }));
 
     await waitFor(() => {
       expect(screen.getByText('El email ya está registrado')).toBeInTheDocument();
@@ -231,11 +234,11 @@ describe('Signup Component - Envio exitoso', () => {
     mockUseLocation.mockReturnValue({ state: { role: 'arrendador' } });
     renderSignup();
 
-    await user.type(screen.getByPlaceholderText(/\(\+57\)/), '3001234567');
+    await user.type(screen.getByPlaceholderText('+57 300 123 4567'), '3001234567');
     const passwordInputs = screen.getAllByPlaceholderText(/••••••••/);
     await user.type(passwordInputs[0], 'password123');
     await user.type(passwordInputs[1], 'password123');
-    await user.click(screen.getByRole('button', { name: /registrarse ahora/i }));
+    await user.click(screen.getByRole('button', { name: /crear cuenta/i }));
 
     await waitFor(() => {
       expect(signupUser).toHaveBeenCalledWith(
@@ -334,11 +337,11 @@ describe('Signup Component - Google Sign-In', () => {
 });
 
 describe('Signup Component - Navegacion', () => {
-  test('navega a login al hacer clic en inicia sesion', async () => {
+  test('navega a login al hacer clic en Iniciar Sesion', async () => {
     const user = userEvent.setup();
     renderSignup();
 
-    await user.click(screen.getByText(/inicia sesión aquí/i));
+    await user.click(screen.getByRole('button', { name: /iniciar sesión/i }));
     expect(mockNavigate).toHaveBeenCalledWith('/login');
   });
 

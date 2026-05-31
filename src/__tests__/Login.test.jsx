@@ -238,11 +238,11 @@ describe('Login Component - Google Sign-In', () => {
 });
 
 describe('Login Component - Navegacion', () => {
-  test('navega a signup al hacer clic en registrate', async () => {
+  test('navega a signup al hacer clic en Registrarse', async () => {
     const user = userEvent.setup();
     renderLogin();
 
-    await user.click(screen.getByText(/regístrate aquí/i));
+    await user.click(screen.getByRole('button', { name: /registrarse/i }));
     expect(mockNavigate).toHaveBeenCalledWith('/signup');
   });
 
