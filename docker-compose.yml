@@ -3,6 +3,11 @@ services:
     build: .
     ports:
       - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      - REACT_APP_API_URL=http://host.docker.internal:9000
+      - REACT_APP_SOCKET_URL=http://host.docker.internal:9000
     networks:
       - rentup-network
 
