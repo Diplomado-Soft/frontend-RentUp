@@ -35,6 +35,14 @@ const renderWithUserContext = (ui, userValue = null) => {
   );
 };
 
+beforeEach(() => {
+  global.ResizeObserver = jest.fn().mockImplementation(() => ({
+    observe: jest.fn(),
+    unobserve: jest.fn(),
+    disconnect: jest.fn(),
+  }));
+});
+
 describe('Navbar Component', () => {
   test('renders logo', () => {
     renderWithUserContext(<Navbar {...defaultProps} />);
