@@ -6,8 +6,26 @@ import { UserContext } from '../contexts/UserContext';
 jest.mock('react-router-dom', () => ({
   useNavigate: () => jest.fn(),
   useLocation: () => ({ pathname: '/' }),
+  useSearchParams: () => [new URLSearchParams(), jest.fn()],
   BrowserRouter: ({ children }) => children,
 }));
+
+const defaultProps = {
+  goToJoin: () => {},
+  setShowAccount: () => {},
+  listingSearch: '',
+  setListingSearch: () => {},
+  listingFilters: { priceMin: '', priceMax: '', bedrooms: [], bathrooms: [], amenities: [] },
+  setListingFilters: () => {},
+  notifications: [],
+  unreadCount: 0,
+  showNotifications: false,
+  setShowNotifications: () => {},
+  fetchNotifications: () => {},
+  markNotificationRead: () => {},
+  markAllRead: () => {},
+  deleteNotification: () => {},
+};
 
 const renderWithUserContext = (ui, userValue = null) => {
   return render(
@@ -18,15 +36,15 @@ const renderWithUserContext = (ui, userValue = null) => {
 };
 
 describe('Navbar Component', () => {
-  test('renders logo and title', () => {
-    renderWithUserContext(<Navbar goToJoin={() => {}} setShowAccount={() => {}} />);
+  test('renders logo', () => {
+    renderWithUserContext(<Navbar {...defaultProps} />);
     
-    expect(screen.getByText('RentUp')).toBeInTheDocument();
+    expect(screen.getByAltText('RentUP')).toBeInTheDocument();
   });
 
   test('renders login button when no user is logged in', () => {
-    renderWithUserContext(<Navbar goToJoin={() => {}} setShowAccount={() => {}} />);
+    renderWithUserContext(<Navbar {...defaultProps} />);
     
-    expect(screen.getByText(/Iniciar Sesión/i)).toBeInTheDocument();
+    expect(screen.getByText(/Iniciar sesión/i)).toBeInTheDocument();
   });
 });
