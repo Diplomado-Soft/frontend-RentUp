@@ -25,18 +25,18 @@ import TenantDashboard from './pages/TenantDashboard';
 import OnboardingTour from './components/OnboardingTour';
 import axiosInstance from './contexts/axiosInstance';
 import { initSocket } from './utils/socket';
+import { NotificationProvider } from './contexts/NotificationContext';
 import './App.css';
 
 function ListingsPage({ goToJoin, listingSearch, setListingSearch, listingFilters }) {
   const [searchParams] = useSearchParams();
   const urlQ = searchParams.get('q') || '';
 
-  // Si hay ?q= en la URL, sincronizar con listingSearch al montar
   useEffect(() => {
     if (urlQ && urlQ !== listingSearch) {
       setListingSearch(urlQ);
     }
-  }, []); // solo al montar
+  }, []);
 
   return (
     <div className="min-h-screen bg-paper">
@@ -81,7 +81,6 @@ function AppContent() {
   const [navbarHeight, setNavbarHeight] = useState(56);
   const location = useLocation();
 
-  // Notifications
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -122,7 +121,6 @@ function AppContent() {
     } catch (e) { console.error(e); }
   };
 
-  // Socket para notificaciones en vivo
   useEffect(() => {
     if (userId && userData?.rol_id === 3) {
       const socket = initSocket(userId);
@@ -132,7 +130,6 @@ function AppContent() {
     }
   }, [userId, userData?.rol_id]);
 
-  // Click outside para cerrar dropdown
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (notifRef.current && !notifRef.current.contains(e.target)) setShowNotifications(false);
@@ -255,11 +252,11 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AppContent />
+      <NotificationProvider>
+        <AppContent />
+      </NotificationProvider>
     </Router>
   );
 }
 
 export default App;
-
-

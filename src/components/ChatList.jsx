@@ -1,27 +1,26 @@
-// src/components/ChatList.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import ChatComponent from "./ChatComponent";
+import { useNotificationContext } from "../contexts/NotificationContext";
 import "../styles/ChatList.css";
 
 export default function ChatList({ arrendador_id }) {
+  const { readConversations, marcarComoLeido } = useNotificationContext();
   const [conversaciones, setConversaciones] = useState([]);
   const [conversacionActiva, setConversacionActiva] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Cargar lista de conversaciones del arrendador
   useEffect(() => {
     if (!arrendador_id) return;
-    
+
     const userData = JSON.parse(localStorage.getItem('user') || '{}');
     const token = userData?.token;
-    
+
     axios
       .get(`${process.env.REACT_APP_API_URL || 'http://localhost:9000'}/api/chat/conversaciones/${arrendador_id}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       })
       .then((res) => {
-        // Dedupe defensively by usuario_id in case backend returns duplicates
         const uniqueByUser = [];
         const seen = new Set();
         for (const conv of res.data || []) {
@@ -40,6 +39,7 @@ export default function ChatList({ arrendador_id }) {
   }, [arrendador_id]);
 
   const abrirChat = (usuario) => {
+    marcarComoLeido(usuario.usuario_id);
     setConversacionActiva(usuario);
   };
 
@@ -87,7 +87,7 @@ export default function ChatList({ arrendador_id }) {
                     <div className="avatar-circle">
                       {conv.usuario_nombre?.charAt(0).toUpperCase()}
                     </div>
-                    {conv.mensajes_no_leidos > 0 && (
+                    {!readConversations[conv.usuario_id] && conv.mensajes_no_leidos > 0 && (
                       <span className="badge-unread">{conv.mensajes_no_leidos}</span>
                     )}
                   </div>

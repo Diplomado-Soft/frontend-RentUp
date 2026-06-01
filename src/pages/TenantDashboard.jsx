@@ -168,10 +168,14 @@ function TenantDashboard() {
     return acc;
   }, []);
 
-  const [selectedLandlordId, setSelectedLandlordId] = useState(
-    landlords.length > 0 ? landlords[0].id : null
-  );
+  const [selectedLandlordId, setSelectedLandlordId] = useState(null);
   const selectedLandlord = landlords.find((l) => l.id === selectedLandlordId) || null;
+
+  useEffect(() => {
+    if (landlords.length > 0 && (!selectedLandlordId || !landlords.some((l) => l.id === selectedLandlordId))) {
+      setSelectedLandlordId(landlords[0].id);
+    }
+  }, [landlords, selectedLandlordId]);
 
   const daysToNearestEnd = activeContracts.length > 0
     ? Math.min(
@@ -916,29 +920,13 @@ function TenantDashboard() {
 
                       {selectedLandlord && (
                         <>
-                          <div className="bg-surface-container-low rounded-xl p-4 flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-full bg-brand-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-                              {(selectedLandlord.name || "").charAt(0).toUpperCase()}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-headline font-semibold text-ink">
-                                {selectedLandlord.name} {selectedLandlord.lastname}
-                              </p>
-                              <p className="text-sm text-ink-muted">{selectedLandlord.email}</p>
-                              {selectedLandlord.phone && (
-                                <p className="text-sm text-ink-muted">{selectedLandlord.phone}</p>
-                              )}
-                              <div className="flex flex-wrap gap-1.5 mt-1.5">
-                                {selectedLandlord.properties.map((p, i) => (
-                                  <span key={i} className="text-[11px] bg-surface-container-high text-ink-muted px-2 py-0.5 rounded-full truncate max-w-[200px]">
-                                    {p.name}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
                           <div className="bg-surface-container-low rounded-xl overflow-hidden" key={selectedLandlord.id}>
-                            <ChatComponent emisor_id={userId} receptor_id={selectedLandlord.id} />
+                            <ChatComponent
+                              emisor_id={userId}
+                              receptor_id={selectedLandlord.id}
+                              nombre_receptor={`${selectedLandlord.name} ${selectedLandlord.lastname}`}
+                              info_receptor={selectedLandlord.email}
+                            />
                           </div>
                         </>
                       )}

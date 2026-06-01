@@ -3,7 +3,7 @@ import axiosInstance from "../contexts/axiosInstance";
 import { initSocket, getSocket } from "../utils/socket";
 import "../styles/ChatComponent.css";
 
-export default function ChatComponent({ emisor_id, receptor_id }) {
+export default function ChatComponent({ emisor_id, receptor_id, nombre_receptor, info_receptor }) {
   const [mensajes, setMensajes] = useState([]);
   const [contenido, setContenido] = useState("");
   const [socketReady, setSocketReady] = useState(false);
@@ -91,6 +91,18 @@ export default function ChatComponent({ emisor_id, receptor_id }) {
 
   return (
     <div className="chat-container">
+      {nombre_receptor && (
+        <div className="chat-header-info">
+          <div className="chat-header-avatar">
+            {nombre_receptor.charAt(0).toUpperCase()}
+          </div>
+          <div className="chat-header-text">
+            <h3>{nombre_receptor}</h3>
+            {info_receptor && <p>{info_receptor}</p>}
+          </div>
+        </div>
+      )}
+
       <div className="chat-mensajes" ref={chatRef}>
         {mensajes.map((msg, i) => (
           <div
@@ -113,7 +125,10 @@ export default function ChatComponent({ emisor_id, receptor_id }) {
           placeholder="Escribe un mensaje..."
           onKeyDown={(e) => e.key === "Enter" && enviarMensaje()}
         />
-        <button onClick={enviarMensaje} className="bg-brand-500 text-white font-semibold hover:bg-brand-600 transition-all">Enviar</button>
+        <button onClick={enviarMensaje} className="btn-enviar">
+          <span className="material-symbols-outlined" style={{fontSize:'1rem'}}>send</span>
+          Enviar
+        </button>
       </div>
     </div>
   );

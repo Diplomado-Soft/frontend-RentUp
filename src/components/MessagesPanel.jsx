@@ -21,15 +21,17 @@ function MessagesPanel({ userId, userRole, onClose }) {
 
   return (
     <div className="fixed inset-0 z-[60] flex justify-end">
-      {/* Overlay */}
-      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="fixed inset-0 bg-black/30 backdrop-blur-sm transition-opacity duration-300"
+        onClick={onClose}
+        style={{ animation: 'fadeIn 0.25s ease-out' }}
+      />
 
-      {/* Panel */}
       <div
         ref={panelRef}
-        className="relative w-full max-w-[420px] h-full bg-surface-container-lowest shadow-2xl animate-slide-in-right flex flex-col"
+        className="relative w-full max-w-[420px] h-full bg-surface-container-lowest shadow-2xl flex flex-col rounded-l-xl"
+        style={{ animation: 'slideInRight 0.3s ease-out' }}
       >
-        {/* Close button — flotante arriba a la derecha */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-surface-container-high hover:bg-surface-container-highest flex items-center justify-center transition-all text-on-surface-variant hover:text-on-surface"
@@ -37,7 +39,6 @@ function MessagesPanel({ userId, userRole, onClose }) {
           <span className="material-symbols-outlined text-sm">close</span>
         </button>
 
-        {/* Chat content — ocupa todo el panel, duplica su propio header "Mensajes" */}
         <div className="flex-1 overflow-hidden">
           {userRole === 2 ? (
             <ChatList arrendador_id={userId} />
@@ -47,14 +48,14 @@ function MessagesPanel({ userId, userRole, onClose }) {
         </div>
       </div>
 
-      {/* Animación slide-in */}
       <style>{`
         @keyframes slideInRight {
-          from { transform: translateX(100%); }
-          to   { transform: translateX(0); }
+          from { transform: translateX(100%); opacity: 0; }
+          to   { transform: translateX(0); opacity: 1; }
         }
-        .animate-slide-in-right {
-          animation: slideInRight 0.25s ease-out;
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
         }
       `}</style>
     </div>

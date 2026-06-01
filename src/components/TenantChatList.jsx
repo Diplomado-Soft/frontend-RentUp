@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import ChatComponent from "./ChatComponent";
+import { useNotificationContext } from "../contexts/NotificationContext";
 import "../styles/ChatList.css";
 
 export default function TenantChatList({ tenant_id }) {
+  const { readConversations, marcarComoLeido } = useNotificationContext();
   const [conversaciones, setConversaciones] = useState([]);
   const [conversacionActiva, setConversacionActiva] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -37,6 +39,7 @@ export default function TenantChatList({ tenant_id }) {
   }, [tenant_id]);
 
   const abrirChat = (usuario) => {
+    marcarComoLeido(usuario.usuario_id);
     setConversacionActiva(usuario);
   };
 
@@ -84,7 +87,7 @@ export default function TenantChatList({ tenant_id }) {
                     <div className="avatar-circle">
                       {conv.usuario_nombre?.charAt(0).toUpperCase()}
                     </div>
-                    {conv.mensajes_no_leidos > 0 && (
+                    {!readConversations[conv.usuario_id] && conv.mensajes_no_leidos > 0 && (
                       <span className="badge-unread">{conv.mensajes_no_leidos}</span>
                     )}
                   </div>
