@@ -85,7 +85,7 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
       <div className="flex items-center justify-between px-8 py-3 max-w-[1440px] mx-auto">
         {/* Izquierda: Logo + Nav links */}
         <div className="flex items-center gap-4">
-          <div onClick={handleTitleClick} className="cursor-pointer select-none">
+          <div id="rentup-logo" onClick={handleTitleClick} className="cursor-pointer select-none">
             <img src="/Preview-nobg.png" alt="RentUP" className="h-16 w-auto" />
           </div>
 
@@ -113,6 +113,7 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
               {navLinks.map((link) => (
                 <button
                   key={link.label}
+                  id={link.label === 'Mapa' ? 'rentup-nav-mapa' : undefined}
                   onClick={() => { window.scrollTo(0, 0); navigate(link.path); }}
                   className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
                     isActive(link.path)
@@ -133,6 +134,7 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
           {user && userRole === 1 && (
             <div className="hidden md:flex items-center gap-1">
               <button
+                id="rentup-mi-espacio"
                 onClick={() => { window.scrollTo(0, 0); navigate('/mi-espacio'); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors"
               >
@@ -173,7 +175,7 @@ function Navbar({ goToJoin, setShowAccount, listingSearch, setListingSearch, lis
                     </button>
                 )}
                 {user && [1, 2].includes(userRole) && (
-                    <button onClick={() => setShowMessages(v => !v)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors">
+                    <button id="rentup-mensajes" onClick={() => setShowMessages(v => !v)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-ink-soft hover:bg-paper-sunk hover:text-ink transition-colors">
                       <span className="material-symbols-outlined text-sm">forum</span>
                       <span>Mensajes</span>
                     </button>

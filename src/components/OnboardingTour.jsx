@@ -1,78 +1,77 @@
 import React, { useState, useEffect } from 'react';
-import { Joyride, ACTIONS, EVENTS, STATUS } from 'react-joyride';
+import { Joyride, ACTIONS, STATUS } from 'react-joyride';
 
 const TOUR_KEY = 'rentup_tour_completed';
 
-const defaultSteps = [
+const stepContent = [
   {
-    target: '#rentup-search-bar',
-    content: '¡Bienvenido a RentUp! 🏠 Aquí puedes buscar propiedades usando filtros o navegando directamente en el mapa.',
-    title: '🔍 Busca tu hogar',
+    target: '#rentup-logo',
+    content: (
+      <div>
+        <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>¡Bienvenido a RentUp! 🏠</h3>
+        <p style={{ margin: '8px 0 0', fontSize: 14, lineHeight: 1.5, color: '#555' }}>
+          El portal líder en Mocoa diseñado para conectar estudiantes con hogares seguros y verificados. ¡Comencemos este breve recorrido!
+        </p>
+      </div>
+    ),
     placement: 'bottom',
     disableBeacon: true,
   },
   {
-    target: '#rentup-property-card',
-    content: 'Revisa los detalles. Podrás ver fotos, precios y ubicar el apartamento exacto en nuestro mapa interactivo.',
-    title: '📋 Explora propiedades',
-    placement: 'top',
+    target: '.property-card',
+    content: (
+      <div>
+        <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Propiedades Destacadas</h3>
+        <p style={{ margin: '8px 0 0', fontSize: 14, lineHeight: 1.5, color: '#555' }}>
+          Cada tarjeta resume lo esencial: precio, capacidad y ubicación exacta. Haz clic en <strong>Ver</strong> para más detalles o <strong>Ubicación</strong> para verla en el mapa.
+        </p>
+      </div>
+    ),
+    placement: 'right',
     disableBeacon: true,
   },
   {
-    target: '#rentup-cta-section',
-    content: 'Conéctate y cierra el trato. Contacta al arrendador, agenda visitas y firma tu contrato de forma 100% digital.',
-    title: '✍️ Firma digital',
-    placement: 'top',
+    target: '#rentup-nav-mapa',
+    content: (
+      <div>
+        <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Búsqueda Inteligente (Mapa) 🗺️</h3>
+        <p style={{ margin: '8px 0 0', fontSize: 14, lineHeight: 1.5, color: '#555' }}>
+          No busques a ciegas. Usa nuestro mapa interactivo para filtrar propiedades por zonas cercanas a tu universidad. ¡Encuentra tu lugar ideal geográficamente!
+        </p>
+      </div>
+    ),
+    placement: 'bottom',
+    disableBeacon: true,
+  },
+  {
+    target: '#rentup-mi-espacio',
+    content: (
+      <div>
+        <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Tu Dashboard Personal 💼</h3>
+        <p style={{ margin: '8px 0 0', fontSize: 14, lineHeight: 1.5, color: '#555' }}>
+          En "Mi Espacio" gestionas todo tu proceso: estado de visitas, contratos activos, pagos pendientes y reportes. Es tu oficina virtual de arrendamiento.
+        </p>
+      </div>
+    ),
+    placement: 'bottom',
+    disableBeacon: true,
+  },
+  {
+    target: '#rentup-mensajes',
+    content: (
+      <div>
+        <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Comunicación Directa 💬</h3>
+        <p style={{ margin: '8px 0 0', fontSize: 14, lineHeight: 1.5, color: '#555' }}>
+          ¿Tienes dudas? Chatea en tiempo real con los arrendadores. La transparencia es clave para una convivencia exitosa. <strong>¡Ya puedes empezar a buscar tu próximo hogar!</strong>
+        </p>
+      </div>
+    ),
+    placement: 'bottom',
     disableBeacon: true,
   },
 ];
 
-const joyrideStyles = {
-  options: {
-    arrowColor: '#fff',
-    backgroundColor: '#fff',
-    beaconSize: 36,
-    overlayColor: 'rgba(0, 0, 0, 0.5)',
-    primaryColor: '#6A6BEF',
-    spotlightShadow: '0 0 15px rgba(106, 107, 239, 0.4)',
-    textColor: '#1e1e2f',
-    width: 380,
-    zIndex: 1000,
-  },
-  buttonSkip: {
-    color: '#8e8ea0',
-    fontSize: 13,
-  },
-  buttonBack: {
-    color: '#6A6BEF',
-    fontSize: 13,
-    marginRight: 8,
-  },
-  buttonNext: {
-    backgroundColor: '#6A6BEF',
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: 600,
-    borderRadius: 8,
-    padding: '8px 20px',
-  },
-  tooltipContainer: {
-    textAlign: 'left',
-    lineHeight: 1.5,
-  },
-  tooltipTitle: {
-    fontSize: 16,
-    fontWeight: 700,
-    marginBottom: 6,
-  },
-  tooltipContent: {
-    fontSize: 14,
-    color: '#4a4a5a',
-    padding: '0 0 8px',
-  },
-};
-
-function OnboardingTour({ steps = defaultSteps }) {
+function OnboardingTour() {
   const [run, setRun] = useState(false);
 
   useEffect(() => {
@@ -93,22 +92,64 @@ function OnboardingTour({ steps = defaultSteps }) {
     }
   };
 
+  const styles = {
+    options: {
+      primaryColor: '#005088',
+      textColor: '#005088',
+      arrowColor: '#fff',
+      backgroundColor: '#fff',
+      zIndex: 10000,
+      overlayColor: 'rgba(0, 0, 0, 0.5)',
+      width: 420,
+    },
+    tooltipContainer: {
+      textAlign: 'left',
+      borderRadius: 16,
+      boxShadow: '0 12px 48px rgba(0, 80, 136, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08)',
+    },
+    buttonNext: {
+      backgroundColor: '#005088',
+      color: '#fff',
+      fontSize: 13,
+      fontWeight: 600,
+      borderRadius: 10,
+      padding: '10px 24px',
+    },
+    buttonBack: {
+      color: '#005088',
+      fontSize: 13,
+      fontWeight: 500,
+      marginRight: 8,
+    },
+    buttonSkip: {
+      color: '#8e8ea0',
+      fontSize: 13,
+      fontWeight: 500,
+    },
+    progress: {
+      color: '#005088',
+      fontSize: 12,
+      fontWeight: 500,
+    },
+  };
+
   return (
     <Joyride
-      steps={steps}
+      steps={stepContent}
       run={run}
       callback={handleJoyrideCallback}
       continuous
       showProgress
       showSkipButton
       scrollToFirstStep
+      scrollOffset={80}
       disableScrolling={false}
       spotlightClicks
-      styles={joyrideStyles}
+      styles={styles}
       locale={{
         back: 'Atrás',
         close: 'Cerrar',
-        last: '¡Listo!',
+        last: '¡Entendido!',
         next: 'Siguiente',
         skip: 'Saltar',
       }}
@@ -116,5 +157,4 @@ function OnboardingTour({ steps = defaultSteps }) {
   );
 }
 
-export { TOUR_KEY };
 export default OnboardingTour;

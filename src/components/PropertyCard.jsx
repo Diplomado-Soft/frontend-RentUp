@@ -72,9 +72,8 @@ function PropertyCard({ apt, onViewMore, isFavorite, onToggleFavorite }) {
   }, [apt.id_apt]);
 
   return (
-    <div id="rentup-property-card"
+    <div id="rentup-property-card" className="property-card rcard overflow-hidden cursor-pointer group transition-transform hover:-translate-y-0.5"
       onClick={() => { onViewMore && onViewMore(apt); }}
-      className="rcard overflow-hidden cursor-pointer group transition-transform hover:-translate-y-0.5"
     >
       <div className="relative">
         {allImages.length > 0 && !imgErrors[0] ? (
