@@ -13,6 +13,7 @@ jobs:
 
     steps:
     - name: Trigger Netlify Deploy
-      if: ${{ secrets.NETLIFY_DEPLOY_HOOK_URL != '' }}
+      env:
+        NETLIFY_HOOK: ${{ secrets.NETLIFY_DEPLOY_HOOK_URL }}
       run: |
-        curl -X POST "${{ secrets.NETLIFY_DEPLOY_HOOK_URL }}"
+        curl -X POST "$NETLIFY_HOOK"
